@@ -2,7 +2,7 @@
 Simple integration with https://beta.character.ai service which you can use to add any character on your Discord server.
 The service is currently being in beta test state, and it does not have any public API documentation. In this regard, I could not find any convenient way to log into accout (aside from clumsy one described below), and I also cannot guarantee that this bot will not stop working in any moment it's developers will make another update :P
 
-Also, I have to note that I'm very-very new to .NET and C# in overall, so my code can be a little bit awful. Whole this thing was made just for fun and self-educational intentions.
+Also, I have to note that I'm very-very new to .NET and C# in overall, so my code can be a little bit awful. Whole thing was made just for fun and with self-educational intentions.
 
 #  How to set up
 1. Create a new Discord application with bot (you can easily find all guides in the internet, so I won't focus on that part here).
@@ -15,4 +15,4 @@ Also, I have to note that I'm very-very new to .NET and C# in overall, so my cod
 8. Now you should see a list of requests. Locate "auth0/" and open it's response.
 9. What you must see is a string that looks like '{"key":"81a8d269da126081a5f4..."}', that's your accout auth token.
 10. Copy it's value and place in Config.json file.
-
+11. Start bot.

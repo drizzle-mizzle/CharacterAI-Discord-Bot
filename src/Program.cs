@@ -66,7 +66,7 @@ namespace CharacterAI_Discord_Bot
         }
         public static JObject GetConfig()
         {
-            using StreamReader configJson = new StreamReader(Directory.GetCurrentDirectory() + @"/../../../Config.json");
+            using StreamReader configJson = new StreamReader(Directory.GetCurrentDirectory() + @"/../../../../Config.json");
 
             return (JObject)JsonConvert.DeserializeObject(configJson.ReadToEnd());
         }

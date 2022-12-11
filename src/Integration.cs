@@ -30,7 +30,7 @@ namespace CharacterAI_Discord_Bot
             this.authToken = token;
             GetInfo();
             if (!GetHistory()) CreateDialog();
-            Console.WriteLine("СharacterAI - ready");
+            Console.WriteLine($"СharacterAI - {charInfo.name}\n{charInfo.greeting}");
         }
 
         public string CallCharacter(string msg)

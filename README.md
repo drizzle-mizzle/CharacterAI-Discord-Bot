@@ -9,22 +9,22 @@ Also, I have to note that I'm very-very new to .NET and C#, so my code can be a 
 
 ##  How to set up
 1. Create a new Discord application with bot (you can easily find all guides on the internet, so I won't focus on that part here).
-2. Get your bot token and place it in Config.json file.
+2. Get your bot token and place it in Precompiled/YOUR_OS/Config.json file.
 3. Create character.ai account if you don't have one.
 4. Sign in and open a chat with a character you want to add on your server.
-5. In adress bar locate and copy character's id (it's right after '/chat?char='), place it in Config.json file.
+5. In adress bar locate and copy character's id (it's right after '/chat?char='), place it in Precompiled/YOUR_OS/Config.json file.
 6. Open DevTools (<Ctrl+Shift+J> in Chrome) and go to "Fetch/XHR" section.
 7. Reload page (DevTools should remain open).
 8. Now you should see a list of requests. Locate "auth0/" and open it's response.
 ![FetchXHR](https://i.imgur.com/UnOxKUg.png)
 9. What you must see is a string that looks like '{"key":"81a8d269da126081a5f4..."}', that's your accout auth token.
-10. Copy it's value and place in Config.json file.
+10. Copy it's value and place in Precompiled/YOUR_OS/Config.json file.
 ## Launching bot:
 Windows:
-1. Go to WindowsBinary folder
+1. Go to Precompiled/win-x64 folder
 2. Launch CharacterAI_Discord_Bot.exe
 
 Linux:
-1. Go to UbuntuBinary folder
+1. Go to Precompiled/linux-x64 folder
 2. Execute "chmod 777 ./CharacterAI_Discord_Bot"
 3. Launch bot with "./CharacterAI_Discord_Bot"

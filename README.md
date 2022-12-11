@@ -5,7 +5,7 @@ Simple integration with https://beta.character.ai service which you can use to a
 
 (The service is currently in beta test state, and it does not have any public API documentation. In this regard, I could not find any convenient way to log into account, aside from clumsy one described below, and I also cannot guarantee that this bot will not stop working in any moment it's developers will make another update :P)
 
-Also, I have to note that I'm very-very new to .NET and C# in overall, so my code can be a little bit awful. Whole thing was made just for fun and with self-educational intentions.
+Also, I have to note that I'm very-very new to .NET and C#, so my code can be a little awful. Whole thing was made just for fun and with self-educational intentions.
 
 ##  How to set up
 1. Create a new Discord application with bot (you can easily find all guides on the internet, so I won't focus on that part here).

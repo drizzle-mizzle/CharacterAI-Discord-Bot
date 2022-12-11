@@ -1,26 +1,18 @@
-# 💎 Discord Bot C# 
-This is the source code I made based on my Discord bot called [Konek0](https://konek0.nl/). You can use this source to easily get started with making a Discord bot in C#. Crediting me isn't necessary, but will definitely be appreciated. Have fun!  
+## CharacterAI Discord Bot
+Simple integration with https://beta.character.ai service which you can use to add any character on your Discord server.
+The service is currently being in beta test state, and it does not have any public API documentation. In this regard, I could not find any convenient way to log into accout (aside from clumsy one described below), and I also cannot guarantee that this bot will not stop working in any moment it's developers will make another update :P
 
-![Discord](https://i.imgur.com/JpbYChQ.png)
-## Requirements  
-* [Microsoft Visual Studio](https://visualstudio.microsoft.com/downloads/)
-* [Discord.Net](https://www.nuget.org/packages/Discord.Net/)
-* [Newtonsoft.Json](https://www.nuget.org/packages/Newtonsoft.Json/)
-* [Microsoft DI Extension](https://www.nuget.org/packages/Microsoft.Extensions.DependencyInjection/3.1.3)
-* 4 braincells  
+Also, I have to note that I'm very-very new to .NET and C# in overall, so my code can be a little bit awful. Whole this thing was made just for fun and self-educational intentions.
 
 #  How to set up
-1. Go to the [Discord Developer Portal](https://discordapp.com/developers/) and create a new application.  
-2. Go to the Bot section, build a bot and copy the bot token.  
-3. Open the *Config.json* file and replace "BOT_TOKEN_HERE" with your bot token. Simply run the project and your bot should now connect!
+1. Create a new Discord application with bot (you can easily find all guides in the internet, so I won't focus on that part here).
+2. Get your bot token and place it in Config.json file.
+3. Create character.ai account if you don't have one.
+4. Sign in and open a chat with a character you want to add on your server.
+5. In adress bar locate and copy character's id (it's right after '/chat?char='), place it in Config.json file.
+6. Open DevTools (<Ctrl+Shift+J> in Chrome) and go to "Fetch/XHR" section.
+7. Reload page (DevTools should remain open).
+8. Now you should see a list of requests. Locate "auth0/" and open it's response.
+9. What you must see is a string that looks like '{"key":"81a8d269da126081a5f4..."}', that's your accout auth token.
+10. Copy it's value and place in Config.json file.
 
-##  This source code contains  
-* A sample of fun commands
-* A sample of utility commands
-* A sample of moderator commands
-* A *Config.json* file to customize some settings like: prefix, welcome message and playing status  
-
-## Need help?  
-To ask any questions or leave a comment about anything, please join [my Discord server](https://discord.gg/xJ2HRxZ).  
-
-![Kanna](https://media.giphy.com/media/cgEP4Iee5gvks/giphy.gif)

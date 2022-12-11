@@ -115,6 +115,7 @@ namespace CharacterAI_Discord_Bot
             historyExternalId = JsonConvert.DeserializeObject<dynamic>(content).external_id;
         }
 
+        // Currently unneeded
         //private void SetPrimary(string replyId)
         //{
         //    var request = new HttpRequestMessage(HttpMethod.Post, "https://beta.character.ai/chat/msg/update/primary/");

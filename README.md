@@ -15,4 +15,11 @@ Also, I have to note that I'm very-very new to .NET and C# in overall, so my cod
 8. Now you should see a list of requests. Locate "auth0/" and open it's response.
 9. What you must see is a string that looks like '{"key":"81a8d269da126081a5f4..."}', that's your accout auth token.
 10. Copy it's value and place in Config.json file.
-11. Start bot.
+11. Start bot:
+    a) Windows:
+        1. Go to WindowsBinary folder
+        2. Launch CharacterAI_Discord_Bot.exe
+    b) Linux:
+        1. Go to UbuntuBinary folder
+        2. Execute "chmod 777 ./CharacterAI_Discord_Bot"
+        3. Launch bot with "./CharacterAI_Discord_Bot"

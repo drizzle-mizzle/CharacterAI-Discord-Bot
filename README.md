@@ -23,6 +23,7 @@ Also, I have to note that I'm very-very new to .NET and C#, so my code can be a 
 Windows:
 1. Go to WindowsBinary folder
 2. Launch CharacterAI_Discord_Bot.exe
+
 Linux:
 1. Go to UbuntuBinary folder
 2. Execute "chmod 777 ./CharacterAI_Discord_Bot"

@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32929.385
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CharacterAI_Discord_Bot", "CharacterAI_Discord_Bot.csproj", "{B67FDFB2-64D8-4D3C-A64C-3D1936A2846D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B67FDFB2-64D8-4D3C-A64C-3D1936A2846D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B67FDFB2-64D8-4D3C-A64C-3D1936A2846D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B67FDFB2-64D8-4D3C-A64C-3D1936A2846D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B67FDFB2-64D8-4D3C-A64C-3D1936A2846D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EC05F264-1E00-4DF9-B808-6833BE523C19}
+	EndGlobalSection
+EndGlobal

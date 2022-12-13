@@ -25,7 +25,7 @@ namespace CharacterAI_Discord_Bot
             dynamic config = GetConfig();
 
             _bot = new Integration();
-            _bot.Setup(config.charId.ToString(), config.userToken.ToString());
+            _bot.Setup(config.charId, config.userToken);
 
             _client = new DiscordSocketClient();
             _client.MessageReceived += MessageHandler;

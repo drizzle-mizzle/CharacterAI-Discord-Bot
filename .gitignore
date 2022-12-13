@@ -3,3 +3,4 @@ obj/
 
 *.user
 /src/Config.json
+src/bin/Debug/net6.0/Config.json

@@ -5,121 +5,136 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Net.Http.Headers;
+using System.Net.NetworkInformation;
+using static System.Net.Mime.MediaTypeNames;
 using Discord.Net;
 using Newtonsoft.Json;
 using System.Data;
-using System.Net.NetworkInformation;
 using System.Text.RegularExpressions;
-using System.Net.Http.Headers;
 using System.Reflection.Metadata;
-using static System.Net.Mime.MediaTypeNames;
-
+using System.Net;
 
 namespace CharacterAI_Discord_Bot
 {
     public class Integration
     {
-        private HttpClient httpClient = new HttpClient();
-        private Character charInfo = new Character();
-        private string authToken;
-        private string historyExternalId;
-
-        public void Setup(string id, string token)
+        private HttpClient _httpClient = new HttpClient();
+        private Character _charInfo = new Character();
+        private string _authToken;
+        private string _historyExternalId;
+        
+        public bool Setup(string id, string token)
         {
-            this.charInfo.charId = id;
-            this.authToken = token;
-            GetInfo();
-            if (!GetHistory()) CreateDialog();
-            Console.WriteLine($"СharacterAI - {charInfo.name}\n{charInfo.greeting}");
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "Chrome/108.0.0.0");
+            _charInfo.CharId = id;
+            _authToken = token;
+            Console.WriteLine("...");
+            if (!GetInfo()) return false;
+            Console.WriteLine("...");
+            if (!GetHistory())
+            {
+                Console.WriteLine("...");
+                if (!CreateDialog())
+                    return false;
+            }
+            Console.WriteLine("...");
+            Console.WriteLine($"СharacterAI - {_charInfo.Name}\n {_charInfo.Greeting}\n");
+
+            return true;
         }
 
         public string CallCharacter(string msg)
         {
             var request = new HttpRequestMessage(HttpMethod.Post, "https://beta.character.ai/chat/streaming/");
-            request.Headers.Add("Authorization", $"Token {authToken}");
+            request.Headers.Add("Authorization", $"Token {_authToken}");
             request.Headers.Add("ContentType", "application/json");
 
             request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
             {
-                { "character_external_id", this.charInfo.charId },
-                { "history_external_id", historyExternalId },
+                { "character_external_id", _charInfo.CharId },
+                { "history_external_id", _historyExternalId },
                 { "text", msg },
-                { "tgt", this.charInfo.tgt },
+                { "tgt", _charInfo.Tgt },
                 { "ranking_method", "random" }
             });
 
-            var response = httpClient.Send(request);
+            var response = _httpClient.Send(request);
             var content = response.Content.ReadAsStringAsync().Result;
-
-            Random rand = new Random();
-            // Персонаж отвечает сразу несколькими вариациями, и API присылает ответы одновременно по частям.
-            // Последняя часть с полностью готовыми ответами всегда находится в предпоследней строке.
+            // The character answers with many reply variations at once, and API sends them part by part so it could
+            // be desplayed on site in real time with "typing" animation.
+            // Last part with a list of complete replies always lies in a penult line of response content.
             var reply = JsonConvert.DeserializeObject<dynamic>(content.Split("\n")[^2]).replies[0];
             string replyText = reply.text;
-            replyText = Regex.Replace(replyText, @"(\n){3,}", "\n\n");
-            //SetPrimary(reply.id.ToString());
+            replyText = Regex.Replace(replyText, @"(\n){3,}", "\n\n"); // (3 or more) "\n\n\n..." -> "\n\n"
+            //SetPrimary(reply.id.ToString()); // Choose the reply variation to answer
 
             return replyText;
         }
-        private void GetInfo()
+        private bool GetInfo()
         {
             var request = new HttpRequestMessage(HttpMethod.Post, "https://beta.character.ai/chat/character/info/");
-            request.Headers.Add("authorization", $"Token {authToken}");
-            request.Content = new FormUrlEncodedContent(new Dictionary<string, string> { { "external_id", this.charInfo.charId } });
+            request.Content = new FormUrlEncodedContent(new Dictionary<string, string> { { "external_id", _charInfo.CharId } })
+            request.Headers.Add("Authorization", $"Token {_authToken}");
+            request.Headers.Add("ContentType", "application/json");
 
-            var response = httpClient.Send(request);
+            var response = _httpClient.Send(request);
+            if (!response.IsSuccessStatusCode) return false;
+
             var content = response.Content.ReadAsStringAsync().Result;
-            var character = JsonConvert.DeserializeObject<dynamic>(content).character;
+            var charParsed = JsonConvert.DeserializeObject<dynamic>(content).character;
 
-            charInfo.name = character.name;
-            charInfo.greeting = character.greeting;
-            charInfo.tgt = character.participant__user__username;
+            _charInfo.Name = charParsed.name;
+            _charInfo.Greeting = charParsed.greeting;
+            _charInfo.Tgt = charParsed.participant__user__username;
+
+            return true;
         }
 
         private bool GetHistory()
         {
             var request = new HttpRequestMessage(HttpMethod.Post, "https://beta.character.ai/chat/history/continue/");
-            request.Headers.Add("authorization", $"Token {authToken}");
-            request.Content = new FormUrlEncodedContent(new Dictionary<string, string> { { "character_external_id", charInfo.charId } });
+            request.Headers.Add("Authorization", $"Token {_authToken}");
+            request.Content = new FormUrlEncodedContent(new Dictionary<string, string> { { "character_external_id", _charInfo.CharId } });
 
-            var response = httpClient.Send(request);
+            var response = _httpClient.Send(request);
+            if (!response.IsSuccessStatusCode) return false;
+
             var content = response.Content.ReadAsStringAsync().Result;
             var historyInfo = JsonConvert.DeserializeObject<dynamic>(content);
 
-            // если есть поле status, то значит пришёл ответ "status": "No Such History"
-            if (historyInfo.status != null)
-            {
-                return false;
-            }
-            else
-            {
-                historyExternalId = historyInfo.external_id;
-                return true;
-            }
+            // if there's status field, then response is "status: No Such History"
+            if (historyInfo.status != null) return false;
+            
+            _historyExternalId = historyInfo.external_id;
+            return true;
         }
 
-        private void CreateDialog()
+        private bool CreateDialog()
         {
             var request = new HttpRequestMessage(HttpMethod.Post, "https://beta.character.ai/chat/history/create/");
-            request.Headers.Add("Authorization", $"Token {authToken}");
+            request.Headers.Add("Authorization", $"Token {_authToken}");
             request.Headers.Add("Accept", "application/json, text/plain, */*");
 
             request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
             {
-                { "character_external_id", this.charInfo.charId }
+                { "character_external_id", _charInfo.CharId }
             });
 
-            var response = httpClient.Send(request);
-            var content = response.Content.ReadAsStringAsync().Result;
+            var response = _httpClient.Send(request);
+            if (!response.IsSuccessStatusCode) return false;
 
-            historyExternalId = JsonConvert.DeserializeObject<dynamic>(content).external_id;
+            var content = response.Content.ReadAsStringAsync().Result;
+            _historyExternalId = JsonConvert.DeserializeObject<dynamic>(content).external_id;
+
+            return true;
         }
 
         // Currently unneeded
         //private void SetPrimary(string replyId)
         //{
         //    var request = new HttpRequestMessage(HttpMethod.Post, "https://beta.character.ai/chat/msg/update/primary/");
-        //    request.Headers.Add("Authorization", $"Token {authToken}");
+        //    request.Headers.Add("Authorization", $"Token {_authToken}");
         //    request.Headers.Add("ContentType", "application/json");
 
         //    request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
@@ -128,17 +143,9 @@ namespace CharacterAI_Discord_Bot
         //        { "reason", "SWIPE" }
         //    });
 
-        //    httpClient.Send(request);
+        //    _httpClient.Send(request);
         //    Console.WriteLine($"{replyId} set as primary");
         //}
-
-        public class Character
-        {
-            public string charId;
-            public string name;
-            public string greeting;
-            public string tgt;
-        }
 
     }
 }

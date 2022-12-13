@@ -21,20 +21,17 @@ namespace CharacterAI_Discord_Bot
 
         private async Task MainAsync()
         {
-
-            JObject config = GetConfig();
-            string charAiUserToken = config["char_ai_user_token"].Value<string>();
-            string characterId = config["character_id"].Value<string>();
-            string discordBotToken = config["discord_bot_token"].Value<string>();
+            
+            dynamic config = GetConfig();
 
             _bot = new Integration();
-            _bot.Setup(characterId, charAiUserToken);
+            _bot.Setup(config.charId.ToString(), config.userToken.ToString());
 
             _client = new DiscordSocketClient();
             _client.MessageReceived += MessageHandler;
             _client.Log += Log;
 
-            await _client.LoginAsync(TokenType.Bot, discordBotToken);
+            await _client.LoginAsync(TokenType.Bot, config.botToken);
             await _client.StartAsync();
 
             await Task.Delay(-1);
@@ -64,11 +61,15 @@ namespace CharacterAI_Discord_Bot
 
             return text;
         }
-        public static JObject GetConfig()
+        public static dynamic GetConfig()
         {
             using StreamReader configJson = new StreamReader(Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "Config.json");
+            var configParsed = (JObject)JsonConvert.DeserializeObject(configJson.ReadToEnd());
+            string charId = configParsed["character_id"].Value<string>();
+            string userToken = configParsed["char_ai_user_token"].Value<string>();
+            string botToken = configParsed["discord_bot_token"].Value<string>();
 
-            return (JObject)JsonConvert.DeserializeObject(configJson.ReadToEnd());
+            return new { charId = charId, userToken = userToken, botToken = botToken };
         }
 
         private Task Log(LogMessage log)

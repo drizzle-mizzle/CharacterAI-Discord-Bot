@@ -69,7 +69,7 @@ namespace CharacterAI_Discord_Bot
         private bool GetInfo()
         {
             var request = new HttpRequestMessage(HttpMethod.Post, "https://beta.character.ai/chat/character/info/");
-            request.Content = new FormUrlEncodedContent(new Dictionary<string, string> { { "external_id", _charInfo.CharId } })
+            request.Content = new FormUrlEncodedContent(new Dictionary<string, string> { { "external_id", _charInfo.CharId } });
             request.Headers.Add("Authorization", $"Token {_authToken}");
             request.Headers.Add("ContentType", "application/json");
 

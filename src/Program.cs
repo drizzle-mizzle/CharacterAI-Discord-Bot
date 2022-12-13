@@ -44,7 +44,7 @@ namespace CharacterAI_Discord_Bot
                 !(rawMessage is SocketUserMessage message) ||
                 !(
                     (message.HasMentionPrefix(_client.CurrentUser, ref argPos)) ||
-                    (message.ReferencedMessage != null && message.ReferencedMessage.Author.IsBot)
+                    (message.ReferencedMessage != null && message.ReferencedMessage.Author.Id == _client.CurrentUser.Id)
                  ))
                 return Task.CompletedTask;
 
@@ -54,13 +54,7 @@ namespace CharacterAI_Discord_Bot
 
             return Task.CompletedTask;
         }
-        private string RemoveMention(string text)
-        {
-            var rgx = new Regex(@"\<(.*?)\>");
-            text = rgx.Replace(text, "", 1).Trim(' ');
 
-            return text;
-        }
         public static dynamic GetConfig()
         {
             using StreamReader configJson = new StreamReader(Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "Config.json");
@@ -77,6 +71,14 @@ namespace CharacterAI_Discord_Bot
             Console.WriteLine(log.ToString());
 
             return Task.CompletedTask;
+        }
+
+        private static string RemoveMention(string text)
+        {
+            var rgx = new Regex(@"\<(.*?)\>");
+            text = rgx.Replace(text, "", 1).Trim(' ');
+
+            return text;
         }
     }
 }

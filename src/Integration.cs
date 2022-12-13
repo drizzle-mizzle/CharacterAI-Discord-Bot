@@ -26,19 +26,15 @@ namespace CharacterAI_Discord_Bot
         
         public bool Setup(string id, string token)
         {
-            _httpClient.DefaultRequestHeaders.Add("User-Agent", "Chrome/108.0.0.0");
             _charInfo.CharId = id;
             _authToken = token;
-            Console.WriteLine("...");
+
             if (!GetInfo()) return false;
-            Console.WriteLine("...");
             if (!GetHistory())
             {
-                Console.WriteLine("...");
                 if (!CreateDialog())
                     return false;
             }
-            Console.WriteLine("...");
             Console.WriteLine($"СharacterAI - {_charInfo.Name}\n {_charInfo.Greeting}\n");
 
             return true;
@@ -66,8 +62,7 @@ namespace CharacterAI_Discord_Bot
             // Last part with a list of complete replies always lies in a penult line of response content.
             var reply = JsonConvert.DeserializeObject<dynamic>(content.Split("\n")[^2]).replies[0];
             string replyText = reply.text;
-            replyText = Regex.Replace(replyText, @"(\n){3,}", "\n\n"); // (3 or more) "\n\n\n..." -> "\n\n"
-            //SetPrimary(reply.id.ToString()); // Choose the reply variation to answer
+            replyText = Regex.Replace(replyText, @"(\n){3,}", "\n\n"); // (3 or more) "\n\n\n..." -> (2) "\n\n"
 
             return replyText;
         }
@@ -129,23 +124,5 @@ namespace CharacterAI_Discord_Bot
 
             return true;
         }
-
-        // Currently unneeded
-        //private void SetPrimary(string replyId)
-        //{
-        //    var request = new HttpRequestMessage(HttpMethod.Post, "https://beta.character.ai/chat/msg/update/primary/");
-        //    request.Headers.Add("Authorization", $"Token {_authToken}");
-        //    request.Headers.Add("ContentType", "application/json");
-
-        //    request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
-        //    {
-        //        { "message_id", replyId },
-        //        { "reason", "SWIPE" }
-        //    });
-
-        //    _httpClient.Send(request);
-        //    Console.WriteLine($"{replyId} set as primary");
-        //}
-
     }
 }

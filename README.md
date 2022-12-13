@@ -4,7 +4,7 @@ Simple integration with https://beta.character.ai service which you can use to a
 ![CharacterAI](https://i.imgur.com/H5hDipp.jpg)
 
 (The service is currently in beta test state, and it does not have any public API documentation. In this regard, I could not find any convenient way to log into account, aside from clumsy one described below, and I also cannot guarantee that this bot will not stop working in any moment CharacterAI's developers will make another update :P)
-## Well, it happened way faster than I thought. Currently, integration doesn't work anymore. Not fully sure, but seems like it's the same problem as here https://github.com/acheong08/ChatGPT/issues/261
+> **Well, it happened way faster than I thought. Currently, integration doesn't work anymore. Not fully sure, but seems like it's the same problem as here https://github.com/acheong08/ChatGPT/issues/261**
 
 Also, I have to note that I'm very-very new to .NET and C#, so my code can be a little awful. Whole thing was made just for fun and with self-educational intentions.
 

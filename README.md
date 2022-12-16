@@ -47,7 +47,7 @@ Simple integration with https://beta.character.ai service which you can use to a
 ## Audience mode (experimental)
 ![image](https://user-images.githubusercontent.com/55811932/208030740-84062de1-b7df-4ffb-bd27-2cd59b5717c6.png)
 
-When you talk with a character, it's obvious that you can use only one character.ai account for every user on your server, and it does puts some limitations on a conversation. Thinking about it, I decided to try to "explain" character that there are many different users who speak with him using a single account. And... tt really worked lol.
+When you talk with a character, it's obvious that you can use only one character.ai account for every user on your server, and it does puts some limitations on a conversation. Thinking about it, I decided to try to "explain" character that there are many different users who speak with him using a single account. And... it really worked lol.
 If you add a nickname and a quote to your reply, the character will, usually, understand the context, and his answers will be more consistent.
 
 **How it looks in Discord:**

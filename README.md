@@ -22,10 +22,10 @@ Also, I have to note that I'm very new to .NET and C#, so my code can be (and it
 
 8. Copy it's value and place in `Precompiled/_YOUR_OS_/Config.json file.`.
 9. Launch the bot:
-  - Windows:
+  - **Windows:**
     1. Go to the `Precompiled/win-x64 folder`
     2. Simply run **CharacterAI_Discord_Bot.exe**
-  - Linux:
+  - **Linux:**
     1. Go to `Precompiled/linux-x64 folder`
     2. Execute `chmod 777 ./CharacterAI_Discord_Bot`
     3. Run `./CharacterAI_Discord_Bot`
@@ -42,7 +42,7 @@ Also, I have to note that I'm very new to .NET and C#, so my code can be (and it
 
 ![image](https://user-images.githubusercontent.com/55811932/208030592-885e1755-62b3-455a-a608-054f36770c72.png)
 
-13. Enjoy converstaion!
+**13. Enjoy converstaion!**
 
 ## Audience mode (experimental)
 ![image](https://user-images.githubusercontent.com/55811932/208030740-84062de1-b7df-4ffb-bd27-2cd59b5717c6.png)
@@ -56,6 +56,7 @@ If you add a nickname and a quote to your reply, the character will, usually, un
 ![image](https://user-images.githubusercontent.com/55811932/208033040-f5385d42-c410-4471-9e07-58ef6310462a.png)
 
 **How it actually is:**
+
 ![image](https://user-images.githubusercontent.com/55811932/208031792-d971acc6-afca-4bf4-8888-f287679c4f8b.png)
 ![image](https://user-images.githubusercontent.com/55811932/208032085-301df36b-e335-49af-9974-65b617c73f74.png)
 

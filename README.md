@@ -3,8 +3,8 @@ Simple integration with https://beta.character.ai service which you can use to a
 
 ![CharacterAI](https://i.imgur.com/H5hDipp.jpg)
 
-(The service is currently in beta test state, and it does not have any public API documentation. In this regard, I could not find any convenient way to log into account, aside from clumsy one described below, and I also cannot guarantee that this bot will not stop working in any moment when CharacterAI's developers will make another update :P)
-Also, I have to note that I'm very new to .NET and C#, so my code can be (and it is) kinda awful. Whole thing was made just for fun and with self-educational intentions.
+> (The service is currently in beta test state, and it does not have any public API documentation. In this regard, I could not find any convenient way to log into account, aside from clumsy one described below, and I also cannot guarantee that this bot will not stop working in any moment when CharacterAI's developers will make another update :P)
+> Also, I have to note that I'm very new to .NET and C#, so my code can be (and it is) kinda awful. Whole thing was made just for fun and with self-educational intentions.
 
 ##  How to set up
 1. Create a new Discord application with bot (you can easily find guide on the internet, so I won't focus on this part here).

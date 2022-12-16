@@ -24,7 +24,7 @@ Also, I have to note that I'm very new to .NET and C#, so my code can be (and it
 9. Launch the bot:
   - Windows:
     1. Go to the `Precompiled/win-x64 folder`
-    2. Simply run `CharacterAI_Discord_Bot.exe`
+    2. Simply run **CharacterAI_Discord_Bot.exe**
   - Linux:
     1. Go to `Precompiled/linux-x64 folder`
     2. Execute `chmod 777 ./CharacterAI_Discord_Bot`
@@ -32,7 +32,7 @@ Also, I have to note that I'm very new to .NET and C#, so my code can be (and it
 10. Open a chat with a character you want to add on your server.
 11. In adress bar locate and copy character's id (it's right after '/chat?char=...').
 
-![image](https://user-images.githubusercontent.com/55811932/208027419-520bde1e-6721-494f-82a1-9d3c3983ae41.png)
+![image](https://user-images.githubusercontent.com/55811932/208032897-71a459f4-4db3-47b0-a042-d772a3f0c01b.png)
 
 12. Go to your server and run bot command `@BOT_NAME !set-character <id>`
 
@@ -44,7 +44,7 @@ Also, I have to note that I'm very new to .NET and C#, so my code can be (and it
 
 13. Enjoy converstaion!
 
-### Audience mode
+## Audience mode (experimental)
 ![image](https://user-images.githubusercontent.com/55811932/208030740-84062de1-b7df-4ffb-bd27-2cd59b5717c6.png)
 
 When you talk with a character, it's obvious that you can use only one character.ai account for every user on your server, and it does puts some limitations on a conversation. Thinking about it, I decided to try to "explain" character that there are many different users who speak with him using a single account. And... tt really worked lol.
@@ -53,10 +53,11 @@ If you add a nickname and a quote to your reply, the character will, usually, un
 **How it looks in Discord:**
 
 ![image](https://user-images.githubusercontent.com/55811932/208031628-a52057dc-9cf4-4344-b1f0-3abd1c9ba51f.png)
-![image](https://user-images.githubusercontent.com/55811932/208031685-c172f9e4-8040-4269-a44f-b3c45face0e3.png)
+![image](https://user-images.githubusercontent.com/55811932/208033040-f5385d42-c410-4471-9e07-58ef6310462a.png)
 
 **How it actually is:**
 ![image](https://user-images.githubusercontent.com/55811932/208031792-d971acc6-afca-4bf4-8888-f287679c4f8b.png)
 ![image](https://user-images.githubusercontent.com/55811932/208032085-301df36b-e335-49af-9974-65b617c73f74.png)
-This feature is disabled by default, but you can easily enable it with `@BOT_NAME !audience-toggle`
+
+This feature is disabled by default, but you can easily enable it with `@BOT_NAME !audience-toggle`.
 

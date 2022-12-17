@@ -1,26 +1,22 @@
-﻿using Discord;
+﻿using CharacterAI_Discord_Bot.Service;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Windows.Input;
+
 
 namespace CharacterAI_Discord_Bot
 {
-    public class MessageHandler
+    public class MessageHandler : CommonService
     {
         private readonly DiscordSocketClient _client;
         private readonly IServiceProvider _services;
+        private readonly Integration _integration;
         private readonly CommandService _commands;
-        private Integration? _integration;
         
-
         public MessageHandler(IServiceProvider services)
         {
             _services = services;
@@ -35,9 +31,11 @@ namespace CharacterAI_Discord_Bot
             int argPos = 0;
             var message = rawMessage as SocketUserMessage;
             var context = new SocketCommandContext(_client, message);
+
             // return if no mention and no reply
-            if (!message.HasMentionPrefix(_client.CurrentUser, ref argPos) && 
+            if (message != null && !message.HasMentionPrefix(_client.CurrentUser, ref argPos) && 
                  !(message.ReferencedMessage != null && message.ReferencedMessage.Author.Id == _client.CurrentUser.Id)) return;
+
             // execute and return if message was a command
             string text = RemoveMention(message.Content);
             if (text.StartsWith("!")) { await HandleCommandAsync(text, context); return; }
@@ -47,7 +45,7 @@ namespace CharacterAI_Discord_Bot
 
             using (message.Channel.EnterTypingState())
             {
-                if (_integration._audienceMode)
+                if (_integration.audienceMode)
                 {
                     // Test feature that makes character aware that he's talking to many different people
                     string author = message.Author.Username;
@@ -66,26 +64,25 @@ namespace CharacterAI_Discord_Bot
         {
             if (context.Message.Author.Id != context.Guild.OwnerId)
             {
-                try { await context.Message.Channel.SendFileAsync(Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "img" + Path.DirectorySeparatorChar + "nopower.gif"); }
-                catch { Console.WriteLine("\nPut that damn .gif back!\n"); };
+                var path = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "img" + Path.DirectorySeparatorChar + "nopower.gif";
+                try { var result = await context.Message.Channel.SendFileAsync(path); }
+                catch { Log("Cant' send file. Missing file or permission.", ConsoleColor.Red); }
 
                 return;
             }
 
             Commands commands = new(_client, _integration);
-            var cmdArg = text.Split(" ");
+            var cmdArg = text.Split(' ');
 
             switch (cmdArg[0])
             {
-                case "!set-character":
-                    string arg = "";
-                    if (text.Split(" ").Length > 1) arg = cmdArg[1];
-
+                case "!set-character" or "!set":
+                    string arg = cmdArg.ElementAtOrDefault(1);
                     await commands.SetCharacter(arg, context); break;
-                case "!audience-toggle":
+                case "!audience-toggle" or "!au":
                     await commands.AudienceToggle(context); break;
                 case "!ping":
-                    await commands.Ping(context); break;
+                    await Commands.Ping(context); break;
             }
         }
 
@@ -101,3 +98,17 @@ namespace CharacterAI_Discord_Bot
             => await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
     }
 }
+//{ 
+//    "replies": 
+//    [
+//        { "text": "", "id": 1042042806}, 
+//        { "text": "", "id": 1042042800}
+//    ], 
+//    "src_char": 
+//    {
+//        "participant": { "name": "Rei Ayanami"}, 
+//        "avatar_file_name": "uploaded/2022/11/21/NCqKYK9ccWBBhoUPnRthu_2rLgW_QeOT5Y-Vs-wIGrM.webp"
+//    }, 
+//    "is_final_chunk": true, 
+//    "last_user_msg_id": 1042042788
+//}

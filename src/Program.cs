@@ -7,10 +7,11 @@ using Newtonsoft.Json;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using System.Windows.Input;
+using CharacterAI_Discord_Bot.Service;
 
 namespace CharacterAI_Discord_Bot
 {
-    public class Program
+    public class Program : CommonService
     {
         static void Main(string[] args)
             => new Program().MainAsync().GetAwaiter().GetResult();
@@ -24,7 +25,6 @@ namespace CharacterAI_Discord_Bot
                 .BuildServiceProvider();
 
             var client = services.GetRequiredService<DiscordSocketClient>();
-            var commands = services.GetRequiredService<CommandService>();
             client.Log += Log;
 
             await client.LoginAsync(TokenType.Bot, GetConfig().botToken);
@@ -32,19 +32,6 @@ namespace CharacterAI_Discord_Bot
             await services.GetRequiredService<MessageHandler>().InitializeAsync();
 
             await Task.Delay(-1);
-        }
-
-        public static dynamic GetConfig()
-        {
-            using StreamReader configJson = new StreamReader(Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "Config.json");
-            var configParsed = (JObject)JsonConvert.DeserializeObject(configJson.ReadToEnd());
-            dynamic config = new
-            {
-                userToken = configParsed["char_ai_user_token"].Value<string>(),
-                botToken = configParsed["discord_bot_token"].Value<string>()
-            };
-
-            return config;
         }
 
         private Task Log(LogMessage log)

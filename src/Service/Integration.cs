@@ -2,53 +2,54 @@
 using System;
 using System.Text.RegularExpressions;
 
-namespace CharacterAI_Discord_Bot
+namespace CharacterAI_Discord_Bot.Service
 {
-    public class Integration
+    public class Integration : CommonService
     {
-        private readonly HttpClient _httpClient = new();
         public Character _charInfo = new();
-        private string? _userToken;
+        private readonly HttpClient _httpClient = new();
+        private readonly string? _userToken;
         private string? _historyExternalId;
-        public bool _audienceMode = false;
+        public bool audienceMode = false;
 
         public Integration(string userToken)
         {
             _userToken = userToken;
         }
 
-        public bool Setup(string charID)
+        public bool Setup(string charID = "")
         {
-            _charInfo.CharID = charID;
-            if (!GetInfo()) return false;
+            if (!GetInfo(charID)) return false;
             if (!GetHistory()) return false;
             DownloadAvatar();
 
             Log("CharacterAI");
             Log(" - Connected\n\n", ConsoleColor.Yellow);
             Log($"  [{_charInfo.Name}]\n", ConsoleColor.Cyan);
-            Log($"  {_charInfo.Greeting}\n\n");
+            Log($"  {_charInfo.Greeting.Replace("\n", "\n  ")}\n\n");
 
             return true;
         }
 
         public string CallCharacter(string msg)
         {
-            var request = new HttpRequestMessage(HttpMethod.Post, "https://beta.character.ai/chat/streaming/");
-            request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://beta.character.ai/chat/streaming/")
             {
-                { "character_external_id", _charInfo.CharID },
-                { "enable_tti", "true" },
-                { "history_external_id", _historyExternalId },
-                { "text", msg },
-                { "tgt", _charInfo.Tgt },
-                { "ranking_method", "random" }
-            });
+                Content = new FormUrlEncodedContent(new Dictionary<string, string>
+                {
+                    { "character_external_id", _charInfo.CharID },
+                    { "enable_tti", "true" },
+                    { "history_external_id", _historyExternalId },
+                    { "text", msg },
+                    { "tgt", _charInfo.Tgt },
+                    { "ranking_method", "random" }
+                })
+            };
             request = SetHeaders(request);
             request.Headers.Add("Accept", "*/*");
             request.Headers.Add("accept-encoding", "gzip, deflate, br");
 
-            var response = _httpClient.Send(request);
+            using var response = _httpClient.Send(request);
             if (!response.IsSuccessStatusCode)
             {
                 string errorMsg = $"\nFailed to send message!\nDetails: {response}\nContent: {response.Content.ReadAsStringAsync().Result}\n\n" +
@@ -57,6 +58,7 @@ namespace CharacterAI_Discord_Bot
 
                 return "⚠️ Failed to send message!";
             }
+            request.Dispose();
 
             var content = response.Content.ReadAsStringAsync().Result;
             // The character answers with many reply variations at once, and API sends them part by part so it could
@@ -69,22 +71,23 @@ namespace CharacterAI_Discord_Bot
             return replyText;
         }
 
-        private bool GetInfo()
+        private bool GetInfo(string charID)
         {
             Log("Fetching character info... ");
 
             var request = new HttpRequestMessage(HttpMethod.Post, "https://beta.character.ai/chat/character/info/");
-            request.Content = new FormUrlEncodedContent(new Dictionary<string, string> { { "external_id", _charInfo.CharID } });
+            request.Content = new FormUrlEncodedContent(new Dictionary<string, string> { { "external_id", charID } });
             request = SetHeaders(request);
             request.Headers.Add("Accept", "application/json, text/plain, */*");
             request.Headers.Add("accept-encoding", "deflate, br");
 
-            var response = _httpClient.Send(request);
+            using var response = _httpClient.Send(request);
             if (!response.IsSuccessStatusCode) return Failure("Error!\n Request failed! (https://beta.character.ai/chat/character/info/)\n");
 
             var content = response.Content.ReadAsStringAsync().Result;
             var charParsed = JsonConvert.DeserializeObject<dynamic>(content).character;
 
+            _charInfo.CharID = charParsed.external_id;
             _charInfo.Name = charParsed.name;
             _charInfo.Greeting = charParsed.greeting;
             _charInfo.Tgt = charParsed.participant__user__username;
@@ -103,15 +106,15 @@ namespace CharacterAI_Discord_Bot
             request.Headers.Add("Accept", "application/json, text/plain, */*");
             request.Headers.Add("accept-encoding", "deflate, br");
 
-            var response = _httpClient.Send(request);
+            using var response = _httpClient.Send(request);
             if (!response.IsSuccessStatusCode) return Failure("Error!\n Request failed! (https://beta.character.ai/chat/history/continue/)\n");
 
             var content = response.Content.ReadAsStringAsync().Result;
             var historyInfo = JsonConvert.DeserializeObject<dynamic>(content);
 
             // if there's status field, then response is "status: No Such History"
-            if (historyInfo.status != null) CreateDialog(); 
-            else _historyExternalId = historyInfo.external_id;
+            if (historyInfo.status == null) _historyExternalId = historyInfo.external_id;
+            else if (!CreateDialog()) return Failure();
 
             return Success("OK\n");
         }
@@ -127,7 +130,7 @@ namespace CharacterAI_Discord_Bot
             request.Headers.Add("Accept", "application/json, text/plain, */*");
             request.Headers.Add("accept-encoding", "deflate, br");
 
-            var response = _httpClient.Send(request);
+            using var response = _httpClient.Send(request);
             if (!response.IsSuccessStatusCode) return Failure("Error!\n Request failed! (https://beta.character.ai/chat/history/create/)\n");
 
             var content = response.Content.ReadAsStringAsync().Result;
@@ -139,12 +142,13 @@ namespace CharacterAI_Discord_Bot
         private bool DownloadAvatar()
         {
             Log("Downloading character avatar... ");
-            var request = new HttpRequestMessage(HttpMethod.Get, _charInfo.AvatarUrl);
-            var response = _httpClient.Send(request);
-            if (!response.IsSuccessStatusCode) return Failure($"Error!\n Request failed! ({_charInfo.AvatarUrl})\n");
+            using var request = new HttpRequestMessage(HttpMethod.Get, _charInfo.AvatarUrl);
+            using var response = _httpClient.Send(request);
+            if (!response.IsSuccessStatusCode)
+                return Failure($"Error!\n Request failed! ({_charInfo.AvatarUrl})\n");
 
-            using var content = response.Content.ReadAsStreamAsync().Result;
-            using var avatar = File.Create("characterAvatar.avif");
+            var content = response.Content.ReadAsStreamAsync().Result;
+            using var avatar = File.Create(botImgPath);
             content.CopyTo(avatar);
 
             return Success("OK\n");
@@ -157,36 +161,34 @@ namespace CharacterAI_Discord_Bot
             return true;
         }
 
-        private  bool Failure(string logText = "")
+        private bool Failure(string logText = "")
         {
             Log(logText, ConsoleColor.Red);
 
             return false;
         }
 
-        public static void Log(string text, ConsoleColor color = ConsoleColor.White)
-        {
-            Console.ForegroundColor = color;
-            Console.Write(text);
-            Console.ResetColor();
-        }
-
         private HttpRequestMessage SetHeaders(HttpRequestMessage request)
         {
-            request.Headers.Add("accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7");
-            request.Headers.Add("Authorization", $"Token {_userToken}");
-            request.Headers.Add("ContentLength", request.Content.ToString().Length.ToString());
-            request.Headers.Add("ContentType", "application/json");
-            request.Headers.Add("dnt", "1");
-            request.Headers.Add("Origin", "https://beta.character.ai");
-            request.Headers.Add("Referer", $"https://beta.character.ai/chat?char={_charInfo.CharID}");
-            request.Headers.Add("sec-ch-ua", "\"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"108\", \"Google Chrome\";v=\"108\"");
-            request.Headers.Add("sec-ch-ua-mobile", "?0");
-            request.Headers.Add("sec-ch-ua-platform", "Windows");
-            request.Headers.Add("sec-fetch-dest", "empty");
-            request.Headers.Add("sec-fetch-mode", "cors");
-            request.Headers.Add("sec-fetch-site", "same-origin");
-            request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36");
+            var headers = new string[]
+            {
+                "accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
+                "Authorization", $"Token {_userToken}",
+                "ContentLength", request.Content.ToString().Length.ToString(),
+                "ContentType", "application/json",
+                "dnt", "1",
+                "Origin", "https://beta.character.ai",
+                "Referer", $"https://beta.character.ai/chat?char={_charInfo.CharID}",
+                "sec-ch-ua", "\"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"108\", \"Google Chrome\";v=\"108\"",
+                "sec-ch-ua-mobile", "?0",
+                "sec-ch-ua-platform", "Windows",
+                "sec-fetch-dest", "empty",
+                "sec-fetch-mode", "cors",
+                "sec-fetch-site", "same-origin",
+                "User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
+            };
+            for (int i = 0; i < headers.Length-1; i+=2)
+                request.Headers.Add(headers[i], headers[i+1]);
 
             return request;
         }

@@ -5,3 +5,4 @@ obj/
 /src/Config.json
 src/bin/Debug/net6.0/Config.json
 src/bin/Debug/net6.0/img/characterAvatar.avif
+src/bin/Debug/net6.0/characterAvatar.avif

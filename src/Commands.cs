@@ -17,7 +17,7 @@ namespace CharacterAI_Discord_Bot
             _integration = integration;
         }
 
-        public async Task SetCharacter(string charID, SocketCommandContext context)
+        public async Task SetCharacter(string? charID, SocketCommandContext context)
         {
             if (!_integration.Setup(charID)) { await context.Message.ReplyAsync("⚠️ Failed to set character!"); return; }
 

@@ -77,7 +77,7 @@ namespace CharacterAI_Discord_Bot
             switch (cmdArg[0])
             {
                 case "!set-character" or "!set":
-                    string arg = cmdArg.ElementAtOrDefault(1);
+                    string? arg = cmdArg.ElementAtOrDefault(1);
                     await commands.SetCharacter(arg, context); break;
                 case "!audience-toggle" or "!au":
                     await commands.AudienceToggle(context); break;

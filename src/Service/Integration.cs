@@ -25,8 +25,8 @@ namespace CharacterAI_Discord_Bot.Service
 
             Log("CharacterAI");
             Log(" - Connected\n\n", ConsoleColor.Yellow);
-            Log($"  [{_charInfo.Name}]\n", ConsoleColor.Cyan);
-            Log($"  {_charInfo.Greeting.Replace("\n", "\n  ")}\n\n");
+            Log($" [{_charInfo.Name}]\n", ConsoleColor.Cyan);
+            Log($"{_charInfo.Greeting}\n\n");
 
             return true;
         }
@@ -152,20 +152,6 @@ namespace CharacterAI_Discord_Bot.Service
             content.CopyTo(avatar);
 
             return Success("OK\n");
-        }
-
-        private static bool Success(string logText = "")
-        {
-            Log(logText, ConsoleColor.Green);
-
-            return true;
-        }
-
-        private bool Failure(string logText = "")
-        {
-            Log(logText, ConsoleColor.Red);
-
-            return false;
         }
 
         private HttpRequestMessage SetHeaders(HttpRequestMessage request)

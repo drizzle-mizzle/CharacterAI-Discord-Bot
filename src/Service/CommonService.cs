@@ -40,7 +40,7 @@ namespace CharacterAI_Discord_Bot.Service
             return false;
         }
 
-        public static void Log(string text, ConsoleColor color = ConsoleColor.White)
+        public static void Log(string text, ConsoleColor color = ConsoleColor.Gray)
         {
             Console.ForegroundColor = color;
             Console.Write(text);

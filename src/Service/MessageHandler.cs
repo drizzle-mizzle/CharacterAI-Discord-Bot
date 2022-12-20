@@ -81,6 +81,7 @@ namespace CharacterAI_Discord_Bot.Service
                 // If no attachments
                 if (string.IsNullOrEmpty(reply[1]))
                 { 
+                    // Simple reply
                     await message.ReplyAsync(reply[0]);
 
                     return;
@@ -94,6 +95,7 @@ namespace CharacterAI_Discord_Bot.Service
                 mc.CopyTo(tempImg);
                 tempImg.Close();
 
+                // Reply with attachment
                 var mRef = new MessageReference(messageId: message.Id);
                 await message.Channel.SendFileAsync(tempImgPath, reply[0], messageReference: mRef);
             }

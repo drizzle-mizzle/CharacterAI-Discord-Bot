@@ -17,17 +17,14 @@ namespace CharacterAI_Discord_Bot.Service
 
         public static async Task AutoSetup(ServiceProvider services, DiscordSocketClient client)
         {
-            do
-            {
-                dynamic config = GetConfig();
-                var integration = services.GetRequiredService<MessageHandler>().integration;
-                if (!integration.Setup(config.autoCharID)) break;
+            
+            dynamic config = GetConfig();
+            var integration = services.GetRequiredService<MessageHandler>().integration;
+            if (!integration.Setup(config.autoCharID)) return;
 
-                integration.audienceMode = config.autoAudienceMode;
-                string desc = integration.charInfo.CharID == null ? "No character selected | " : $"Description: {integration.charInfo.Title} | ";
-                await client.SetGameAsync(desc + $"Audience mode: " + (integration.audienceMode ? "✔️" : "✖️"));
-            }
-            while (false);
+            integration.audienceMode = config.autoAudienceMode;
+            string desc = integration.charInfo.CharID == null ? "No character selected | " : $"Description: {integration.charInfo.Title} | ";
+            await client.SetGameAsync(desc + $"Audience mode: " + (integration.audienceMode ? "✔️" : "✖️"));
         }
 
         // probably not useless

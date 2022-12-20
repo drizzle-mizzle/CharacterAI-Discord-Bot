@@ -1,11 +1,11 @@
 {
   "runtimeTarget": {
-    "name": ".NETCoreApp,Version=v6.0",
+    "name": ".NETCoreApp,Version=v7.0",
     "signature": ""
   },
   "compilationOptions": {},
   "targets": {
-    ".NETCoreApp,Version=v6.0": {
+    ".NETCoreApp,Version=v7.0": {
       "CharacterAI_Discord_Bot/1.0.0": {
         "dependencies": {
           "Discord.Net": "3.8.1",
@@ -107,7 +107,7 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "7.0.0"
         },
         "runtime": {
-          "lib/net6.0/Microsoft.Extensions.DependencyInjection.dll": {
+          "lib/net7.0/Microsoft.Extensions.DependencyInjection.dll": {
             "assemblyVersion": "7.0.0.0",
             "fileVersion": "7.0.22.51805"
           }
@@ -115,7 +115,7 @@
       },
       "Microsoft.Extensions.DependencyInjection.Abstractions/7.0.0": {
         "runtime": {
-          "lib/net6.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {
+          "lib/net7.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {
             "assemblyVersion": "7.0.0.0",
             "fileVersion": "7.0.22.51805"
           }

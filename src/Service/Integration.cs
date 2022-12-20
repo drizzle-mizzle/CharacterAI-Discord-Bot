@@ -1,12 +1,12 @@
 ﻿using Newtonsoft.Json;
-using System;
+using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 
 namespace CharacterAI_Discord_Bot.Service
 {
     public class Integration : CommonService
     {
-        public Character _charInfo = new();
+        public Character charInfo = new();
         private readonly HttpClient _httpClient = new();
         private readonly string? _userToken;
         private string? _historyExternalId;
@@ -17,7 +17,7 @@ namespace CharacterAI_Discord_Bot.Service
             _userToken = userToken;
         }
 
-        public bool Setup(string charID = "")
+        public bool Setup(string charID)
         {
             if (!GetInfo(charID)) return false;
             if (!GetHistory()) return false;
@@ -25,26 +25,40 @@ namespace CharacterAI_Discord_Bot.Service
 
             Log("CharacterAI");
             Log(" - Connected\n\n", ConsoleColor.Yellow);
-            Log($" [{_charInfo.Name}]\n", ConsoleColor.Cyan);
-            Log($"{_charInfo.Greeting}\n\n");
+            Log($" [{charInfo.Name}]\n", ConsoleColor.Cyan);
+            Log($"{charInfo.Greeting}\n{charInfo.Description}\n\n");
 
             return true;
         }
 
-        public string CallCharacter(string msg)
+        public string[] CallCharacter(string msg, string imgPath)
         {
+            var contentDict = new Dictionary<string, string>
+            {
+                { "character_external_id", charInfo.CharID },
+                { "enable_tti", "true" },
+                { "history_external_id", _historyExternalId },
+                { "text", msg },
+                { "tgt", charInfo.Tgt },
+                { "ranking_method", "random" },
+                { "staging", "false" }
+            };
+            if (!string.IsNullOrEmpty(imgPath))
+            {
+                var imgParams = new string[] {
+                    "image_description_type", "AUTO_IMAGE_CAPTIONING",
+                    "image_origin_type", "UPLOADED",
+                    "image_rel_path", imgPath
+                };
+                for (var i = 0; i < imgParams.Length-1; i+=2)
+                    contentDict.Add(imgParams[i], imgParams[i+1]);
+            }
+
             var request = new HttpRequestMessage(HttpMethod.Post, "https://beta.character.ai/chat/streaming/")
             {
-                Content = new FormUrlEncodedContent(new Dictionary<string, string>
-                {
-                    { "character_external_id", _charInfo.CharID },
-                    { "enable_tti", "true" },
-                    { "history_external_id", _historyExternalId },
-                    { "text", msg },
-                    { "tgt", _charInfo.Tgt },
-                    { "ranking_method", "random" }
-                })
+                Content = new FormUrlEncodedContent(contentDict)
             };
+
             request = SetHeaders(request);
             request.Headers.Add("Accept", "*/*");
             request.Headers.Add("accept-encoding", "gzip, deflate, br");
@@ -56,7 +70,7 @@ namespace CharacterAI_Discord_Bot.Service
                     $"Message: {request.Content.ReadAsStringAsync().Result}";
                 Log(errorMsg, ConsoleColor.Red);
 
-                return "⚠️ Failed to send message!";
+                return new string[1] { "⚠️ Failed to send message!" };
             }
             request.Dispose();
 
@@ -66,9 +80,10 @@ namespace CharacterAI_Discord_Bot.Service
             // Last part with a list of complete replies always lies in a penult line of response content.
             var reply = JsonConvert.DeserializeObject<dynamic>(content.Split("\n")[^2]).replies[0];
             string replyText = reply.text;
-            replyText = Regex.Replace(replyText, @"(\n){3,}", "\n\n"); // (3 or more) "\n\n\n..." -> (2) "\n\n"
+            string replyImage = reply.image_rel_path ??= "";
+            replyText = Regex.Replace(replyText, @"(\n){3,}", "\n\n"); // (3 or more) "\n\n\n..." -> (exactly 2) "\n\n"
 
-            return replyText;
+            return new string[] { replyText, replyImage };
         }
 
         private bool GetInfo(string charID)
@@ -87,11 +102,13 @@ namespace CharacterAI_Discord_Bot.Service
             var content = response.Content.ReadAsStringAsync().Result;
             var charParsed = JsonConvert.DeserializeObject<dynamic>(content).character;
 
-            _charInfo.CharID = charParsed.external_id;
-            _charInfo.Name = charParsed.name;
-            _charInfo.Greeting = charParsed.greeting;
-            _charInfo.Tgt = charParsed.participant__user__username;
-            _charInfo.AvatarUrl = $"https://characterai.io/i/400/static/avatars/{charParsed.avatar_file_name}";
+            charInfo.CharID = charParsed.external_id;
+            charInfo.Name = charParsed.name;
+            charInfo.Greeting = charParsed.greeting;
+            charInfo.Description = charParsed.description;
+            charInfo.Title = charParsed.title;
+            charInfo.Tgt = charParsed.participant__user__username;
+            charInfo.AvatarUrl = $"https://characterai.io/i/400/static/avatars/{charParsed.avatar_file_name}";
 
             return Success("OK\n");
         }
@@ -101,7 +118,7 @@ namespace CharacterAI_Discord_Bot.Service
             Log("Fetching chat history... ");
 
             var request = new HttpRequestMessage(HttpMethod.Post, "https://beta.character.ai/chat/history/continue/");
-            request.Content = new FormUrlEncodedContent(new Dictionary<string, string> { { "character_external_id", _charInfo.CharID } });
+            request.Content = new FormUrlEncodedContent(new Dictionary<string, string> { { "character_external_id", charInfo.CharID } });
             request = SetHeaders(request);
             request.Headers.Add("Accept", "application/json, text/plain, */*");
             request.Headers.Add("accept-encoding", "deflate, br");
@@ -125,7 +142,7 @@ namespace CharacterAI_Discord_Bot.Service
             Log("Creating new dialog... ");
 
             var request = new HttpRequestMessage(HttpMethod.Post, "https://beta.character.ai/chat/history/create/");
-            request.Content = new FormUrlEncodedContent(new Dictionary<string, string> { { "character_external_id", _charInfo.CharID } });
+            request.Content = new FormUrlEncodedContent(new Dictionary<string, string> { { "character_external_id", charInfo.CharID } });
             request = SetHeaders(request);
             request.Headers.Add("Accept", "application/json, text/plain, */*");
             request.Headers.Add("accept-encoding", "deflate, br");
@@ -142,14 +159,26 @@ namespace CharacterAI_Discord_Bot.Service
         private bool DownloadAvatar()
         {
             Log("Downloading character avatar... ");
-            using var request = new HttpRequestMessage(HttpMethod.Get, _charInfo.AvatarUrl);
-            using var response = _httpClient.Send(request);
-            if (!response.IsSuccessStatusCode)
-                return Failure($"Error!\n Request failed! ({_charInfo.AvatarUrl})\n");
 
-            var content = response.Content.ReadAsStreamAsync().Result;
-            using var avatar = File.Create(botImgPath);
-            content.CopyTo(avatar);
+            Stream image;
+            using var response = _httpClient.GetAsync(charInfo.AvatarUrl).Result;
+
+            if (!response.IsSuccessStatusCode)
+            {
+                Failure($"Error!\n Request failed! ({charInfo.AvatarUrl})\n");
+                Log("(Default avatar is used) ", ConsoleColor.DarkCyan);
+                image = new FileStream(pfpDefaultPath, FileMode.Open);
+            }
+            else
+            {
+                image = response.Content.ReadAsStreamAsync().Result;
+            }
+
+            if (File.Exists(pfpPath)) File.Delete(pfpPath);
+
+            using var avatar = File.Create(pfpPath);
+            image.CopyTo(avatar);
+            avatar.Close(); image.Close();
 
             return Success("OK\n");
         }
@@ -164,7 +193,7 @@ namespace CharacterAI_Discord_Bot.Service
                 "ContentType", "application/json",
                 "dnt", "1",
                 "Origin", "https://beta.character.ai",
-                "Referer", $"https://beta.character.ai/chat?char={_charInfo.CharID}",
+                "Referer", $"https://beta.character.ai/chat?char={charInfo.CharID}",
                 "sec-ch-ua", "\"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"108\", \"Google Chrome\";v=\"108\"",
                 "sec-ch-ua-mobile", "?0",
                 "sec-ch-ua-platform", "Windows",
@@ -177,6 +206,32 @@ namespace CharacterAI_Discord_Bot.Service
                 request.Headers.Add(headers[i], headers[i+1]);
 
             return request;
+        }
+
+        // in work
+        public string UploadImg(byte[] img)
+        {
+            var bacImg = new ByteArrayContent(img);
+            bacImg.Headers.ContentType = MediaTypeHeaderValue.Parse("image/jpeg");
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://beta.character.ai/chat/upload-image/") 
+            { 
+                Content = new MultipartFormDataContent { { bacImg, "\"image\"", $"\"image.jpg\"" } }
+            };
+
+            request = SetHeaders(request);
+            request.Headers.Add("Accept", "application/json, text/plain, */*");
+            request.Headers.Add("accept-encoding", "deflate, br");
+
+            using var response = _httpClient.Send(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                Failure("\nRequest failed! (https://beta.character.ai/chat/upload-image/)\n");
+
+                return "";
+            }
+            var content = response.Content.ReadAsStringAsync().Result;
+
+            return JsonConvert.DeserializeObject<dynamic>(content).value;
         }
     }
 }

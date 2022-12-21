@@ -1,6 +1,7 @@
 ﻿using Discord.Commands;
 using Discord.WebSocket;
 using Discord;
+using static CharacterAI_Discord_Bot.Service.CommonService;
 
 namespace CharacterAI_Discord_Bot.Service
 {
@@ -18,23 +19,29 @@ namespace CharacterAI_Discord_Bot.Service
         [Alias("sc", "set")]
         public async Task SetCharacter(string charID)
         {
-            if (!ValidateBotRole()) { await NoPermission(); return; }
-            if (!_handler.integration.Setup(charID)) { await Context.Message.ReplyAsync("⚠️ Failed to set character!"); return; }
+            if (!ValidateBotRole()) { await NoPermissionAlert(); return; }
+            if (!await _handler.integration.Setup(charID)) { await Context.Message.ReplyAsync("⚠️ Failed to set character!"); return; }
 
             var charInfo = _handler.integration.charInfo;
             string reply = charInfo.Greeting + "\n" + charInfo.Description;
 
-            // Setting bot username
-            try { await Context.Guild.GetUser(Context.Client.CurrentUser.Id).ModifyAsync(u => { u.Nickname = charInfo.Name; }); }
+            try
+            {   // Setting bot username
+                var botAsGuildUser = Context.Guild.GetUser(Context.Client.CurrentUser.Id);
+                await botAsGuildUser.ModifyAsync(u => { u.Nickname = charInfo.Name; });
+            }
             catch { reply += "\n⚠️ Failed to set bot name! Probably, missing permissions?"; }
 
-            // Setting bot avatar
-            try { await Context.Client.CurrentUser.ModifyAsync(u => { u.Avatar = new Image(new FileStream(_handler.pfpPath, FileMode.Open)); }); }
+            try
+            {   // Setting bot avatar
+                var bot = Context.Client.CurrentUser;
+                using var fs = new FileStream(avatarPath, FileMode.Open);
+                await bot.ModifyAsync(u => { u.Avatar = new Discord.Image(fs); });
+            }
             catch { reply += "\n⚠️ Failed to set bot avatar!"; }
 
             // Setting bot playing status
             await UpdatePlayingStatus();
-
             // Report status
             await Context.Message.ReplyAsync(reply);
         }
@@ -44,7 +51,7 @@ namespace CharacterAI_Discord_Bot.Service
         [Alias("au mode", "amode")]
         public async Task AudienceToggle()
         {
-            if (!ValidateBotRole()) { await NoPermission(); return; }
+            if (!ValidateBotRole()) { await NoPermissionAlert(); return; }
 
             var aM = _handler.integration.audienceMode ^= true;
 
@@ -55,22 +62,26 @@ namespace CharacterAI_Discord_Bot.Service
         [Command("ping")]
         public async Task Ping()
         {
-            if (!ValidateBotRole()) { await NoPermission(); return; }
-
             await Context.Message.ReplyAsync($"Pong! - {Context.Client.Latency} ms");
         }
 
         private bool ValidateBotRole()
         {
             var user = Context.User as SocketGuildUser;
-            var role = (user as IGuildUser).Guild.Roles.FirstOrDefault(role => role.Name == CommonService.GetConfig().botRole);
-            return user.Roles.Contains(role);
+            if (user.Id == Context.Guild.OwnerId) return true;
+
+            var roles = (user as IGuildUser).Guild.Roles;
+            var requiredRole = roles.FirstOrDefault(role => role.Name == Config.botRole);
+
+            return user.Roles.Contains(requiredRole);
         }
 
-        private async Task NoPermission()
+        private async Task NoPermissionAlert()
         {
+            if (string.IsNullOrEmpty(nopowerPath) || !File.Exists(nopowerPath)) return;
+
             var mRef = new MessageReference(messageId: Context.Message.Id);
-            await Context.Channel.SendFileAsync(_handler.nopowerPath, messageReference: mRef);
+            await Context.Channel.SendFileAsync(nopowerPath, messageReference: mRef);
         }
 
         private async Task UpdatePlayingStatus()

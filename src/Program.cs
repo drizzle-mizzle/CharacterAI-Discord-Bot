@@ -9,34 +9,46 @@ namespace CharacterAI_Discord_Bot
 {
     public class Program : CommonService
     {
+        private ServiceProvider _services;
+        private DiscordSocketClient _client;
         static void Main()
             => new Program().MainAsync().GetAwaiter().GetResult();
 
         private async Task MainAsync()
         {
-            var clientConfig = new DiscordSocketConfig() {
-                AlwaysDownloadUsers = true,
-                GatewayIntents = GatewayIntents.All
-            };
+            _services = CreateServices();
+            _client = _services.GetRequiredService<DiscordSocketClient>();
 
-            using var services = new ServiceCollection()
-                .AddSingleton(new DiscordSocketClient(clientConfig))
-                .AddSingleton(new CommandService())
-                .AddSingleton<MessageHandler>()
-                .BuildServiceProvider();
+            if (Config is null) return;
 
-            var client = services.GetRequiredService<DiscordSocketClient>();
-            client.Log += Log;
-            dynamic config = GetConfig();
+            _client.Log += Log;
+            _client.Ready += OnClientReady;
 
-            await client.LoginAsync(TokenType.Bot, config.botToken);
-            await client.StartAsync();
-            await services.GetRequiredService<MessageHandler>().InitializeAsync();
-
-
-            if (config.autoSetup) await AutoSetup(services, client);
+            await _client.LoginAsync(TokenType.Bot, Config.botToken);
+            await _client.StartAsync();
+            await _services.GetRequiredService<MessageHandler>().InitializeAsync();
 
             await Task.Delay(-1);
+        }
+
+        public async Task OnClientReady()
+        {
+            if (Config.autoSetupEnabled)
+                await AutoSetup(_services, _client);
+        }
+
+        private static ServiceProvider CreateServices()
+        {
+            var clientConfig = new DiscordSocketConfig()
+            {
+                GatewayIntents = GatewayIntents.All
+            };
+            var services = new ServiceCollection();
+            services.AddSingleton(new DiscordSocketClient(clientConfig))
+                    .AddSingleton(new CommandService())
+                    .AddSingleton<MessageHandler>();
+
+            return services.BuildServiceProvider();
         }
 
         private Task Log(LogMessage log)

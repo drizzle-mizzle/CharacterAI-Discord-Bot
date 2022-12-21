@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace CharacterAI_Discord_Bot.Service
 {
-    public class Integration : CommonService
+    public partial class Integration : CommonService
     {
         public Character charInfo = new();
         private readonly HttpClient _httpClient = new();
@@ -17,21 +17,25 @@ namespace CharacterAI_Discord_Bot.Service
             _userToken = userToken;
         }
 
-        public bool Setup(string charID)
+        public async Task<bool> Setup(string charID)
         {
-            if (!GetInfo(charID)) return false;
-            if (!GetHistory()) return false;
-            DownloadAvatar();
+            Log("\nStaring character setup...\n", ConsoleColor.Yellow);
+            charInfo.CharID = charID;
 
-            Log("CharacterAI");
-            Log(" - Connected\n\n", ConsoleColor.Yellow);
+            if (!await GetInfo()) return Failure("Setup has been aborted");
+            if (!await GetHistory()) return Failure("Setup has been aborted"); ;
+            await DownloadAvatar();
+
+            Log("CharacterAI - ");
+            Log("Connected\n\n", ConsoleColor.Yellow);
             Log($" [{charInfo.Name}]\n", ConsoleColor.Cyan);
-            Log($"{charInfo.Greeting}\n{charInfo.Description}\n\n");
+            Log($"{charInfo.Greeting}\n");
+            Log($"\"{charInfo.Description}\"\n");
 
-            return true;
+            return Success("Setup complete\n");
         }
 
-        public string[] CallCharacter(string msg, string imgPath)
+        public async Task<string[]> CallCharacter(string msg, string imgPath)
         {
             var contentDict = new Dictionary<string, string>
             {
@@ -43,6 +47,7 @@ namespace CharacterAI_Discord_Bot.Service
                 { "ranking_method", "random" },
                 { "staging", "false" }
             };
+
             if (!string.IsNullOrEmpty(imgPath))
             {
                 var imgParams = new string[] {
@@ -60,147 +65,184 @@ namespace CharacterAI_Discord_Bot.Service
             };
 
             request = SetHeaders(request);
-            request.Headers.Add("Accept", "*/*");
             request.Headers.Add("accept-encoding", "gzip, deflate, br");
-            using var response = _httpClient.Send(request);
+            using var response = await _httpClient.SendAsync(request);
 
             if (!response.IsSuccessStatusCode)
             {
-                string errorMsg = $"\nFailed to send message!\nDetails: {response}\nContent: {response.Content.ReadAsStringAsync().Result}\n\n" +
-                    $"Message: {request.Content.ReadAsStringAsync().Result}";
+                string errorMsg = "\nFailed to send message!\n" +
+                    $"Details: { response }\n" +
+                    $"Response: { await response.Content.ReadAsStringAsync() }\n" +
+                    $"Request: { await request.Content.ReadAsStringAsync() }";
                 Failure(errorMsg);
 
                 return new string[2] { "⚠️ Failed to send message!", "" };
             }
             request.Dispose();
 
-            var content = response.Content.ReadAsStringAsync().Result;
             // The character answers with many reply variations at once, and API sends them part by part so it could
             // be desplayed on site in real time with "typing" animation.
             // Last part with a list of complete replies always lies in a penult line of response content.
-            try { var reply = JsonConvert.DeserializeObject<dynamic>(content.Split("\n")[^2]).replies[0]; }
-            catch { return new string[2] { "⚠️ Something went wrong...", "" }; }
+            try
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var reply = JsonConvert.DeserializeObject<dynamic>(content.Split("\n")[^2]).replies[0];
+                string replyText = reply.text;
+                string replyImage = reply.image_rel_path ??= "";
+                replyText = MyRegex().Replace(replyText, "\n\n");
 
-            string replyText = reply.text;
-            string replyImage = reply.image_rel_path ??= "";
-            replyText = Regex.Replace(replyText, @"(\n){3,}", "\n\n"); // (3 or more) "\n\n\n..." -> (exactly 2) "\n\n"
+                return new string[2] { replyText, replyImage };
+            }
 
-            return new string[] { replyText, replyImage };
+            catch { return new string[2] { "⚠️ Message has been sent successfully, but something went wrong...", "" }; }
         }
 
-        private bool GetInfo(string charID)
+        private async Task<bool> GetInfo()
         {
             Log("Fetching character info... ");
 
             var request = new HttpRequestMessage(HttpMethod.Post, "https://beta.character.ai/chat/character/info/")
             {
-                Content = new FormUrlEncodedContent(new Dictionary<string, string> { { "external_id", charID } })
+                Content = new FormUrlEncodedContent(new Dictionary<string, string> { { "external_id", charInfo.CharID } })
             };
             request = SetHeaders(request);
-            request.Headers.Add("Accept", "application/json, text/plain, */*");
             request.Headers.Add("accept-encoding", "deflate, br");
 
-            using var response = _httpClient.Send(request);
-            if (!response.IsSuccessStatusCode) return Failure("Error!\n Request failed! (https://beta.character.ai/chat/character/info/)\n");
+            using var response = await _httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode) return Failure("Error!\n Request failed! (https://beta.character.ai/chat/character/info/)");
 
-            var content = response.Content.ReadAsStringAsync().Result;
-            try { var charParsed = JsonConvert.DeserializeObject<dynamic>(content).character; }
-            catch { return Failure("Something went wrong"); }
+            try
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var charParsed = JsonConvert.DeserializeObject<dynamic>(content).character;
+                charInfo.Name = charParsed.name;
+                charInfo.Greeting = charParsed.greeting;
+                charInfo.Description = charParsed.description;
+                charInfo.Title = charParsed.title;
+                charInfo.Tgt = charParsed.participant__user__username;
+                charInfo.AvatarUrl = $"https://characterai.io/i/400/static/avatars/{charParsed.avatar_file_name}";
 
-            charInfo.CharID = charParsed.external_id;
-            charInfo.Name = charParsed.name;
-            charInfo.Greeting = charParsed.greeting;
-            charInfo.Description = charParsed.description;
-            charInfo.Title = charParsed.title;
-            charInfo.Tgt = charParsed.participant__user__username;
-            charInfo.AvatarUrl = $"https://characterai.io/i/400/static/avatars/{charParsed.avatar_file_name}";
-
-            return Success("OK\n");
+                return Success("OK");
+            }
+            catch (Exception e) { return Failure("Something went wrong...\n" + e.ToString()); }
         }
 
-        private bool GetHistory()
+        private async Task<bool> GetHistory()
         {
             Log("Fetching chat history... ");
 
-            var request = new HttpRequestMessage(HttpMethod.Post, "https://beta.character.ai/chat/history/continue/");
-            request.Content = new FormUrlEncodedContent(new Dictionary<string, string> { { "character_external_id", charInfo.CharID } });
+            HttpRequestMessage request = new(HttpMethod.Post, "https://beta.character.ai/chat/history/continue/")
+            {
+                Content = new FormUrlEncodedContent(
+                    new Dictionary<string, string> { { "character_external_id", charInfo.CharID } })
+            };
             request = SetHeaders(request);
-            request.Headers.Add("Accept", "application/json, text/plain, */*");
             request.Headers.Add("accept-encoding", "deflate, br");
 
-            using var response = _httpClient.Send(request);
-            if (!response.IsSuccessStatusCode) return Failure("Error!\n Request failed! (https://beta.character.ai/chat/history/continue/)\n");
+            using var response = await _httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+                return Failure("Error!\n Request failed! (https://beta.character.ai/chat/history/continue/)");
 
-            var content = response.Content.ReadAsStringAsync().Result;
+            var content = await response.Content.ReadAsStringAsync();
             dynamic historyInfo;
 
             try { historyInfo = JsonConvert.DeserializeObject<dynamic>(content); }
-            catch { return Failure("Something went wrong"); }
+            catch (Exception e) { return Failure("Something went wrong...\n" + e.ToString()); }
 
-            // if there's status field, then response is "status: No Such History"
-            if (historyInfo.status == null) _historyExternalId = historyInfo.external_id;
-            else if (!CreateDialog()) return Failure();
+            // If no status field, then history external_id is provided.
+            if (historyInfo.status == null)
+                _historyExternalId = historyInfo.external_id;
+            // If there's status field, then response is "status: No Such History".
+            else if (!await CreateNewDialog())
+                return Failure();
 
-            return Success("OK\n");
+            return Success("OK");
         }
 
-        private bool CreateDialog()
+        private async Task<bool> CreateNewDialog()
         {
             Log("No chat history found\n", ConsoleColor.Magenta);
             Log("Creating new dialog... ");
 
-            var request = new HttpRequestMessage(HttpMethod.Post, "https://beta.character.ai/chat/history/create/");
-            request.Content = new FormUrlEncodedContent(new Dictionary<string, string> { { "character_external_id", charInfo.CharID } });
+            HttpRequestMessage request = new(HttpMethod.Post, "https://beta.character.ai/chat/history/create/")
+            {
+                Content = new FormUrlEncodedContent(
+                    new Dictionary<string, string> { { "character_external_id", charInfo.CharID } })
+            };
             request = SetHeaders(request);
-            request.Headers.Add("Accept", "application/json, text/plain, */*");
             request.Headers.Add("accept-encoding", "deflate, br");
 
-            using var response = _httpClient.Send(request);
-            if (!response.IsSuccessStatusCode) return Failure("Error!\n Request failed! (https://beta.character.ai/chat/history/create/)\n");
+            using var response = await _httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+                return Failure("Error!\n Request failed! (https://beta.character.ai/chat/history/create/)");
 
-            var content = response.Content.ReadAsStringAsync().Result;
+            var content = await response.Content.ReadAsStringAsync();
             try { _historyExternalId = JsonConvert.DeserializeObject<dynamic>(content).external_id; }
-            catch { return Failure("Something went wrong"); }
+            catch (Exception e) { return Failure("Something went wrong...\n" + e.ToString()); }
 
             return Success();
         }
 
-        private bool DownloadAvatar()
+        private async Task<bool> DownloadAvatar()
         {
             Log("Downloading character avatar... ");
-
             Stream image;
-            using var response = _httpClient.GetAsync(charInfo.AvatarUrl).Result;
 
-            if (!response.IsSuccessStatusCode)
+            try { if (File.Exists(avatarPath)) File.Delete(avatarPath); }
+            catch (Exception e) { return Failure("Something went wrong...\n" + e.ToString()); }
+
+            var avatar = File.Create(avatarPath);
+            
+            using var response = await _httpClient.GetAsync(charInfo.AvatarUrl);
+            if (response.IsSuccessStatusCode)
             {
-                Failure($"Error!\n Request failed! ({charInfo.AvatarUrl})\n");
-                Log("(Default avatar is used) ", ConsoleColor.DarkCyan);
-                try { image = new FileStream(pfpDefaultPath, FileMode.Open); }
-                catch { return Failure("Something went wrong"); }
+                try { image = await response.Content.ReadAsStreamAsync(); }
+                catch (Exception e) { return Failure("Something went wrong...\n" + e.ToString()); }
             }
             else
             {
-                image = response.Content.ReadAsStreamAsync().Result;
-            }
+                Failure($"Error!\n Request failed! ({charInfo.AvatarUrl})");
+                Log("Setting default avatar... ", ConsoleColor.DarkCyan);
 
-            if (File.Exists(pfpPath)) File.Delete(pfpPath);
-
-            try
-            {
-                using var avatar = File.Create(pfpPath);
-                image.CopyTo(avatar);
-                avatar.Close(); image.Close();
+                try { image = new FileStream(defaultAvatarPath, FileMode.Open); }
+                catch { return Failure(@"Something went wrong. Check if img/defaultAvatar.webp does exist."); }
             }
-            catch { return Failure("Something went wrong"); }
+            image.CopyTo(avatar);
+            image.Close();
+            avatar.Close();
 
             return Success("OK\n");
+        }
+
+        public async Task<string?> UploadImg(byte[] img)
+        {
+            var image = new ByteArrayContent(img);
+            image.Headers.ContentType = MediaTypeHeaderValue.Parse("image/jpeg");
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://beta.character.ai/chat/upload-image/")
+            {
+                Content = new MultipartFormDataContent { { image, "\"image\"", $"\"image.jpg\"" } }
+            };
+
+            request = SetHeaders(request);
+            request.Headers.Add("accept-encoding", "deflate, br");
+
+            using var response = await _httpClient.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                try { return JsonConvert.DeserializeObject<dynamic>(content).value.ToString(); }
+                catch { Failure("Something went wrong"); return null; }
+            }
+
+            Failure("\nRequest failed! (https://beta.character.ai/chat/upload-image/)\n");
+            return null;
         }
 
         private HttpRequestMessage SetHeaders(HttpRequestMessage request)
         {
             var headers = new string[]
             {
+                "Accept", "application/json, text/plain, */*",
                 "accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
                 "Authorization", $"Token {_userToken}",
                 "ContentLength", request.Content.ToString().Length.ToString(),
@@ -222,31 +264,9 @@ namespace CharacterAI_Discord_Bot.Service
             return request;
         }
 
-        // in work
-        public string UploadImg(byte[] img)
-        {
-            var bacImg = new ByteArrayContent(img);
-            bacImg.Headers.ContentType = MediaTypeHeaderValue.Parse("image/jpeg");
-            var request = new HttpRequestMessage(HttpMethod.Post, "https://beta.character.ai/chat/upload-image/") 
-            { 
-                Content = new MultipartFormDataContent { { bacImg, "\"image\"", $"\"image.jpg\"" } }
-            };
 
-            request = SetHeaders(request);
-            request.Headers.Add("Accept", "application/json, text/plain, */*");
-            request.Headers.Add("accept-encoding", "deflate, br");
-
-            using var response = _httpClient.Send(request);
-            if (!response.IsSuccessStatusCode)
-            {
-                Failure("\nRequest failed! (https://beta.character.ai/chat/upload-image/)\n");
-
-                return "";
-            }
-            var content = response.Content.ReadAsStringAsync().Result;
-
-            try { return JsonConvert.DeserializeObject<dynamic>(content).value; }
-            catch { Failure("Something went wrong"); return ""; }
-        }
+        // (3 or more) "\n\n\n..." -> (exactly 2) "\n\n"
+        [GeneratedRegex("(\\n){3,}")]
+        private static partial Regex MyRegex();
     }
 }

@@ -8,23 +8,104 @@ namespace CharacterAI_Discord_Bot.Service
 {
     public class CommonService
     {
-
-        public string pfpPath = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "img" + Path.DirectorySeparatorChar + "characterAvatar.avif";
-        public string pfpDefaultPath = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "img" + Path.DirectorySeparatorChar + "defaultAvatar.png";
-        public string tempImgPath = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "img" + Path.DirectorySeparatorChar + "temp.webp";
-        public string nopowerPath = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "img" + Path.DirectorySeparatorChar + "nopower.gif";
-
+        public static readonly dynamic Config = GetConfig();
+        public static readonly string imgPath = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + ".." + Path.DirectorySeparatorChar + "img" + Path.DirectorySeparatorChar;
+        public static readonly string avatarPath = imgPath + "characterAvatar.webp";
+        public static readonly string defaultAvatarPath = imgPath + "defaultAvatar.webp";
+        public static readonly string tempImgPath = imgPath + "temp.webp";
+        public static readonly string nopowerPath = imgPath + Config.nopower;
+        
 
         public static async Task AutoSetup(ServiceProvider services, DiscordSocketClient client)
         {
-            
-            dynamic config = GetConfig();
-            var integration = services.GetRequiredService<MessageHandler>().integration;
-            if (!integration.Setup(config.autoCharID)) return;
+            if (Config is null) return;
 
-            integration.audienceMode = config.autoAudienceMode;
-            string desc = integration.charInfo.CharID == null ? "No character selected | " : $"Description: {integration.charInfo.Title} | ";
-            await client.SetGameAsync(desc + $"Audience mode: " + (integration.audienceMode ? "✔️" : "✖️"));
+            var integration = services.GetRequiredService<MessageHandler>().integration;
+            integration.audienceMode = Config.defaultAudienceMode;
+            if (!await integration.Setup(Config.autoCharID)) return;
+
+            string desc = integration.charInfo.CharID == null ? "No character selected" : $"Description: {integration.charInfo.Title}";
+            await client.SetGameAsync(desc + $" | Audience mode: " + (integration.audienceMode ? "✔️" : "✖️"));
+
+            using var fs = new FileStream(avatarPath, FileMode.Open);
+            await client.CurrentUser.ModifyAsync(u => { u.Avatar = new Discord.Image(fs); });
+
+            var guildID = client.Guilds.First().Id;
+            var botAsGuildUser = client.GetGuild(guildID).GetUser(client.CurrentUser.Id);
+            await botAsGuildUser.ModifyAsync(u => { u.Nickname = integration.charInfo.Name; });
+        }
+
+        public static string RemoveMention(string text)
+        {
+            var rgx = new Regex(@"\<(.*?)\>");
+            text = rgx.Replace(text, "", 1);
+
+            foreach(var prefix in Config.botPrefixes)
+                text.Replace(prefix, "");
+
+            return text.Trim(' ');
+        }
+
+        public static async Task<byte[]?> DownloadImg(string url)
+        {
+            if (string.IsNullOrEmpty(url)) return null;
+
+            HttpClient client = new();
+            // Try 10 times and return null
+            for (int i = 0; i < 10; i++)
+            {
+                try { return await client.GetByteArrayAsync(url); }
+                catch { Thread.Sleep(2000); }
+            }
+
+            return null;
+        }
+
+        public static bool Success(string logText = "")
+        {
+            Log(logText + "\n", ConsoleColor.Green);
+
+            return true;
+        }
+
+        public static bool Failure(string logText = "")
+        {
+            Log(logText + "\n", ConsoleColor.Red);
+
+            return false;
+        }
+
+        public static void Log(string text, ConsoleColor color = ConsoleColor.Gray)
+        {
+            Console.ForegroundColor = color;
+            Console.Write(text);
+            Console.ResetColor();
+        }
+
+        public static dynamic? GetConfig()
+        {
+            var path = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + ".." + Path.DirectorySeparatorChar + "Config.json";
+            using StreamReader configJson = new StreamReader(path);
+            try
+            {
+                var configParsed = (JObject)JsonConvert.DeserializeObject(configJson.ReadToEnd());
+                return new
+                {
+                    userToken = configParsed["char_ai_user_token"].Value<string>(),
+                    botToken = configParsed["discord_bot_token"].Value<string>(),
+                    botRole = configParsed["discord_bot_role"].Value<string>(),
+                    botPrefixes = JsonConvert.DeserializeObject<string[]>(configParsed["discord_bot_prefixes"].ToString()),
+                    defaultAudienceMode = bool.Parse(configParsed["default_audience_mode"].Value<string>()),
+                    nopower = configParsed["default_no_permission_file"].Value<string>(),
+                    autoSetupEnabled = bool.Parse(configParsed["auto_setup"].Value<string>()),
+                    autoCharID = configParsed["auto_char_id"].Value<string>()
+                };
+            }
+            catch
+            {
+                Failure("Something went wrong... Check your Config file.\n");
+                return null;
+            }
         }
 
         // probably not useless
@@ -44,67 +125,5 @@ namespace CharacterAI_Discord_Bot.Service
 
         //    Success("OK\n");
         //}
-
-        public static dynamic GetConfig()
-        {
-            using StreamReader configJson = new StreamReader(Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "Config.json");
-            var configParsed = (JObject)JsonConvert.DeserializeObject(configJson.ReadToEnd());
-            dynamic config = new
-            {
-                userToken = configParsed["char_ai_user_token"].Value<string>(),
-                botToken = configParsed["discord_bot_token"].Value<string>(),
-                botRole = configParsed["discord_bot_role"].Value<string>(),
-                botPrefixes = JsonConvert.DeserializeObject<string[]>(configParsed["discord_bot_prefixes"].ToString()),
-                autoSetup = bool.Parse(configParsed["auto_setup"].Value<string>()),
-                autoCharID = configParsed["auto_char_id"].Value<string>(),
-                autoAudienceMode = bool.Parse(configParsed["auto_audience_mode"].Value<string>())
-            };
-
-            return config;
-        }
-
-
-        public static string RemoveMention(string text)
-        {
-            var rgx = new Regex(@"\<(.*?)\>");
-            text = rgx.Replace(text, "", 1);
-
-            foreach(var prefix in GetConfig().botPrefixes)
-                text.Replace(prefix, "");
-
-            return text.Trim(' ');
-        }
-
-        public static byte[] DownloadImg(string url)
-        {
-            HttpClient client = new();
-
-            while (true)
-            {
-                try { return client.GetByteArrayAsync(url).Result; }
-                catch { Thread.Sleep(2000); }
-            }
-        }
-
-        public static bool Success(string logText = "")
-        {
-            Log(logText, ConsoleColor.Green);
-
-            return true;
-        }
-
-        public static bool Failure(string logText = "")
-        {
-            Log(logText, ConsoleColor.Red);
-
-            return false;
-        }
-
-        public static void Log(string text, ConsoleColor color = ConsoleColor.Gray)
-        {
-            Console.ForegroundColor = color;
-            Console.Write(text);
-            Console.ResetColor();
-        }
     }
 }

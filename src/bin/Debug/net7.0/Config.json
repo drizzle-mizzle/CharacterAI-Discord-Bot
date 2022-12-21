@@ -1,10 +1,13 @@
 ﻿{
   "discord_bot_token": "_YOUR_DISCORD_TOKEN_",
   "char_ai_user_token": "_YOUR_USER_TOKEN",
+
   "discord_bot_role": "Manage Character",
   "discord_bot_prefixes": ["!ai ", "!char "],
 
+  "default_audience_mode": "False",
+  "default_no_permission_file": "nopower.gif",
+
   "auto_setup": "False",
-  "auto_char_id": "_CHARACTER_ID_",
-  "auto_audience_mode": "False"
+  "auto_char_id": "_CHARACTER_ID_"
 }

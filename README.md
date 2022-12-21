@@ -3,61 +3,80 @@ Simple integration with https://beta.character.ai service which you can use to a
 
 ![CharacterAI](https://i.imgur.com/H5hDipp.jpg)
 
-> (The service is currently in beta test state, and it does not have any public API documentation. In this regard, I could not find any convenient way to log into account, aside from clumsy one described below, and I also cannot guarantee that this bot will not stop working in any moment when CharacterAI's developers will make another update :P)
-> Also, I have to note that I'm very new to .NET and C#, so my code can be (and it is) kinda awful. Whole thing was made just for fun and with self-educational intentions.
+> (The service is currently in beta test state, and it does not have any public API documentation. In this regard, I could not find any convenient way to log into account, aside from clumsy one described below, and I also cannot guarantee that this bot will not suddenly stop working in any moment when CharacterAI's developers will make another update :P)
+
+## Features
+1. Talk with any characters on your own server and change them on the wing!
+2. What else do you need lol?
+
+![chrome_lqjAER1cug](https://user-images.githubusercontent.com/55811932/208914718-5e6fa518-da30-4807-92c7-c2238f4bef87.gif)
+
+## Commands
+- `set character <id>` - set character by id
+	- Aliases: `sc`, `set`
+- `audience toggle` - enable/disable audience mode (What is the audience mode - read below)
+	- Aliases: `amode`, `au mode`
+- `ping` - check latency
 
 ##  How to set up
-> There are some big updates were made.
-> This section will be updated soon.
 1. Create a new Discord application with bot (you can easily find guide on the internet, so I won't focus on this part here).
- (don't forget to enable all "Intents" switchers)
-2. Get your bot token and place it in `Precompiled/_YOUR_OS_/Config.json file.`.
+	- *(don't forget to enable all **"Privileged Gateway Intents"** switchers)*
+2. Get your bot token and place it in `Config.json` file.
 3. Create character.ai account if you don't have one.
 4. Sign in, open DevTools (<Ctrl+Shift+J> in Chrome), find "Network" page and go to the "Fetch/XHR" section.
+
+![image](https://user-images.githubusercontent.com/55811932/208903651-17ffef98-6a88-47d2-92ec-6940e76fbf77.png)
+![image](https://user-images.githubusercontent.com/55811932/208903737-1ec8741a-3151-455b-bca0-9b2cf878dd48.png)
+
 5. Reload page (DevTools should remain open).
+6. Now you should see a list of requests. Locate "auth0/" and open it's Response/Preview page.
 
-![image](https://user-images.githubusercontent.com/55811932/208026300-28c0339b-8e6f-49fd-992f-7e07d439d5ba.png)
+![image](https://user-images.githubusercontent.com/55811932/208904061-f2628020-3e77-4f01-865b-809a8234c70b.png)
 
-6. Now you should see a list of requests. Locate "auth0/" and open it's response.
-7. You must get a string that looks like `'{"key":"81a8d269da126081a5f4..."}'`, that's your accout auth token.
+7. That's your accout auth token.
 
-![image](https://user-images.githubusercontent.com/55811932/208027304-464216ec-4325-4662-a759-59699f0216e0.png)
+![image](https://user-images.githubusercontent.com/55811932/208904455-8331a2d5-5160-448e-9464-77fb62d410b7.png)
 
-8. Copy it's value and place in `Precompiled/_YOUR_OS_/Config.json file.`.
+8. Copy it's value and place in `char_ai_user_token` field in `Config.json` file.
 9. Launch the bot:
-  - **Windows:**
-    1. Go to the `Precompiled/win-x64 folder`
-    2. Simply run **CharacterAI_Discord_Bot.exe**
-  - **Linux:**
-    1. Go to `Precompiled/linux-x64 folder`
-    2. Execute `chmod 777 ./CharacterAI_Discord_Bot`
-    3. Run `./CharacterAI_Discord_Bot`
+	- **Windows:**
+		- Go to the `bin` folder.
+		- Simply run **CharacterAI_Discord_Bot.exe**
+  - **Linux**
+		- Go to the `bin` folder.
+		- Execute `chmod 777 ./CharacterAI_Discord_Bot`
+		- Run `./CharacterAI_Discord_Bot`
 10. Open a chat with a character you want to add on your server.
 11. In adress bar locate and copy character's id (it's right after '/chat?char=...').
 
 ![image](https://user-images.githubusercontent.com/55811932/208032897-71a459f4-4db3-47b0-a042-d772a3f0c01b.png)
 
-12. Go to your server and run bot command `!ai set <id>`
+12. Go to your server and run bot command `set <id>`
+	- (Bot will automatically set it's avatar and nickname)
 
-(Bot will automatically set it's avatar and nickname)
+![chrome_NJ88RGQgdn](https://user-images.githubusercontent.com/55811932/208912215-8ecbb70b-5f12-4739-9b6d-20bfebbe81eb.gif)
 
 **13. Enjoy converstaion!**
 
-## Audience mode (experimental)
-![image](https://user-images.githubusercontent.com/55811932/208030740-84062de1-b7df-4ffb-bd27-2cd59b5717c6.png)
+## Additional configuration
+- If you want make other users on your server be able to configure a bot, give them a role and place it's name in `discord_bot_role`.
+- Specify prefixes in `discord_bot_prefixes` field so you could call your bot without mention or reply.
+- Set `default_audience_mode` to `True` if you want it to be always enabled on a bot launch.
+- Specify `default_no_permission_file` with a name of the gif/image you want to be shown when non-privileged user tries to execute bot commands (or just leave it empty to disable this feature)
+- Set `auto_setup` to `True` and specify `auto_char_id` with id of a character if you want bot to set character automatically after every relaunch. 
 
-When you talk with a character, it's obvious that you can use only one character.ai account for every user on your server, and it does puts some limitations on a conversation. Thinking about it, I decided to try to "explain" character that there are many different users who speak with him using a single account. And... it really worked lol.
+## Audience mode (experimental)
+![image](https://user-images.githubusercontent.com/55811932/208913065-e367dbfa-8296-43dd-a0fc-c5aec847f9e2.png)
+
+When you talk with a character you can use only one character.ai account for every user on your server, and it does puts some limitations on a conversation. Thinking about it, I decided to try to "explain" character that there are many different users who speak with him using a single account. And... it really worked lol.
 If you add a nickname and a quote to your reply, the character will, usually, understand the context, and his answers will be more consistent.
 
-**How it looks in Discord:**
-
+**How does it looks in Discord:**
 ![image](https://user-images.githubusercontent.com/55811932/208031628-a52057dc-9cf4-4344-b1f0-3abd1c9ba51f.png)
 ![image](https://user-images.githubusercontent.com/55811932/208033040-f5385d42-c410-4471-9e07-58ef6310462a.png)
 
 **How it actually is:**
-
 ![image](https://user-images.githubusercontent.com/55811932/208031792-d971acc6-afca-4bf4-8888-f287679c4f8b.png)
 ![image](https://user-images.githubusercontent.com/55811932/208032085-301df36b-e335-49af-9974-65b617c73f74.png)
 
-This feature is disabled by default, but you can easily enable it with `@BOT_NAME amode`.
-
+This feature is disabled by default, but you can enable it with `amode` command.

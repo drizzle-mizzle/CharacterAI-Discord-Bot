@@ -1,7 +1,7 @@
 # CharacterAI Discord Bot
-Simple integration with https://beta.character.ai service which you can use to add any character on your Discord server.
+Simple unofficial Discord integration with [CharacterAI](https://beta.character.ai/) service which you can use to add any character on your Discord server.
 
-![CharacterAI](https://i.imgur.com/H5hDipp.jpg)
+![Logo](https://i.imgur.com/H5hDipp.jpg)
 
 > (The service is currently in beta test state, and it does not have any public API documentation. In this regard, I could not find any convenient way to log into account, aside from clumsy one described below, and I also cannot guarantee that this bot will not suddenly stop working in any moment when CharacterAI's developers will make another update :P)
 

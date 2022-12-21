@@ -6,8 +6,9 @@ Simple integration with https://beta.character.ai service which you can use to a
 > (The service is currently in beta test state, and it does not have any public API documentation. In this regard, I could not find any convenient way to log into account, aside from clumsy one described below, and I also cannot guarantee that this bot will not suddenly stop working in any moment when CharacterAI's developers will make another update :P)
 
 ## Features
-1. Talk with any characters on your own server and change them on the wing!
-2. What else do you need lol?
+- Talk with any characters on your own server and change them on the wing.
+- Automatically sets the name and profile picture of the character.
+- Supports sending and receiving of images.
 
 ![chrome_lqjAER1cug](https://user-images.githubusercontent.com/55811932/208914718-5e6fa518-da30-4807-92c7-c2238f4bef87.gif)
 
@@ -26,6 +27,7 @@ Simple integration with https://beta.character.ai service which you can use to a
 4. Sign in, open DevTools (<Ctrl+Shift+J> in Chrome), find "Network" page and go to the "Fetch/XHR" section.
 
 ![image](https://user-images.githubusercontent.com/55811932/208903651-17ffef98-6a88-47d2-92ec-6940e76fbf77.png)
+
 ![image](https://user-images.githubusercontent.com/55811932/208903737-1ec8741a-3151-455b-bca0-9b2cf878dd48.png)
 
 5. Reload page (DevTools should remain open).
@@ -66,17 +68,22 @@ Simple integration with https://beta.character.ai service which you can use to a
 - Set `auto_setup` to `True` and specify `auto_char_id` with id of a character if you want bot to set character automatically after every relaunch. 
 
 ## Audience mode (experimental)
+
 ![image](https://user-images.githubusercontent.com/55811932/208913065-e367dbfa-8296-43dd-a0fc-c5aec847f9e2.png)
 
 When you talk with a character you can use only one character.ai account for every user on your server, and it does puts some limitations on a conversation. Thinking about it, I decided to try to "explain" character that there are many different users who speak with him using a single account. And... it really worked lol.
 If you add a nickname and a quote to your reply, the character will, usually, understand the context, and his answers will be more consistent.
 
 **How does it looks in Discord:**
+
 ![image](https://user-images.githubusercontent.com/55811932/208031628-a52057dc-9cf4-4344-b1f0-3abd1c9ba51f.png)
+
 ![image](https://user-images.githubusercontent.com/55811932/208033040-f5385d42-c410-4471-9e07-58ef6310462a.png)
 
 **How it actually is:**
+
 ![image](https://user-images.githubusercontent.com/55811932/208031792-d971acc6-afca-4bf4-8888-f287679c4f8b.png)
+
 ![image](https://user-images.githubusercontent.com/55811932/208032085-301df36b-e335-49af-9974-65b617c73f74.png)
 
 This feature is disabled by default, but you can enable it with `amode` command.

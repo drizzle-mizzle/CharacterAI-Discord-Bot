@@ -1,14 +1,15 @@
 # CharacterAI Discord Bot
-Simple integration with https://beta.character.ai service which you can use to add any character on your Discord server.
+Simple unofficial Discord integration with [CharacterAI](https://beta.character.ai/) service which you can use to add any character on your Discord server.
 
-![CharacterAI](https://i.imgur.com/H5hDipp.jpg)
+![Logo](https://i.imgur.com/H5hDipp.jpg)
 
 > (The service is currently in beta test state, and it does not have any public API documentation. In this regard, I could not find any convenient way to log into account, aside from clumsy one described below, and I also cannot guarantee that this bot will not suddenly stop working in any moment when CharacterAI's developers will make another update :P)
 
 ## Features
 - Talk with any characters on your own server and change them on the wing.
 - Automatically sets the name and profile picture of the character.
-- Supports sending and receiving of images.
+- Supports sending and receiving of images (you can use it for **image generating** bots).
+- Experimental *audience mode* that makes the character a truly part of your server!
 
 ![chrome_lqjAER1cug](https://user-images.githubusercontent.com/55811932/208914718-5e6fa518-da30-4807-92c7-c2238f4bef87.gif)
 
@@ -78,6 +79,7 @@ Simple integration with https://beta.character.ai service which you can use to a
 
 When you talk with a character you can use only one character.ai account for every user on your server, and it does puts some limitations on a conversation. Thinking about it, I decided to try to "explain" character that there are many different users who speak with him using a single account. And... it really worked lol.
 If you add a nickname and a quote to your reply, the character will, usually, understand the context, and his answers will be more consistent.
+> This feature is disabled by default, but you can enable it with `amode` command.
 
 **How does it looks in Discord:**
 
@@ -90,5 +92,3 @@ If you add a nickname and a quote to your reply, the character will, usually, un
 ![image](https://user-images.githubusercontent.com/55811932/208031792-d971acc6-afca-4bf4-8888-f287679c4f8b.png)
 
 ![image](https://user-images.githubusercontent.com/55811932/208032085-301df36b-e335-49af-9974-65b617c73f74.png)
-
-This feature is disabled by default, but you can enable it with `amode` command.

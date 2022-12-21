@@ -1,0 +1,13 @@
+﻿{
+  "discord_bot_token": "MTA1MzE2MzU3NTMxNDc1NTYwNA.GGFQVS.EfA1tzgsnlEsTAlmG7gPmw1kJeBw0AFfj9Y7_c",
+  "char_ai_user_token": "456ae54dcc6af0f5cd1fa98c85dc84e884014289",
+
+  "discord_bot_role": "Manage Character",
+  "discord_bot_prefixes": ["!ai ", "!char "],
+
+  "default_audience_mode": "False",
+  "default_no_permission_file": "nopower.gif",
+
+  "auto_setup": "True",
+  "auto_char_id": "BpWTW4G2Mzlq7bfl0-9OXXiBuws-yEx_MhHbTQ4XU8U"
+}

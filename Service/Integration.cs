@@ -170,7 +170,6 @@ namespace CharacterAI_Discord_Bot.Service
                     new Dictionary<string, string> { { "character_external_id", charInfo.CharID } })
             };
             request = SetHeaders(request);
-            request.Headers.Add("accept-encoding", "deflate, br");
 
             using var response = await _httpClient.SendAsync(request);
             if (!response.IsSuccessStatusCode)
@@ -243,8 +242,9 @@ namespace CharacterAI_Discord_Bot.Service
             var headers = new string[]
             {
                 "Accept", "application/json, text/plain, */*",
-                "accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
                 "Authorization", $"Token {_userToken}",
+                "accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
+                "accept-encoding", "deflate, br",
                 "ContentLength", request.Content.ToString().Length.ToString(),
                 "ContentType", "application/json",
                 "dnt", "1",

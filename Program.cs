@@ -3,7 +3,6 @@ using Discord.WebSocket;
 using Discord.Commands;
 using Microsoft.Extensions.DependencyInjection;
 using CharacterAI_Discord_Bot.Service;
-using System.Reflection.Metadata;
 
 namespace CharacterAI_Discord_Bot
 {

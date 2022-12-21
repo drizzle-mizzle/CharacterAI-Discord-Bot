@@ -6,8 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
-    <PublishSingleFile>true</PublishSingleFile>
-    <SelfContained>True</SelfContained>
+    <SelfContained>true</SelfContained>
   </PropertyGroup>
 
   <ItemGroup>

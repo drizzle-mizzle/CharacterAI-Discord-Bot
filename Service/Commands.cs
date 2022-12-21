@@ -1,6 +1,6 @@
-﻿using Discord.Commands;
+﻿using Discord;
+using Discord.Commands;
 using Discord.WebSocket;
-using Discord;
 using static CharacterAI_Discord_Bot.Service.CommonService;
 
 namespace CharacterAI_Discord_Bot.Service

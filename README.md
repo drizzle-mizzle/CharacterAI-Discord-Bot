@@ -9,7 +9,7 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 - Talk with any characters on your own server and change them on the wing.
 - Automatically sets the name and profile picture of the character.
 - Supports sending and receiving of images (you can use it for **image generating** bots).
-- Experimental *audience mode* that makes the character a truly part of your server!
+- Experimental *audience mode* feature that makes your character a *real* participant of the conversation!
 
 ![chrome_lqjAER1cug](https://user-images.githubusercontent.com/55811932/208914718-5e6fa518-da30-4807-92c7-c2238f4bef87.gif)
 
@@ -27,7 +27,7 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 ##  How to set up
 1. Download [last release](https://github.com/drizzle-mizzle/CharacterAI_Discord_Bot/releases)
 2. Create a new Discord application with bot (you can easily find guide on the internet, so I won't focus on this part here).
-	- *(don't forget to enable all **"Privileged Gateway Intents"** switchers)*
+	- *(don't forget to enable **"SERVER MEMBERS INTENT"** and **"MESSAGE CONTENT INTENT"** switchers)*
 3. Get your bot token and place it in `Config.json` file.
 4. Create character.ai account if you don't have one.
 5. Sign in, open DevTools (<Ctrl+Shift+J> in Chrome), find "Network" page and go to the "Fetch/XHR" section.

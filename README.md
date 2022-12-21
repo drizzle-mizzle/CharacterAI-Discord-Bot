@@ -12,6 +12,10 @@ Simple integration with https://beta.character.ai service which you can use to a
 
 ![chrome_lqjAER1cug](https://user-images.githubusercontent.com/55811932/208914718-5e6fa518-da30-4807-92c7-c2238f4bef87.gif)
 
+> **Planned:**
+> - Answers swiping
+> - Imbedded character search+selection menu
+
 ## Commands
 - `set character <id>` - set character by id
 	- Aliases: `sc`, `set`
@@ -20,27 +24,28 @@ Simple integration with https://beta.character.ai service which you can use to a
 - `ping` - check latency
 
 ##  How to set up
-1. Create a new Discord application with bot (you can easily find guide on the internet, so I won't focus on this part here).
+1. Download [last release](https://github.com/drizzle-mizzle/CharacterAI_Discord_Bot/releases)
+2. Create a new Discord application with bot (you can easily find guide on the internet, so I won't focus on this part here).
 	- *(don't forget to enable all **"Privileged Gateway Intents"** switchers)*
-2. Get your bot token and place it in `Config.json` file.
-3. Create character.ai account if you don't have one.
-4. Sign in, open DevTools (<Ctrl+Shift+J> in Chrome), find "Network" page and go to the "Fetch/XHR" section.
+3. Get your bot token and place it in `Config.json` file.
+4. Create character.ai account if you don't have one.
+5. Sign in, open DevTools (<Ctrl+Shift+J> in Chrome), find "Network" page and go to the "Fetch/XHR" section.
 
 ![image](https://user-images.githubusercontent.com/55811932/208903651-17ffef98-6a88-47d2-92ec-6940e76fbf77.png)
 
 ![image](https://user-images.githubusercontent.com/55811932/208903737-1ec8741a-3151-455b-bca0-9b2cf878dd48.png)
 
-5. Reload page (DevTools should remain open).
-6. Now you should see a list of requests. Locate "auth0/" and open it's Response/Preview page.
+6. Reload page (DevTools should remain open).
+7. Now you should see a list of requests. Locate "auth0/" and open it's Response/Preview page.
 
 ![image](https://user-images.githubusercontent.com/55811932/208904061-f2628020-3e77-4f01-865b-809a8234c70b.png)
 
-7. That's your accout auth token.
+8. That's your accout auth token.
 
 ![image](https://user-images.githubusercontent.com/55811932/208904455-8331a2d5-5160-448e-9464-77fb62d410b7.png)
 
-8. Copy it's value and place in `char_ai_user_token` field in `Config.json` file.
-9. Launch the bot:
+9. Copy it's value and place in `char_ai_user_token` field in `Config.json` file.
+10. Launch the bot:
   - **Windows:**
     - Go to the `bin` folder.
     - Simply run **CharacterAI_Discord_Bot.exe**
@@ -48,17 +53,17 @@ Simple integration with https://beta.character.ai service which you can use to a
     - Go to the `bin` folder.
     - Execute `chmod 777 ./CharacterAI_Discord_Bot`
     - Run `./CharacterAI_Discord_Bot`
-10. Open a chat with a character you want to add on your server.
-11. In adress bar locate and copy character's id (it's right after '/chat?char=...').
+11. Open a chat with a character you want to add on your server.
+12. In adress bar locate and copy character's id (it's right after '/chat?char=...').
 
 ![image](https://user-images.githubusercontent.com/55811932/208032897-71a459f4-4db3-47b0-a042-d772a3f0c01b.png)
 
-12. Go to your server and run bot command `set <id>`
+13. Go to your server and run bot command `set <id>`
 	- (Bot will automatically set it's avatar and nickname)
 
 ![chrome_NJ88RGQgdn](https://user-images.githubusercontent.com/55811932/208912215-8ecbb70b-5f12-4739-9b6d-20bfebbe81eb.gif)
 
-**13. Enjoy converstaion!**
+**14. Enjoy converstaion!**
 
 ## Additional configuration
 - If you want to give other users ability to configure a bot, give them a role and place it's name in `discord_bot_role`.

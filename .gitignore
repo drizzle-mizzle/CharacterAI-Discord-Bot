@@ -6,3 +6,5 @@ obj/
 src/bin/Debug/net6.0/Config.json
 src/bin/Debug/net6.0/img/characterAvatar.avif
 src/bin/Debug/net6.0/characterAvatar.avif
+bin/Debug/net7.0/win-x64/
+bin/Debug/net7.0/img/characterAvatar.webp

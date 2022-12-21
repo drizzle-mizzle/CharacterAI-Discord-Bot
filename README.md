@@ -7,7 +7,10 @@ Simple integration with https://beta.character.ai service which you can use to a
 > Also, I have to note that I'm very new to .NET and C#, so my code can be (and it is) kinda awful. Whole thing was made just for fun and with self-educational intentions.
 
 ##  How to set up
+> There are some big updates were made.
+> This section will be updated soon.
 1. Create a new Discord application with bot (you can easily find guide on the internet, so I won't focus on this part here).
+ (don't forget to enable all "Intents" switchers)
 2. Get your bot token and place it in `Precompiled/_YOUR_OS_/Config.json file.`.
 3. Create character.ai account if you don't have one.
 4. Sign in, open DevTools (<Ctrl+Shift+J> in Chrome), find "Network" page and go to the "Fetch/XHR" section.
@@ -34,13 +37,9 @@ Simple integration with https://beta.character.ai service which you can use to a
 
 ![image](https://user-images.githubusercontent.com/55811932/208032897-71a459f4-4db3-47b0-a042-d772a3f0c01b.png)
 
-12. Go to your server and run bot command `@BOT_NAME !set-character <id>`
-
-![image](https://user-images.githubusercontent.com/55811932/208030503-f7e9cac8-4b13-4900-976c-671af16861ad.png)
+12. Go to your server and run bot command `!ai set <id>`
 
 (Bot will automatically set it's avatar and nickname)
-
-![image](https://user-images.githubusercontent.com/55811932/208030592-885e1755-62b3-455a-a608-054f36770c72.png)
 
 **13. Enjoy converstaion!**
 
@@ -60,5 +59,5 @@ If you add a nickname and a quote to your reply, the character will, usually, un
 ![image](https://user-images.githubusercontent.com/55811932/208031792-d971acc6-afca-4bf4-8888-f287679c4f8b.png)
 ![image](https://user-images.githubusercontent.com/55811932/208032085-301df36b-e335-49af-9974-65b617c73f74.png)
 
-This feature is disabled by default, but you can easily enable it with `@BOT_NAME !audience-toggle`.
+This feature is disabled by default, but you can easily enable it with `@BOT_NAME amode`.
 

@@ -41,7 +41,7 @@ Simple integration with https://beta.character.ai service which you can use to a
 
 8. Copy it's value and place in `char_ai_user_token` field in `Config.json` file.
 9. Launch the bot:
-	- **Windows:**
+  - **Windows:**
 		- Go to the `bin` folder.
 		- Simply run **CharacterAI_Discord_Bot.exe**
   - **Linux**

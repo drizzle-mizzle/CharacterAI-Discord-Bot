@@ -42,12 +42,12 @@ Simple integration with https://beta.character.ai service which you can use to a
 8. Copy it's value and place in `char_ai_user_token` field in `Config.json` file.
 9. Launch the bot:
   - **Windows:**
-		- Go to the `bin` folder.
-		- Simply run **CharacterAI_Discord_Bot.exe**
+    - Go to the `bin` folder.
+    - Simply run **CharacterAI_Discord_Bot.exe**
   - **Linux**
-		- Go to the `bin` folder.
-		- Execute `chmod 777 ./CharacterAI_Discord_Bot`
-		- Run `./CharacterAI_Discord_Bot`
+    - Go to the `bin` folder.
+    - Execute `chmod 777 ./CharacterAI_Discord_Bot`
+    - Run `./CharacterAI_Discord_Bot`
 10. Open a chat with a character you want to add on your server.
 11. In adress bar locate and copy character's id (it's right after '/chat?char=...').
 

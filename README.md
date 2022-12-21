@@ -12,6 +12,10 @@ Simple integration with https://beta.character.ai service which you can use to a
 
 ![chrome_lqjAER1cug](https://user-images.githubusercontent.com/55811932/208914718-5e6fa518-da30-4807-92c7-c2238f4bef87.gif)
 
+> **Planned:**
+> - Answers swiping
+> - Imbedded character search+selection menu
+
 ## Commands
 - `set character <id>` - set character by id
 	- Aliases: `sc`, `set`

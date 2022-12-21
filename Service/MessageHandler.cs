@@ -46,38 +46,33 @@ namespace CharacterAI_Discord_Bot.Service
 
             // Calling character
             using (message.Channel.EnterTypingState())
-            {
-                string text = RemoveMention(message.Content);
-                string imgPath = "";
-                if (message.Attachments.Any())
-                {
-                    string url = message.Attachments.First().Url;
-                    if ((await DownloadImg(url) is byte[] img) && integration.UploadImg(img) is Task<string> path)
-                        imgPath = $"https://characterai.io/i/400/static/user/{path}";
-                }
-
-                if (integration.audienceMode)
-                {
-                    // Test feature that makes character aware that he's talking to many different people
-                    string author = message.Author.Username;
-                    if (!string.IsNullOrEmpty(text) && !string.IsNullOrWhiteSpace(text)) 
-                        text = $"User [{author}] says:\n{text}";
-                    if (message.ReferencedMessage != null)
-                        text = $"(In response to: \"{RemoveMention(message.ReferencedMessage.Content)}\")\n{text}";
-                }
-
-                string[] reply = await integration.CallCharacter(text, imgPath);
-                byte[]? image = await DownloadImg(reply[1]);
-
-                if (string.IsNullOrEmpty(reply[1]) || image is null)
-                    // If no attachments
-                    await message.ReplyAsync(reply[0]);
-                else
-                    // If has attachments
-                    await ReplyWithImage(message, image, text: reply[0]);
-            }
+                Task.Run(() => { CallCharacterAsync(message); } ).Wait();
 
             return;
+        }
+
+        private async Task CallCharacterAsync(SocketUserMessage message)
+        {
+            string text = RemoveMention(message.Content);
+            string imgPath = "";
+            if (message.Attachments.Any())
+            {   // Gets first image from attachments and uploads it to server
+                string url = message.Attachments.First().Url;
+                if ((await DownloadImg(url) is byte[] img) && integration.UploadImg(img) is Task<string> path)
+                    imgPath = $"https://characterai.io/i/400/static/user/{path}";
+            }
+
+            if (integration.audienceMode)
+                text = MakeItThreadMessage(text, message);
+
+            string[] reply = await integration.CallCharacter(text, imgPath);
+            byte[]? image = await DownloadImg(reply[1]);
+
+            if (string.IsNullOrEmpty(reply[1]) || image is null)
+                // If no attachments
+                await message.ReplyAsync(reply[0]);
+            else // If has attachments
+                await ReplyWithImage(message, image, text: reply[0]);
         }
 
         private static async Task ReplyWithImage(SocketUserMessage message, byte[] image, string text)
@@ -93,6 +88,18 @@ namespace CharacterAI_Discord_Bot.Service
 
             var mRef = new MessageReference(messageId: message.Id);
             await message.Channel.SendFileAsync(tempImgPath, text, messageReference: mRef);
+        }
+
+        // Test feature that makes character aware that he's talking to many different people
+        private static string MakeItThreadMessage(string text, SocketUserMessage message)
+        {
+            string author = message.Author.Username;
+            if (!string.IsNullOrEmpty(text) && !string.IsNullOrWhiteSpace(text))
+                text = $"User [{author}] says:\n{text}";
+            if (message.ReferencedMessage != null)
+                text = $"(In response to: \"{RemoveMention(message.ReferencedMessage.Content)}\")\n{text}";
+
+            return text;
         }
 
         public async Task InitializeAsync()

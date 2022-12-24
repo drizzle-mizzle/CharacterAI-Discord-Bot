@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace CharacterAI_Discord_Bot.Service
 {
-    public class CommonService
+    public partial class CommonService
     {
         public static readonly dynamic Config = GetConfig();
         public static readonly string imgPath = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + ".." + Path.DirectorySeparatorChar + "img" + Path.DirectorySeparatorChar;
@@ -37,13 +37,15 @@ namespace CharacterAI_Discord_Bot.Service
 
         public static string RemoveMention(string text)
         {
-            var rgx = new Regex(@"\<(.*?)\>");
-            text = rgx.Replace(text, "", 1);
+            text = text.Trim(' ');
+            // Remove first mention
+            if (text.StartsWith("<"))
+                text = MyRegex().Replace(text, "", 1);
+            // Remove prefix
+            foreach (string prefix in Config.botPrefixes)
+                text = text.Replace(prefix, "");
 
-            foreach(var prefix in Config.botPrefixes)
-                text.Replace(prefix, "");
-
-            return text.Trim(' ');
+            return text;
         }
 
         public static async Task<byte[]?> DownloadImg(string url)
@@ -107,6 +109,9 @@ namespace CharacterAI_Discord_Bot.Service
                 return null;
             }
         }
+
+        [GeneratedRegex("\\<(.*?)\\>")]
+        private static partial Regex MyRegex();
 
         // probably not useless
         //public static async Task CreateRole(DiscordSocketClient client)

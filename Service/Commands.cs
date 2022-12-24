@@ -17,9 +17,16 @@ namespace CharacterAI_Discord_Bot.Service
 
         [Command("set character")]
         [Alias("sc", "set")]
-        public async Task SetCharacter(string charID)
+        public Task SetCharacter(string charID)
         {
-            if (!ValidateBotRole()) { await NoPermissionAlert(); return; }
+            if (!ValidateBotRole()) NoPermissionAlert();
+            else Task.Run(() => SetCharacterAsync(charID));
+
+            return Task.CompletedTask;
+        }
+
+        public async Task SetCharacterAsync(string charID)
+        {
             if (!await _handler.integration.Setup(charID)) { await Context.Message.ReplyAsync("⚠️ Failed to set character!"); return; }
 
             var charInfo = _handler.integration.charInfo;
@@ -76,12 +83,15 @@ namespace CharacterAI_Discord_Bot.Service
             return user.Roles.Contains(requiredRole);
         }
 
-        private async Task NoPermissionAlert()
+        private Task NoPermissionAlert()
         {
-            if (string.IsNullOrEmpty(nopowerPath) || !File.Exists(nopowerPath)) return;
+            if (!string.IsNullOrEmpty(nopowerPath) || File.Exists(nopowerPath))
+            {
+                var mRef = new MessageReference(messageId: Context.Message.Id);
+                Task.Run(() => Context.Channel.SendFileAsync(nopowerPath, messageReference: mRef));
+            }
 
-            var mRef = new MessageReference(messageId: Context.Message.Id);
-            await Context.Channel.SendFileAsync(nopowerPath, messageReference: mRef);
+            return Task.CompletedTask;
         }
 
         private async Task UpdatePlayingStatus()

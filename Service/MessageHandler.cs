@@ -21,42 +21,41 @@ namespace CharacterAI_Discord_Bot.Service
             _client = services.GetRequiredService<DiscordSocketClient>();
             integration = new Integration(Config.userToken);
 
-            _client.MessageReceived += HandleMessageAsync;
+            _client.MessageReceived += HandleMessage;
         }
 
-        public async Task HandleMessageAsync(SocketMessage rawMessage)
+        public Task HandleMessage(SocketMessage rawMessage)
         {
             int argPos = 0;
             var message = rawMessage as SocketUserMessage;
-            var context = new SocketCommandContext(_client, message);
             string[] prefixes = Config.botPrefixes;
 
-            // Return if no mention, no prefix and no reply
-            if (!message.HasMentionPrefix(_client.CurrentUser, ref argPos) &&
-                !prefixes.Any(p => message.HasStringPrefix(p, ref argPos)) &&
-                !(message.ReferencedMessage != null && message.ReferencedMessage.Author.Id == _client.CurrentUser.Id))
-                return;
+            bool hasMention = message.HasMentionPrefix(_client.CurrentUser, ref argPos);
+            bool hasPrefix = !hasMention && prefixes.Any(p => message.HasStringPrefix(p, ref argPos));
+            bool hasReply = !hasPrefix && !hasMention && message.ReferencedMessage != null && message.ReferencedMessage.Author.Id == _client.CurrentUser.Id; // SO FUCKING BIG UUUGHH!
 
-            // Execute and return if message was a command
-            var cmdResponse = await _commands.ExecuteAsync(context, argPos, _services);
-            if (cmdResponse.IsSuccess) return;
+            if (hasMention || hasPrefix || hasReply)
+            {
+                var context = new SocketCommandContext(_client, message);
+                var cmdResponse = _commands.ExecuteAsync(context, argPos, _services).Result;
 
-            // Return if try to call a character before it was set up
-            if (integration.charInfo.CharID == null) { await message.ReplyAsync("⚠ Set a character first"); return; }
+                if (!cmdResponse.IsSuccess)
+                    using (message.Channel.EnterTypingState())
+                        Task.Run(() => CallCharacterAsync(message));
+            }
 
-            // Calling character
-            using (message.Channel.EnterTypingState())
-                Task.Run(() => { CallCharacterAsync(message); } ).Wait();
-
-            return;
+            return Task.CompletedTask;
         }
 
         private async Task CallCharacterAsync(SocketUserMessage message)
         {
+            // Return if try to call a character before it was set up
+            if (integration.charInfo.CharID == null) { await message.ReplyAsync("⚠ Set a character first"); return; }
+
             string text = RemoveMention(message.Content);
             string imgPath = "";
             if (message.Attachments.Any())
-            {   // Gets first image from attachments and uploads it to server
+            {   // Downloads first image from attachments and uploads it to server
                 string url = message.Attachments.First().Url;
                 if ((await DownloadImg(url) is byte[] img) && integration.UploadImg(img) is Task<string> path)
                     imgPath = $"https://characterai.io/i/400/static/user/{path}";
@@ -66,13 +65,12 @@ namespace CharacterAI_Discord_Bot.Service
                 text = MakeItThreadMessage(text, message);
 
             string[] reply = await integration.CallCharacter(text, imgPath);
-            byte[]? image = await DownloadImg(reply[1]);
-
-            if (string.IsNullOrEmpty(reply[1]) || image is null)
-                // If no attachments
-                await message.ReplyAsync(reply[0]);
-            else // If has attachments
-                await ReplyWithImage(message, image, text: reply[0]);
+            using (message.Channel.EnterTypingState())
+                // If has attachments
+                if (reply[1] != "" && await DownloadImg(reply[1]) is byte[] image)
+                    await ReplyWithImage(message, image, text: reply[0]);
+                else // If no attachments
+                    await message.ReplyAsync(reply[0]);
         }
 
         private static async Task ReplyWithImage(SocketUserMessage message, byte[] image, string text)
@@ -90,6 +88,7 @@ namespace CharacterAI_Discord_Bot.Service
             await message.Channel.SendFileAsync(tempImgPath, text, messageReference: mRef);
         }
 
+        
         // Test feature that makes character aware that he's talking to many different people
         private static string MakeItThreadMessage(string text, SocketUserMessage message)
         {

@@ -19,20 +19,23 @@ namespace CharacterAI_Discord_Bot.Service
 
         public async Task<bool> Setup(string charID)
         {
-            Log("\nStaring character setup...\n", ConsoleColor.Yellow);
+            Log("\n" + new string ('>', 50), ConsoleColor.Green);
+            Log("\nStarting character setup...\n", ConsoleColor.Yellow);
+            Log("(ID: " + charID + ")\n\n", ConsoleColor.DarkMagenta);
             charInfo.CharID = charID;
 
-            if (!await GetInfo()) return Failure("Setup has been aborted");
-            if (!await GetHistory()) return Failure("Setup has been aborted"); ;
+            if (!await GetInfo()) return Failure($"\nSetup has been aborted\n{new string('<', 50)}\n");
+            if (!await GetHistory()) return Failure($"\nSetup has been aborted\n{new string('<', 50)}\n");
             await DownloadAvatar();
 
-            Log("CharacterAI - ");
-            Log("Connected\n\n", ConsoleColor.Yellow);
-            Log($" [{charInfo.Name}]\n", ConsoleColor.Cyan);
-            Log($"{charInfo.Greeting}\n");
-            Log($"\"{charInfo.Description}\"\n");
+            Log("\nCharacterAI - Connected\n\n", ConsoleColor.Green);
+            Log($" [{charInfo.Name}]\n\n", ConsoleColor.Cyan);
+            Log($"{charInfo.Greeting}\n"); 
+            if (!string.IsNullOrEmpty(charInfo.Description))
+                Log($"\"{charInfo.Description}\"\n");
+            Log("\nSetup complete\n", ConsoleColor.Yellow);
 
-            return Success("Setup complete\n");
+            return Success(new string('<', 50) + "\n");
         }
 
         public async Task<string[]> CallCharacter(string msg, string imgPath)
@@ -162,7 +165,7 @@ namespace CharacterAI_Discord_Bot.Service
         private async Task<bool> CreateNewDialog()
         {
             Log("No chat history found\n", ConsoleColor.Magenta);
-            Log("Creating new dialog... ");
+            Log(" Creating new dialog... ", ConsoleColor.DarkCyan);
 
             HttpRequestMessage request = new(HttpMethod.Post, "https://beta.character.ai/chat/history/create/")
             {
@@ -173,13 +176,13 @@ namespace CharacterAI_Discord_Bot.Service
 
             using var response = await _httpClient.SendAsync(request);
             if (!response.IsSuccessStatusCode)
-                return Failure("Error!\n Request failed! (https://beta.character.ai/chat/history/create/)");
+                return Failure("Error!\n  Request failed! (https://beta.character.ai/chat/history/create/)");
 
             var content = await response.Content.ReadAsStringAsync();
             try { _historyExternalId = JsonConvert.DeserializeObject<dynamic>(content).external_id; }
             catch (Exception e) { return Failure("Something went wrong...\n" + e.ToString()); }
 
-            return Success();
+            return true;
         }
 
         private async Task<bool> DownloadAvatar()
@@ -190,9 +193,9 @@ namespace CharacterAI_Discord_Bot.Service
             try { if (File.Exists(avatarPath)) File.Delete(avatarPath); }
             catch (Exception e) { return Failure("Something went wrong...\n" + e.ToString()); }
 
-            var avatar = File.Create(avatarPath);
-            
+            using var avatar = File.Create(avatarPath);
             using var response = await _httpClient.GetAsync(charInfo.AvatarUrl);
+
             if (response.IsSuccessStatusCode)
             {
                 try { image = await response.Content.ReadAsStreamAsync(); }
@@ -200,17 +203,16 @@ namespace CharacterAI_Discord_Bot.Service
             }
             else
             {
-                Failure($"Error!\n Request failed! ({charInfo.AvatarUrl})");
-                Log("Setting default avatar... ", ConsoleColor.DarkCyan);
+                Log($"Error! Request failed! ({charInfo.AvatarUrl})\n", ConsoleColor.Magenta);
+                Log(" Setting default avatar... ", ConsoleColor.DarkCyan);
 
                 try { image = new FileStream(defaultAvatarPath, FileMode.Open); }
-                catch { return Failure(@"Something went wrong. Check if img/defaultAvatar.webp does exist."); }
+                catch { return Failure($"Something went wrong.\n   Check if img/defaultAvatar.webp does exist."); }
             }
             image.CopyTo(avatar);
             image.Close();
-            avatar.Close();
 
-            return Success("OK\n");
+            return Success("OK");
         }
 
         public async Task<string?> UploadImg(byte[] img)

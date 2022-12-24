@@ -30,18 +30,24 @@ namespace CharacterAI_Discord_Bot
             await Task.Delay(-1);
         }
 
-        public async Task OnClientReady()
+        public Task OnClientReady()
         {
             if (Config.autoSetupEnabled)
-                await AutoSetup(_services, _client);
+                Task.Run(() => AutoSetup(_services, _client));
+
+            return Task.CompletedTask;
         }
 
         private static ServiceProvider CreateServices()
         {
-            var clientConfig = new DiscordSocketConfig()
+            var clientConfig = new DiscordSocketConfig
             {
                 GatewayIntents = GatewayIntents.All
+                ^ GatewayIntents.GuildPresences
+                ^ GatewayIntents.GuildScheduledEvents
+                ^ GatewayIntents.GuildInvites
             };
+
             var services = new ServiceCollection();
             services.AddSingleton(new DiscordSocketClient(clientConfig))
                     .AddSingleton(new CommandService())

@@ -6,10 +6,10 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 > (The service is currently in beta test state, and it does not have any public API documentation. In this regard, I could not find any convenient way to log into account, aside from clumsy one described below, and I also cannot guarantee that this bot will not suddenly stop working in any moment when CharacterAI's developers will make another update :P)
 
 ## Features
-- Talk with any characters on your own server and change them on the wing.
+- Talk with any character on your own server and change them on the wing.
 - Automatically sets the name and profile picture of the character.
-- Supports sending and receiving of images (you can use it for **image generating** bots).
-- Experimental *audience mode* feature that makes your character a *real* participant of the conversation!
+- Supports sending and receiving of images from character.
+- Experimental *audience mode* feature that makes your character a *real* part of the conversation.
 
 ![chrome_lqjAER1cug](https://user-images.githubusercontent.com/55811932/208914718-5e6fa518-da30-4807-92c7-c2238f4bef87.gif)
 

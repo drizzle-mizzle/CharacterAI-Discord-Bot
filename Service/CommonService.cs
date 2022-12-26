@@ -8,7 +8,7 @@ namespace CharacterAI_Discord_Bot.Service
 {
     public partial class CommonService
     {
-        public static readonly dynamic Config = GetConfig();
+        public static readonly dynamic Config = GetConfig()!;
         public static readonly string imgPath = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + ".." + Path.DirectorySeparatorChar + "img" + Path.DirectorySeparatorChar;
         public static readonly string avatarPath = imgPath + "characterAvatar.webp";
         public static readonly string defaultAvatarPath = imgPath + "defaultAvatar.webp";
@@ -90,17 +90,17 @@ namespace CharacterAI_Discord_Bot.Service
             using StreamReader configJson = new StreamReader(path);
             try
             {
-                var configParsed = (JObject)JsonConvert.DeserializeObject(configJson.ReadToEnd());
+                var configParsed = (JObject)JsonConvert.DeserializeObject(configJson.ReadToEnd())!;
                 return new
                 {
-                    userToken = configParsed["char_ai_user_token"].Value<string>(),
-                    botToken = configParsed["discord_bot_token"].Value<string>(),
-                    botRole = configParsed["discord_bot_role"].Value<string>(),
-                    botPrefixes = JsonConvert.DeserializeObject<string[]>(configParsed["discord_bot_prefixes"].ToString()),
-                    defaultAudienceMode = bool.Parse(configParsed["default_audience_mode"].Value<string>()),
-                    nopower = configParsed["default_no_permission_file"].Value<string>(),
-                    autoSetupEnabled = bool.Parse(configParsed["auto_setup"].Value<string>()),
-                    autoCharID = configParsed["auto_char_id"].Value<string>()
+                    userToken = configParsed["char_ai_user_token"]!.Value<string>(),
+                    botToken = configParsed["discord_bot_token"]!.Value<string>(),
+                    botRole = configParsed["discord_bot_role"]!.Value<string>(),
+                    botPrefixes = JsonConvert.DeserializeObject<string[]>(configParsed["discord_bot_prefixes"]!.ToString()),
+                    defaultAudienceMode = bool.Parse(configParsed["default_audience_mode"]!.Value<string>()!),
+                    nopower = configParsed["default_no_permission_file"]!.Value<string>(),
+                    autoSetupEnabled = bool.Parse(configParsed["auto_setup"]!.Value<string>()!),
+                    autoCharID = configParsed["auto_char_id"]!.Value<string>()
                 };
             }
             catch

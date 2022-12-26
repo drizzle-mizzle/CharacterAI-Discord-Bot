@@ -75,7 +75,7 @@ namespace CharacterAI_Discord_Bot.Service
         private bool ValidateBotRole()
         {
             var user = Context.User as SocketGuildUser;
-            if (user.Id == Context.Guild.OwnerId) return true;
+            if (user!.Id == Context.Guild.OwnerId) return true;
 
             var roles = (user as IGuildUser).Guild.Roles;
             var requiredRole = roles.FirstOrDefault(role => role.Name == Config.botRole);

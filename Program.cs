@@ -8,8 +8,8 @@ namespace CharacterAI_Discord_Bot
 {
     public class Program : CommonService
     {
-        private ServiceProvider _services;
-        private DiscordSocketClient _client;
+        private ServiceProvider _services = null!;
+        private DiscordSocketClient _client = null!;
         static void Main()
             => new Program().MainAsync().GetAwaiter().GetResult();
 

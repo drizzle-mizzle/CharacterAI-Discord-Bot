@@ -7,6 +7,7 @@ using System.Reflection;
 
 namespace CharacterAI_Discord_Bot.Service
 {
+
     public class MessageHandler : CommonService
     {
         private readonly DiscordSocketClient _client;
@@ -26,8 +27,10 @@ namespace CharacterAI_Discord_Bot.Service
 
         public Task HandleMessage(SocketMessage rawMessage)
         {
-            int argPos = 0;
             var message = rawMessage as SocketUserMessage;
+            if (message is null) return Task.CompletedTask;
+
+            int argPos = 0;
             string[] prefixes = Config.botPrefixes;
 
             bool hasMention = message.HasMentionPrefix(_client.CurrentUser, ref argPos);

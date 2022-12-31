@@ -14,7 +14,7 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 ![chrome_lqjAER1cug](https://user-images.githubusercontent.com/55811932/208914718-5e6fa518-da30-4807-92c7-c2238f4bef87.gif)
 
 > **Planned:**
-> - Answers swiping
+> - Answers swiping (This already works, but I can't get the user's messages to be sent in response to the selected answer)
 > - Imbedded character search+selection menu
 
 ## Commands

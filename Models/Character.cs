@@ -15,5 +15,6 @@ namespace CharacterAI_Discord_Bot
         public string? Description { get; set; }
         public string? Tgt { get; set; }
         public string? AvatarUrl { get; set; }
+        public string? HistoryExternalID { get; set; }
     }
 }

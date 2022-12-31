@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System.Text.RegularExpressions;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
+using Discord;
 
 namespace CharacterAI_Discord_Bot.Service
 {
@@ -40,7 +41,7 @@ namespace CharacterAI_Discord_Bot.Service
             text = text.Trim(' ');
             // Remove first mention
             if (text.StartsWith("<"))
-                text = MyRegex().Replace(text, "", 1);
+                text = new Regex("\\<(.*?)\\>").Replace(text, "", 1);
             // Remove prefix
             foreach (string prefix in Config.botPrefixes)
                 text = text.Replace(prefix, "");
@@ -63,14 +64,36 @@ namespace CharacterAI_Discord_Bot.Service
             return null;
         }
 
-        public static bool Success(string logText = "")
+        // Test feature that makes character aware that he's talking to many different people
+        public static string MakeItThreadMessage(string text, SocketUserMessage message)
+        {
+            string author = message.Author.Username;
+            if (!string.IsNullOrEmpty(text) && !string.IsNullOrWhiteSpace(text))
+                text = $"User [{author}] says:\n{text}";
+            if (message.ReferencedMessage != null)
+                text = $"(In response to: \"{RemoveMention(message.ReferencedMessage.Content)}\")\n{text}";
+
+            return text;
+        }
+
+        public static async Task SetArrowButtons(IUserMessage? message)
+        {
+            if (message is null) return;
+
+            var btn1 = new Emoji("\u2B05");
+            var btn2 = new Emoji("\u27A1");
+
+            await message.AddReactionsAsync(new Emoji[] { btn1, btn2 });
+        }
+
+        public static bool SuccessLog(string logText = "")
         {
             Log(logText + "\n", ConsoleColor.Green);
 
             return true;
         }
 
-        public static bool Failure(string logText = "")
+        public static bool FailureLog(string logText = "")
         {
             Log(logText + "\n", ConsoleColor.Red);
 
@@ -105,13 +128,10 @@ namespace CharacterAI_Discord_Bot.Service
             }
             catch
             {
-                Failure("Something went wrong... Check your Config file.\n");
+                FailureLog("Something went wrong... Check your Config file.\n");
                 return null;
             }
         }
-
-        [GeneratedRegex("\\<(.*?)\\>")]
-        private static partial Regex MyRegex();
 
         // probably not useless
         //public static async Task CreateRole(DiscordSocketClient client)

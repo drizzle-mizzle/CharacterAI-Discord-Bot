@@ -45,7 +45,8 @@ namespace CharacterAI_Discord_Bot
                 GatewayIntents = GatewayIntents.All
                 ^ GatewayIntents.GuildPresences
                 ^ GatewayIntents.GuildScheduledEvents
-                ^ GatewayIntents.GuildInvites
+                ^ GatewayIntents.GuildInvites,
+                MessageCacheSize = 5
             };
 
             var services = new ServiceCollection();

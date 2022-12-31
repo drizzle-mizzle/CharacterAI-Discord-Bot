@@ -4,12 +4,11 @@ using System.Text.RegularExpressions;
 
 namespace CharacterAI_Discord_Bot.Service
 {
-    public partial class Integration : CommonService
+    public class Integration : IntegrationService
     {
         public Character charInfo = new();
         private readonly HttpClient _httpClient = new();
         private readonly string? _userToken;
-        private string? _historyExternalId;
         public bool audienceMode = false;
 
         public Integration(string userToken)
@@ -22,45 +21,26 @@ namespace CharacterAI_Discord_Bot.Service
             Log("\n" + new string ('>', 50), ConsoleColor.Green);
             Log("\nStarting character setup...\n", ConsoleColor.Yellow);
             Log("(ID: " + charID + ")\n\n", ConsoleColor.DarkMagenta);
-
             charInfo.CharID = charID;
-            if (!await GetInfo()) return Failure($"\nSetup has been aborted\n{new string('<', 50)}\n");
-            if (!await GetHistory()) return Failure($"\nSetup has been aborted\n{new string('<', 50)}\n");
+
+            if (!await GetInfo()) return FailureLog($"\nSetup has been aborted\n{new string('<', 50)}\n");
+            if (!await GetHistory()) return FailureLog($"\nSetup has been aborted\n{new string('<', 50)}\n");
 
             await DownloadAvatar();
 
-            Log("\nCharacterAI - Connected\n\n", ConsoleColor.Green);
-            Log($" [{charInfo.Name}]\n\n", ConsoleColor.Cyan);
-            Log($"{charInfo.Greeting}\n");
-            if (!string.IsNullOrEmpty(charInfo.Description))
-                Log($"\"{charInfo.Description}\"\n");
-            Log("\nSetup complete\n", ConsoleColor.Yellow);
+            SetupCompleteLog(charInfo);
 
-            return Success(new string('<', 50) + "\n");
+            return SuccessLog(new string('<', 50) + "\n");
         }
 
-        public async Task<string[]> CallCharacter(string msg, string imgPath)
+        public async Task<dynamic> CallCharacter(string msg, string imgPath, string? primaryMsg = null, string? parentMsg = null)
         {
-            var contentDict = new Dictionary<string, string>
+            var contentDict = BasicCallContent(charInfo, msg, imgPath);
+            if (parentMsg != null) contentDict.Add("parent_msg_id", parentMsg);
+            if (primaryMsg != null)
             {
-                { "character_external_id", charInfo.CharID! },
-                { "enable_tti", "true" },
-                { "history_external_id", _historyExternalId! },
-                { "text", msg },
-                { "tgt", charInfo.Tgt! },
-                { "ranking_method", "random" },
-                { "staging", "false" }
-            };
-
-            if (!string.IsNullOrEmpty(imgPath))
-            {
-                var imgParams = new string[] {
-                    "image_description_type", "AUTO_IMAGE_CAPTIONING",
-                    "image_origin_type", "UPLOADED",
-                    "image_rel_path", imgPath
-                };
-                for (var i = 0; i < imgParams.Length-1; i+=2)
-                    contentDict.Add(imgParams[i], imgParams[i+1]);
+                contentDict.Add("primary_msg_id", primaryMsg);
+                contentDict.Add("seen_msg_ids", "["+primaryMsg+"]");
             }
 
             HttpRequestMessage request = new(HttpMethod.Post, "https://beta.character.ai/chat/streaming/");
@@ -68,32 +48,26 @@ namespace CharacterAI_Discord_Bot.Service
             request = SetHeaders(request);
             request.Headers.Add("accept-encoding", "gzip");
 
+            // Sending message
             using var response = await _httpClient.SendAsync(request);
             if (!response.IsSuccessStatusCode)
             {
-                Failure("\nFailed to send message!\n" +
+                FailureLog("\nFailed to send message!\n" +
                         $"Details: { response }\n" +
                         $"Response: { await response.Content.ReadAsStringAsync() }\n" +
                         $"Request: { request?.Content?.ReadAsStringAsync().Result }");
 
-                return new string[2] { "⚠️ Failed to send message!", "" };
+                return "⚠️ Failed to send message!";
             }
             request.Dispose();
 
-            string content = await response.Content.ReadAsStringAsync();
-            string[] chunks = content.Split("\n");
+            // Getting answer
+            string[] chunks = (await response.Content.ReadAsStringAsync()).Split("\n");
             string finalChunk;
-
             try { finalChunk = chunks.First(c => JsonConvert.DeserializeObject<dynamic>(c)!.is_final_chunk == true); }
-            catch { return new string[2] { "⚠️ Message has been sent successfully, but something went wrong...", "" }; }
+            catch { return "⚠️ Message has been sent successfully, but something went wrong..."; }
 
-            // Temporary
-            var reply = JsonConvert.DeserializeObject<dynamic>(finalChunk).replies[0];
-            string replyText = reply.text;
-            string replyImage = reply.image_rel_path ?? "";
-            replyText = MyRegex().Replace(replyText, "\n\n");
-
-            return new string[2] { replyText, replyImage };
+            return JsonConvert.DeserializeObject<dynamic>(finalChunk);
         }
 
         private async Task<bool> GetInfo()
@@ -107,11 +81,11 @@ namespace CharacterAI_Discord_Bot.Service
             request = SetHeaders(request);
 
             using var response = await _httpClient.SendAsync(request);
-            if (!response.IsSuccessStatusCode) return Failure("Error!\n Request failed! (https://beta.character.ai/chat/character/info/)");
+            if (!response.IsSuccessStatusCode) return FailureLog("Error!\n Request failed! (https://beta.character.ai/chat/character/info/)");
 
             var content = await response.Content.ReadAsStringAsync();
             var charParsed = JsonConvert.DeserializeObject<dynamic>(content)?.character;
-            if (charParsed is null) return Failure("Something went wrong...");   
+            if (charParsed is null) return FailureLog("Something went wrong...");   
 
             charInfo.Name = charParsed.name;
             charInfo.Greeting = charParsed.greeting;
@@ -120,7 +94,7 @@ namespace CharacterAI_Discord_Bot.Service
             charInfo.Tgt = charParsed.participant__user__username;
             charInfo.AvatarUrl = $"https://characterai.io/i/400/static/avatars/{charParsed.avatar_file_name}";
 
-            return Success("OK");
+            return SuccessLog("OK");
         }
 
         private async Task<bool> GetHistory()
@@ -135,22 +109,22 @@ namespace CharacterAI_Discord_Bot.Service
 
             using var response = await _httpClient.SendAsync(request);
             if (!response.IsSuccessStatusCode)
-                return Failure("Error!\n Request failed! (https://beta.character.ai/chat/history/continue/)");
+                return FailureLog("Error!\n Request failed! (https://beta.character.ai/chat/history/continue/)");
 
             var content = await response.Content.ReadAsStringAsync();
             dynamic historyInfo;
 
             try { historyInfo = JsonConvert.DeserializeObject<dynamic>(content)!; }
-            catch (Exception e) { return Failure("Something went wrong...\n" + e.ToString()); }
+            catch (Exception e) { return FailureLog("Something went wrong...\n" + e.ToString()); }
 
             // If no status field, then history external_id is provided.
             if (historyInfo.status == null)
-                _historyExternalId = historyInfo.external_id;
+                charInfo.HistoryExternalID = historyInfo.external_id;
             // If there's status field, then response is "status: No Such History".
             else if (!await CreateNewDialog())
-                return Failure();
+                return FailureLog();
 
-            return Success("OK");
+            return SuccessLog("OK");
         }
 
         private async Task<bool> CreateNewDialog()
@@ -166,11 +140,11 @@ namespace CharacterAI_Discord_Bot.Service
 
             using var response = await _httpClient.SendAsync(request);
             if (!response.IsSuccessStatusCode)
-                return Failure("Error!\n  Request failed! (https://beta.character.ai/chat/history/create/)");
+                return FailureLog("Error!\n  Request failed! (https://beta.character.ai/chat/history/create/)");
 
             var content = await response.Content.ReadAsStringAsync();
-            try { _historyExternalId = JsonConvert.DeserializeObject<dynamic>(content)!.external_id; }
-            catch (Exception e) { return Failure("Something went wrong...\n" + e.ToString()); }
+            try { charInfo.HistoryExternalID = JsonConvert.DeserializeObject<dynamic>(content)!.external_id; }
+            catch (Exception e) { return FailureLog("Something went wrong...\n" + e.ToString()); }
 
             return true;
         }
@@ -181,7 +155,7 @@ namespace CharacterAI_Discord_Bot.Service
             Stream image;
 
             try { if (File.Exists(avatarPath)) File.Delete(avatarPath); }
-            catch (Exception e) { return Failure("Something went wrong...\n" + e.ToString()); }
+            catch (Exception e) { return FailureLog("Something went wrong...\n" + e.ToString()); }
 
             using var avatar = File.Create(avatarPath);
             using var response = await _httpClient.GetAsync(charInfo.AvatarUrl);
@@ -189,7 +163,7 @@ namespace CharacterAI_Discord_Bot.Service
             if (response.IsSuccessStatusCode)
             {
                 try { image = await response.Content.ReadAsStreamAsync(); }
-                catch (Exception e) { return Failure("Something went wrong...\n" + e.ToString()); }
+                catch (Exception e) { return FailureLog("Something went wrong...\n" + e.ToString()); }
             }
             else
             {
@@ -197,12 +171,12 @@ namespace CharacterAI_Discord_Bot.Service
                 Log(" Setting default avatar... ", ConsoleColor.DarkCyan);
 
                 try { image = new FileStream(defaultAvatarPath, FileMode.Open); }
-                catch { return Failure($"Something went wrong.\n   Check if img/defaultAvatar.webp does exist."); }
+                catch { return FailureLog($"Something went wrong.\n   Check if img/defaultAvatar.webp does exist."); }
             }
             image.CopyTo(avatar);
             image.Close();
 
-            return Success("OK");
+            return SuccessLog("OK");
         }
 
         public async Task<string?> UploadImg(byte[] img)
@@ -219,10 +193,10 @@ namespace CharacterAI_Discord_Bot.Service
             {
                 var content = await response.Content.ReadAsStringAsync();
                 try { return JsonConvert.DeserializeObject<dynamic>(content)!.value.ToString(); }
-                catch { Failure("Something went wrong"); return null; }
+                catch { FailureLog("Something went wrong"); return null; }
             }
 
-            Failure("\nRequest failed! (https://beta.character.ai/chat/upload-image/)\n");
+            FailureLog("\nRequest failed! (https://beta.character.ai/chat/upload-image/)\n");
             return null;
         }
 
@@ -252,10 +226,5 @@ namespace CharacterAI_Discord_Bot.Service
 
             return request!;
         }
-
-
-        // (3 or more) "\n\n\n..." -> (exactly 2) "\n\n"
-        [GeneratedRegex("(\\n){3,}")]
-        private static partial Regex MyRegex();
     }
 }

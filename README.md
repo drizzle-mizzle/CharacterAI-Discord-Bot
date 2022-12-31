@@ -9,7 +9,7 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 - Talk with any character on your own server and change them on the wing.
 - Automatically sets the name and profile picture of the character.
 - Supports sending and receiving of images from character.
-- Experimental *audience mode* feature that makes your character a *real* part of the conversation.
+- Experimental *audience mode* feature (read below).
 > **Planned:**
 > - Answers swiping (This one already halfway works, but I can't get the user's messages to be sent in response to selected answer)
 > - Imbedded character search+selection menu

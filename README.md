@@ -10,12 +10,11 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 - Automatically sets the name and profile picture of the character.
 - Supports sending and receiving of images from character.
 - Experimental *audience mode* feature that makes your character a *real* part of the conversation.
+> **Planned:**
+> - Answers swiping (This one already halfway works, but I can't get the user's messages to be sent in response to selected answer)
+> - Imbedded character search+selection menu
 
 ![chrome_lqjAER1cug](https://user-images.githubusercontent.com/55811932/208914718-5e6fa518-da30-4807-92c7-c2238f4bef87.gif)
-
-> **Planned:**
-> - Answers swiping (This already works, but I can't get the user's messages to be sent in response to the selected answer)
-> - Imbedded character search+selection menu
 
 ## Commands
 - `set character <id>` - set character by id

@@ -3,10 +3,11 @@ using Discord.WebSocket;
 using Discord.Commands;
 using Microsoft.Extensions.DependencyInjection;
 using CharacterAI_Discord_Bot.Service;
+using CharacterAI_Discord_Bot.Handlers;
 
 namespace CharacterAI_Discord_Bot
 {
-    public class Program : CommonService
+    public class Program : CommandsService
     {
         private ServiceProvider _services = null!;
         private DiscordSocketClient _client = null!;
@@ -25,7 +26,7 @@ namespace CharacterAI_Discord_Bot
 
             await _client.LoginAsync(TokenType.Bot, Config.botToken);
             await _client.StartAsync();
-            await _services.GetRequiredService<MessageHandler>().InitializeAsync();
+            await _services.GetRequiredService<CommandHandler>().InitializeAsync();
 
             await Task.Delay(-1);
         }
@@ -52,7 +53,7 @@ namespace CharacterAI_Discord_Bot
             var services = new ServiceCollection();
             services.AddSingleton(new DiscordSocketClient(clientConfig))
                     .AddSingleton(new CommandService())
-                    .AddSingleton<MessageHandler>();
+                    .AddSingleton<CommandHandler>();
 
             return services.BuildServiceProvider();
         }

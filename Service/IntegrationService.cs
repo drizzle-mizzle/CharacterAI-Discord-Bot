@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,29 +19,27 @@ namespace CharacterAI_Discord_Bot.Service
             Log("\nSetup complete\n", ConsoleColor.Yellow);
         }
         
-        public static Dictionary<string, string> BasicCallContent(Character charInfo, string msg, string imgPath)
+        public static dynamic BasicCallContent(Character charInfo, string msg, string imgPath)
         {
-            var content = new Dictionary<string, string>
-            {
-                { "character_external_id", charInfo.CharID! },
-                { "enable_tti", "true" },
-                { "history_external_id", charInfo.HistoryExternalID! },
-                { "text", msg },
-                { "tgt", charInfo.Tgt! },
-                { "ranking_method", "random" },
-                { "staging", "false" },
-                { "stream_every_n_steps", "16" },
-                { "chunks_to_pad", "8" },
-                { "is_proactive", "false" },
-
-            };
+            dynamic content = new ExpandoObject();
 
             if (!string.IsNullOrEmpty(imgPath))
             {
-                content.Add("image_description_type", "AUTO_IMAGE_CAPTIONING");
-                content.Add("image_origin_type", "UPLOADED");
-                content.Add("image_rel_path", "imgPath");
+                content.image_description_type = "AUTO_IMAGE_CAPTIONING";
+                content.image_origin_type = "UPLOADED";
+                content.image_rel_path = imgPath;
             }
+
+            content.character_external_id = charInfo.CharId!;
+            content.enable_tti = true;
+            content.history_external_id = charInfo.HistoryExternalId!;
+            content.text = msg;
+            content.tgt = charInfo.Tgt!;
+            content.ranking_method = "random";
+            content.staging = false;
+            content.stream_every_n_steps = 16;
+            content.chunks_to_pad = 8;
+            content.is_proactive = false;
 
             return content;
         }

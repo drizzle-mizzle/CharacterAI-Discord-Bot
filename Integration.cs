@@ -1,5 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System.Net.Http.Headers;
+using System.Reflection.PortableExecutable;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace CharacterAI_Discord_Bot.Service
@@ -21,7 +23,7 @@ namespace CharacterAI_Discord_Bot.Service
             Log("\n" + new string ('>', 50), ConsoleColor.Green);
             Log("\nStarting character setup...\n", ConsoleColor.Yellow);
             Log("(ID: " + charID + ")\n\n", ConsoleColor.DarkMagenta);
-            charInfo.CharID = charID;
+            charInfo.CharId = charID;
 
             if (!await GetInfo()) return FailureLog($"\nSetup has been aborted\n{new string('<', 50)}\n");
             if (!await GetHistory()) return FailureLog($"\nSetup has been aborted\n{new string('<', 50)}\n");
@@ -33,20 +35,24 @@ namespace CharacterAI_Discord_Bot.Service
             return SuccessLog(new string('<', 50) + "\n");
         }
 
-        public async Task<dynamic> CallCharacter(string msg, string imgPath, string? primaryMsg = null, string? parentMsg = null)
+        public async Task<dynamic> CallCharacter(string msg, string imgPath, int primaryMsgId = 0, int parentMsgId = 0)
         {
-            var contentDict = BasicCallContent(charInfo, msg, imgPath);
-            if (parentMsg != null) contentDict.Add("parent_msg_id", parentMsg);
-            if (primaryMsg != null)
+            var dynamicContent = BasicCallContent(charInfo, msg, imgPath);
+
+            if (parentMsgId != 0)
+                dynamicContent.parent_msg_id = parentMsgId;
+            if (primaryMsgId != 0)
             {
-                contentDict.Add("primary_msg_id", primaryMsg);
-                contentDict.Add("seen_msg_ids", "["+primaryMsg+"]");
+                dynamicContent.primary_msg_id = primaryMsgId;
+                dynamicContent.seen_msg_ids = new int[] { primaryMsgId };
             }
+            var requestContent = new ByteArrayContent(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(dynamicContent)));
+            requestContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
 
             HttpRequestMessage request = new(HttpMethod.Post, "https://beta.character.ai/chat/streaming/");
-            request.Content = new FormUrlEncodedContent(contentDict);
-            request = SetHeaders(request);
+            request.Content = requestContent;
             request.Headers.Add("accept-encoding", "gzip");
+            request = SetHeaders(request);
 
             // Sending message
             using var response = await _httpClient.SendAsync(request);
@@ -67,7 +73,7 @@ namespace CharacterAI_Discord_Bot.Service
             try { finalChunk = chunks.First(c => JsonConvert.DeserializeObject<dynamic>(c)!.is_final_chunk == true); }
             catch { return "⚠️ Message has been sent successfully, but something went wrong..."; }
 
-            return JsonConvert.DeserializeObject<dynamic>(finalChunk);
+            return JsonConvert.DeserializeObject<dynamic>(finalChunk)!;
         }
 
         private async Task<bool> GetInfo()
@@ -76,7 +82,7 @@ namespace CharacterAI_Discord_Bot.Service
 
             HttpRequestMessage request = new(HttpMethod.Post, "https://beta.character.ai/chat/character/info/");
             request.Content = new FormUrlEncodedContent(new Dictionary<string, string> {
-                { "external_id", charInfo.CharID! }
+                { "external_id", charInfo.CharId! }
             });
             request = SetHeaders(request);
 
@@ -103,7 +109,7 @@ namespace CharacterAI_Discord_Bot.Service
 
             HttpRequestMessage request = new(HttpMethod.Post, "https://beta.character.ai/chat/history/continue/");
             request.Content = new FormUrlEncodedContent(new Dictionary<string, string> {
-                { "character_external_id", charInfo.CharID! }
+                { "character_external_id", charInfo.CharId! }
             });
             request = SetHeaders(request);
 
@@ -119,7 +125,7 @@ namespace CharacterAI_Discord_Bot.Service
 
             // If no status field, then history external_id is provided.
             if (historyInfo.status == null)
-                charInfo.HistoryExternalID = historyInfo.external_id;
+                charInfo.HistoryExternalId = historyInfo.external_id;
             // If there's status field, then response is "status: No Such History".
             else if (!await CreateNewDialog())
                 return FailureLog();
@@ -134,7 +140,7 @@ namespace CharacterAI_Discord_Bot.Service
 
             HttpRequestMessage request = new(HttpMethod.Post, "https://beta.character.ai/chat/history/create/");
             request.Content = new FormUrlEncodedContent(new Dictionary<string, string> { 
-                { "character_external_id", charInfo.CharID! }
+                { "character_external_id", charInfo.CharId! }
             });
             request = SetHeaders(request);
 
@@ -143,7 +149,7 @@ namespace CharacterAI_Discord_Bot.Service
                 return FailureLog("Error!\n  Request failed! (https://beta.character.ai/chat/history/create/)");
 
             var content = await response.Content.ReadAsStringAsync();
-            try { charInfo.HistoryExternalID = JsonConvert.DeserializeObject<dynamic>(content)!.external_id; }
+            try { charInfo.HistoryExternalId = JsonConvert.DeserializeObject<dynamic>(content)!.external_id; }
             catch (Exception e) { return FailureLog("Something went wrong...\n" + e.ToString()); }
 
             return true;
@@ -208,11 +214,11 @@ namespace CharacterAI_Discord_Bot.Service
                 "Authorization", $"Token {_userToken}",
                 "accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
                 "accept-encoding", "deflate, br",
-                "ContentLength", request!.Content!.ToString()!.Length.ToString() ?? "0",
+                "ContentLength", request.Content!.ToString()!.Length.ToString() ?? "0",
                 "ContentType", "application/json",
                 "dnt", "1",
                 "Origin", "https://beta.character.ai",
-                "Referer", $"https://beta.character.ai/chat?char={charInfo.CharID}",
+                "Referer", $"https://beta.character.ai/chat?char={charInfo.CharId}",
                 "sec-ch-ua", "\"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"108\", \"Google Chrome\";v=\"108\"",
                 "sec-ch-ua-mobile", "?0",
                 "sec-ch-ua-platform", "Windows",
@@ -222,9 +228,9 @@ namespace CharacterAI_Discord_Bot.Service
                 "User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
             };
             for (int i = 0; i < headers.Length-1; i+=2)
-                request!.Headers.Add(headers[i], headers[i+1]);
+                request.Headers.Add(headers[i], headers[i+1]);
 
-            return request!;
+            return request;
         }
     }
 }

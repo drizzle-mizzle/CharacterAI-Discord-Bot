@@ -4,6 +4,9 @@ using System.Text.RegularExpressions;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using Discord;
+using System.Reflection.Metadata;
+using Discord.Commands;
+using Microsoft.VisualBasic;
 
 namespace CharacterAI_Discord_Bot.Service
 {
@@ -15,26 +18,6 @@ namespace CharacterAI_Discord_Bot.Service
         public static readonly string defaultAvatarPath = imgPath + "defaultAvatar.webp";
         public static readonly string tempImgPath = imgPath + "temp.webp";
         public static readonly string nopowerPath = imgPath + Config.nopower;
-        
-
-        public static async Task AutoSetup(ServiceProvider services, DiscordSocketClient client)
-        {
-            if (Config is null) return;
-
-            var integration = services.GetRequiredService<MessageHandler>().integration;
-            integration.audienceMode = Config.defaultAudienceMode;
-            if (!await integration.Setup(Config.autoCharID)) return;
-
-            string desc = integration.charInfo.CharID == null ? "No character selected" : $"Description: {integration.charInfo.Title}";
-            await client.SetGameAsync(desc + $" | Audience mode: " + (integration.audienceMode ? "✔️" : "✖️"));
-
-            using var fs = new FileStream(avatarPath, FileMode.Open);
-            await client.CurrentUser.ModifyAsync(u => { u.Avatar = new Discord.Image(fs); });
-
-            var guildID = client.Guilds.First().Id;
-            var botAsGuildUser = client.GetGuild(guildID).GetUser(client.CurrentUser.Id);
-            await botAsGuildUser.ModifyAsync(u => { u.Nickname = integration.charInfo.Name; });
-        }
 
         public static string RemoveMention(string text)
         {

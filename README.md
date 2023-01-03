@@ -6,7 +6,7 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 > (The service is currently in beta test state, and it does not have any public API documentation. In this regard, I could not find any convenient way to log into account, aside from clumsy one described below, and I also cannot guarantee that this bot will not suddenly stop working in any moment when CharacterAI's developers will make another update :P)
 
 ## Features
-- Talk with any character on your own server and change them on the wing.
+- Talk with any character on your own server and change them on the fly.
 - Automatically sets the name and profile picture of the character.
 - Supports answers swiping.
 - Supports sending and receiving of images from character.

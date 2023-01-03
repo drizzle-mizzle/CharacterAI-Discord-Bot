@@ -38,8 +38,8 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
     - Example: `rc 50` => `Probability of random answers was changed from 0% to 50%`
     - *(argument always required)*
     - *(keep in mind that with this feature enabled, commands can be executed without bot prefix/mention)*
-- `hunt! <@user_mention> - Make character always reply on messages of certain user
-- `unhunt! <@user_mention> - Stop hunting user
+- `hunt! <@user_mention>` - Make character always reply on messages of certain user
+- `unhunt! <@user_mention>` - Stop hunting user
 - `hunt chance <chance>` - Change the probability of replies to hunted user `in %`
 	- Alias: `hc`
 	- *(default value = 100)*

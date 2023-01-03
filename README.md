@@ -10,15 +10,33 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 - Automatically sets the name and profile picture of the character.
 - Supports answers swiping.
 - Supports sending and receiving of images from character.
+- 
 - Experimental *audience mode* feature (read below).
 
 ![chrome_lqjAER1cug](https://user-images.githubusercontent.com/55811932/208914718-5e6fa518-da30-4807-92c7-c2238f4bef87.gif)
 
 ## Commands
 - `set character <id>` - set character by id
-	- Aliases: `sc`, `set`
+	- Aliases: `set!`, `sc`
+    - Example: `set! thep9Jza4nSUQQ_ok7YCEI2uMim5oH9OXcVUyo5-C7E`
+- `reset character` - delete chat history and create a new one
+    - Alias: `reset!`
 - `audience toggle` - enable/disable audience mode (What is the audience mode - read below)
-	- Alias: `amode`
+	- Alias: `amode!`
+- `call user <@user_mention> <any text>` - Make character call other user (use it to make two bots talk to each other)
+    - Aliases: `call!`, `cu`
+    - Example: `call! @another_character Do you love donuts?`
+    - (if no text argument provided, default "Hey!" will be used)
+- `skip! <amount>` - Make character ignore next few messages (use it to stop bots' conversation)
+    - Alias: `delay!`
+    - Example: `skip! 2` => `Next 2 message(s) will be ignored`
+    - (if no amount argument provided, default '3' will be used)
+    - (commands will not be ignored, amount can be reduced with another call)
+- `reply chance <chance>` - Change the probability of random replies on new users' messages **(in %)**. It's better to use it with audience mode enabled."
+    - Alias: `rc`
+    - Example: `rc 50` => `Probability of random answers was changed from 0% to 50%`
+    - (argument always required)
+    - (keep in mind that with this feature enabled, commands can be executed without bot prefix/mention)
 - `ping` - check latency
 
 ##  How to set up

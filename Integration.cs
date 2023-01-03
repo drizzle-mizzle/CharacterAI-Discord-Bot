@@ -8,28 +8,29 @@ namespace CharacterAI_Discord_Bot.Service
 {
     public class Integration : IntegrationService
     {
+        public bool audienceMode = false;
         public Character charInfo = new();
         private readonly HttpClient _httpClient = new();
         private readonly string? _userToken;
-        public bool audienceMode = false;
 
         public Integration(string userToken)
         {
             _userToken = userToken;
         }
 
-        public async Task<bool> Setup(string charID)
+        public async Task<bool> Setup(string charID, bool reset)
         {
             Log("\n" + new string ('>', 50), ConsoleColor.Green);
             Log("\nStarting character setup...\n", ConsoleColor.Yellow);
             Log("(ID: " + charID + ")\n\n", ConsoleColor.DarkMagenta);
             charInfo.CharId = charID;
 
-            if (!await GetInfo()) return FailureLog($"\nSetup has been aborted\n{new string('<', 50)}\n");
-            if (!await GetHistory()) return FailureLog($"\nSetup has been aborted\n{new string('<', 50)}\n");
+            if (!await GetInfo() || !(reset ? await CreateNewDialog() : await GetHistory()))
+                return FailureLog($"\nSetup has been aborted\n{new string('<', 50)}\n");
+
+            Log("(History ID: " + charInfo.HistoryExternalId + ")\n", ConsoleColor.DarkMagenta);
 
             await DownloadAvatar();
-
             SetupCompleteLog(charInfo);
 
             return SuccessLog(new string('<', 50) + "\n");
@@ -127,20 +128,23 @@ namespace CharacterAI_Discord_Bot.Service
             if (historyInfo.status == null)
                 charInfo.HistoryExternalId = historyInfo.external_id;
             // If there's status field, then response is "status: No Such History".
-            else if (!await CreateNewDialog())
-                return FailureLog();
+            else
+            {
+                Log("No chat history found\n", ConsoleColor.Magenta);
+                return await CreateNewDialog();
+            }
 
             return SuccessLog("OK");
         }
 
         private async Task<bool> CreateNewDialog()
         {
-            Log("No chat history found\n", ConsoleColor.Magenta);
             Log(" Creating new dialog... ", ConsoleColor.DarkCyan);
 
             HttpRequestMessage request = new(HttpMethod.Post, "https://beta.character.ai/chat/history/create/");
             request.Content = new FormUrlEncodedContent(new Dictionary<string, string> { 
-                { "character_external_id", charInfo.CharId! }
+                { "character_external_id", charInfo.CharId! },
+                { "override_history_set", null! }
             });
             request = SetHeaders(request);
 
@@ -152,7 +156,7 @@ namespace CharacterAI_Discord_Bot.Service
             try { charInfo.HistoryExternalId = JsonConvert.DeserializeObject<dynamic>(content)!.external_id; }
             catch (Exception e) { return FailureLog("Something went wrong...\n" + e.ToString()); }
 
-            return true;
+            return SuccessLog("OK");
         }
 
         private async Task<bool> DownloadAvatar()

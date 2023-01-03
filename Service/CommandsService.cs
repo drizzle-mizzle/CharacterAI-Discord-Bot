@@ -3,7 +3,6 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using CharacterAI_Discord_Bot.Handlers;
-using System.Reflection.Metadata;
 
 namespace CharacterAI_Discord_Bot.Service
 {
@@ -15,7 +14,7 @@ namespace CharacterAI_Discord_Bot.Service
 
             var integration = services.GetRequiredService<CommandHandler>().integration;
             integration.audienceMode = Config.defaultAudienceMode;
-            if (await integration.Setup(Config.autoCharID) is false) return;
+            if (await integration.Setup(Config.autoCharID, reset: false) is false) return;
 
             var charInfo = integration.charInfo;
 
@@ -24,7 +23,7 @@ namespace CharacterAI_Discord_Bot.Service
             await SetBotAvatar(client.CurrentUser).ConfigureAwait(false);
         }
 
-        public static async Task<Task> SetCharacterAsync(string charID, CommandHandler handler, SocketCommandContext context)
+        public static async Task<Task> SetCharacterAsync(string charID, CommandHandler handler, SocketCommandContext context, bool reset = false)
         {
             var integration = handler.integration;
             ulong lastMsgId = handler.lastCharacterCallMsgId;
@@ -32,7 +31,7 @@ namespace CharacterAI_Discord_Bot.Service
             await HandlerService.RemoveButtons(lastMsgId, context.Message).ConfigureAwait(false);
             handler.lastResponse.SetDefaults();
 
-            if (await integration.Setup(charID) is false)
+            if (await integration.Setup(charID, reset: reset) is false)
                 return Task.Run(() => context.Message.ReplyAsync("⚠️ Failed to set character!"));
 
             var charInfo = integration.charInfo;
@@ -49,6 +48,13 @@ namespace CharacterAI_Discord_Bot.Service
                 UpdatePlayingStatus(charInfo, context.Client, integration.audienceMode).ConfigureAwait(false);
                 context.Message.ReplyAsync(reply);
             });
+        }
+
+        public static async Task ResetCharacterAsync(CommandHandler handler, SocketCommandContext context)
+        {
+            string charId = handler.integration.charInfo.CharId!;
+            await Task.Run(()
+                => SetCharacterAsync(charId, handler, context, reset: true)).ConfigureAwait(false);
         }
 
         public static async Task SetBotNickname(Character charInfo, DiscordSocketClient client)

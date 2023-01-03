@@ -10,6 +10,8 @@ namespace CharacterAI_Discord_Bot.Handlers
 {
     public class CommandHandler : HandlerService
     {
+        public int replyChance = 0;
+        public int skipMessages = 0;
         public ulong lastCharacterCallMsgId = 0;
         public readonly Integration integration;
         public readonly dynamic lastResponse;
@@ -40,9 +42,10 @@ namespace CharacterAI_Discord_Bot.Handlers
             _client.ReactionRemoved += HandleReaction;
         }
 
+        private static readonly Random RandomGen = new();
         private Task HandleMessage(SocketMessage rawMessage)
         {
-            if (rawMessage is not SocketUserMessage message)
+            if (rawMessage is not SocketUserMessage message || message.Author.Id == _client.CurrentUser.Id)
                 return Task.CompletedTask;
 
             int argPos = 0;
@@ -51,15 +54,21 @@ namespace CharacterAI_Discord_Bot.Handlers
             bool hasMention = message.HasMentionPrefix(_client.CurrentUser, ref argPos);
             bool hasPrefix = !hasMention && prefixes.Any(p => message.HasStringPrefix(p, ref argPos));
             bool hasReply = !hasPrefix && !hasMention && message.ReferencedMessage != null && message.ReferencedMessage.Author.Id == _client.CurrentUser.Id; // SO FUCKING BIG UUUGHH!
+            bool randomReply = replyChance >= RandomGen.Next(100);
 
-            if (hasMention || hasPrefix || hasReply)
+            if (hasMention || hasPrefix || hasReply || randomReply)
             {
                 var context = new SocketCommandContext(_client, message);
                 var cmdResponse = _commands.ExecuteAsync(context, argPos, _services).Result;
 
                 if (!cmdResponse.IsSuccess)
-                    using (message.Channel.EnterTypingState())
-                        Task.Run(() => CallCharacterAsync(message));
+                {
+                    if (skipMessages > 0)
+                        skipMessages--;
+                    else
+                        using (message.Channel.EnterTypingState())
+                            Task.Run(() => CallCharacterAsync(message));
+                }
             }
 
             return Task.CompletedTask;

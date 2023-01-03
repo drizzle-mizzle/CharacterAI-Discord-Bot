@@ -20,7 +20,7 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 - `set character <id>` - set character by id
 	- Aliases: `set!`, `sc`
     - Example: `set! thep9Jza4nSUQQ_ok7YCEI2uMim5oH9OXcVUyo5-C7E`
-- `reset character` - delete chat history and create a new one
+- `reset character` - save and start new chat
     - Alias: `reset!`
 - `audience toggle` - enable/disable audience mode *(What is the audience mode - read below)*
 	- Alias: `amode!`

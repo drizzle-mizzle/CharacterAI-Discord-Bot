@@ -53,7 +53,7 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 - Set `auto_setup` to `True` and specify `auto_char_id` with id of a character if you want bot to set character automatically after every relaunch. 
 
 ##  How to set up
-1. Download [last release](https://github.com/drizzle-mizzle/CharacterAI_Discord_Bot/releases)
+1. Download [last release](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/releases/tag/1.55_hotfix)
 2. Create a new Discord application with bot (you can easily find guide on the internet, so I won't focus on this part here).
 	- *(don't forget to enable all **"Privileged Gateway Intents"** switchers)*
 3. Get your bot token and place it in `Config.json` file.

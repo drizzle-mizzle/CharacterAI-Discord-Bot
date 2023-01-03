@@ -10,7 +10,8 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 - Automatically sets the name and profile picture of the character.
 - Supports answers swiping.
 - Supports sending and receiving of images from character.
-- 
+- Make bots talk to each other.
+- Random replies.
 - Experimental *audience mode* feature (read below).
 
 ![chrome_lqjAER1cug](https://user-images.githubusercontent.com/55811932/208914718-5e6fa518-da30-4807-92c7-c2238f4bef87.gif)

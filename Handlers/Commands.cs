@@ -79,7 +79,7 @@ namespace CharacterAI_Discord_Bot.Handlers
             if (!ValidateBotRole(Context)) await NoPermissionAlert(Context);
             else
             {
-                await Context.Message.ReplyAsync($"⚠ Probability of random answers was changed from {_handler.replyChance}% to {chance}%");
+                await Context.Message.ReplyAsync($"⚠ Probability of random replies was changed from {_handler.replyChance}% to {chance}%");
                 _handler.replyChance = chance;
             }
         }
@@ -107,7 +107,20 @@ namespace CharacterAI_Discord_Bot.Handlers
             }
         }
 
-        [Command("ping")]
+        [Command("hunt chance")]
+        [Summary("Change the probability of replies on hunted user (%)")]
+        [Alias("hc")]
+        public async Task HuntChance(int chance)
+        {
+            if (!ValidateBotRole(Context)) await NoPermissionAlert(Context);
+            else
+            {
+                await Context.Message.ReplyAsync($"⚠ Probability of replies for hunted users was changed from {_handler.huntChance}% to {chance}%");
+                _handler.huntChance = chance;
+            }
+        }
+
+        [Command("ping!")]
         public async Task Ping()
             => await Context.Message.ReplyAsync($"Pong! - {Context.Client.Latency} ms");
     }

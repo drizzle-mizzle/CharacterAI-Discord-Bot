@@ -52,11 +52,15 @@ namespace CharacterAI_Discord_Bot.Service
 
         public static async Task RemoveButtons(ulong lastMsgId, SocketUserMessage message)
         {
-            if (lastMsgId != 0)
+            if (lastMsgId == 0) return;
+            
+            try
             {
                 var lastMessage = await message.Channel.GetMessageAsync(lastMsgId);
-                await lastMessage.RemoveAllReactionsAsync().ConfigureAwait(false);
+                if (lastMessage is not null)
+                    await lastMessage.RemoveAllReactionsAsync();
             }
+            catch { Log("Failed to remove buttons from last message. Missing permission?\n", ConsoleColor.DarkGray); }
         }
 
         [GeneratedRegex("(\\n){3,}")]

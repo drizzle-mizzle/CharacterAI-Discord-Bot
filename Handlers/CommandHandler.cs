@@ -11,6 +11,7 @@ namespace CharacterAI_Discord_Bot.Handlers
     public class CommandHandler : HandlerService
     {
         public int replyChance = 0;
+        public int huntChance = 100;
         public int skipMessages = 0;
         public List<ulong> huntedUsers = new();
         public ulong lastCharacterCallMsgId = 0;
@@ -56,7 +57,7 @@ namespace CharacterAI_Discord_Bot.Handlers
             bool hasPrefix = !hasMention && prefixes.Any(p => message.HasStringPrefix(p, ref argPos));
             bool hasReply = !hasPrefix && !hasMention && message.ReferencedMessage != null && message.ReferencedMessage.Author.Id == _client.CurrentUser.Id; // SO FUCKING BIG UUUGHH!
             bool randomReply = replyChance >= RandomGen.Next(100);
-            bool huntedUser = huntedUsers.Contains(message.Author.Id);
+            bool huntedUser = huntedUsers.Contains(message.Author.Id) && huntChance >= RandomGen.Next(100);
 
             if (hasMention || hasPrefix || hasReply || huntedUser || randomReply)
             {
@@ -78,7 +79,7 @@ namespace CharacterAI_Discord_Bot.Handlers
 
         private Task HandleReaction(Cacheable<IUserMessage, ulong> rawMessage, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
         {
-            if (lastResponse.replies is null || rawMessage.Id.ToString() != lastCharacterCallMsgId.ToString())
+            if (lastResponse.replies is null || rawMessage.Id != lastCharacterCallMsgId)
                 return Task.CompletedTask;
 
             var message = rawMessage.DownloadAsync().Result;

@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
+using System.Threading.Channels;
 using System.Xml.Linq;
 using static CharacterAI_Discord_Bot.Service.CommandsService;
 using static CharacterAI_Discord_Bot.Service.CommonService;
@@ -80,6 +81,29 @@ namespace CharacterAI_Discord_Bot.Handlers
             {
                 await Context.Message.ReplyAsync($"⚠ Probability of random answers was changed from {_handler.replyChance}% to {chance}%");
                 _handler.replyChance = chance;
+            }
+        }
+
+        [Command("hunt!")]
+        [Summary("Reply on every user's message")]
+        public async Task Hunt(IUser user)
+        {
+            if (!ValidateBotRole(Context)) await NoPermissionAlert(Context);
+            else
+            {
+                await Context.Message.ReplyAsync($"👻 Hunting {user.Mention}!");
+                _handler.huntedUsers.Add(user.Id);
+            }
+        }
+
+        [Command("unhunt!")]
+        public async Task Ununt(IUser user)
+        {
+            if (!ValidateBotRole(Context)) await NoPermissionAlert(Context);
+            else
+            {
+                await Context.Message.ReplyAsync($"{user.Mention} is not hunted anymore 👻");
+                _handler.huntedUsers.Remove(user.Id);
             }
         }
 

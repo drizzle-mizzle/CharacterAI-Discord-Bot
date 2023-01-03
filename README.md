@@ -38,6 +38,8 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
     - Example: `rc 50` => `Probability of random answers was changed from 0% to 50%`
     - *(argument always required)*
     - *(keep in mind that with this feature enabled, commands can be executed without bot prefix/mention)*
+- `hunt! <@user_mention>` - Reply on every user's message
+- `unhunt! <@user_mention>` - Stop hunting
 - `ping` - check latency
 
 ## Additional configuration

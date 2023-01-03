@@ -12,6 +12,7 @@ namespace CharacterAI_Discord_Bot.Handlers
     {
         public int replyChance = 0;
         public int skipMessages = 0;
+        public List<ulong> huntedUsers = new();
         public ulong lastCharacterCallMsgId = 0;
         public readonly Integration integration;
         public readonly dynamic lastResponse;
@@ -42,7 +43,6 @@ namespace CharacterAI_Discord_Bot.Handlers
             _client.ReactionRemoved += HandleReaction;
         }
 
-        private static readonly Random RandomGen = new();
         private Task HandleMessage(SocketMessage rawMessage)
         {
             if (rawMessage is not SocketUserMessage message || message.Author.Id == _client.CurrentUser.Id)
@@ -50,13 +50,15 @@ namespace CharacterAI_Discord_Bot.Handlers
 
             int argPos = 0;
             string[] prefixes = Config.botPrefixes;
+            var RandomGen = new Random();
 
             bool hasMention = message.HasMentionPrefix(_client.CurrentUser, ref argPos);
             bool hasPrefix = !hasMention && prefixes.Any(p => message.HasStringPrefix(p, ref argPos));
             bool hasReply = !hasPrefix && !hasMention && message.ReferencedMessage != null && message.ReferencedMessage.Author.Id == _client.CurrentUser.Id; // SO FUCKING BIG UUUGHH!
             bool randomReply = replyChance >= RandomGen.Next(100);
+            bool huntedUser = huntedUsers.Contains(message.Author.Id);
 
-            if (hasMention || hasPrefix || hasReply || randomReply)
+            if (hasMention || hasPrefix || hasReply || huntedUser || randomReply)
             {
                 var context = new SocketCommandContext(_client, message);
                 var cmdResponse = _commands.ExecuteAsync(context, argPos, _services).Result;

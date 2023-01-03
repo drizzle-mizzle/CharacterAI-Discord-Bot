@@ -40,6 +40,16 @@ namespace CharacterAI_Discord_Bot.Service
             return await message.Channel.SendFileAsync(tempImgPath, text, messageReference: mRef);
         }
 
+        public static async Task SetArrowButtons(IUserMessage? message)
+        {
+            if (message is null) return;
+
+            var btn1 = new Emoji("\u2B05");
+            var btn2 = new Emoji("\u27A1");
+
+            await message.AddReactionsAsync(new Emoji[] { btn1, btn2 });
+        }
+
         public static async Task RemoveButtons(ulong lastMsgId, SocketUserMessage message)
         {
             if (lastMsgId != 0)

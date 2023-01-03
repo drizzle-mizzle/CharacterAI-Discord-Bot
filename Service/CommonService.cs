@@ -55,16 +55,6 @@ namespace CharacterAI_Discord_Bot.Service
             return text;
         }
 
-        public static async Task SetArrowButtons(IUserMessage? message)
-        {
-            if (message is null) return;
-
-            var btn1 = new Emoji("\u2B05");
-            var btn2 = new Emoji("\u27A1");
-
-            await message.AddReactionsAsync(new Emoji[] { btn1, btn2 });
-        }
-
         public static bool SuccessLog(string logText = "")
         {
             Log(logText + "\n", ConsoleColor.Green);

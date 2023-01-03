@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
 using static CharacterAI_Discord_Bot.Service.CommandsService;
+using static CharacterAI_Discord_Bot.Service.CommonService;
 
 namespace CharacterAI_Discord_Bot.Handlers
 {
@@ -17,23 +18,28 @@ namespace CharacterAI_Discord_Bot.Handlers
         [Alias("sc", "set")]
         public Task SetCharacter(string charID)
         {
-            if (!ValidateBotRole(Context)) NoPermissionAlert(Context);
-            else Task.Run(() => SetCharacterAsync(charID, _handler.integration, Context));
-
-            return Task.CompletedTask;
+            if (ValidateBotRole(Context)) 
+                return Task.Run(() =>
+                    SetCharacterAsync(charID, _handler, Context).ConfigureAwait(false)
+                );
+            else 
+                return NoPermissionAlert(Context);
         }
 
         [Command("audience toggle")]
         [Summary("Enable/disable audience mode ")]
         [Alias("amode")]
-        public async Task AudienceToggle()
+        public Task AudienceToggle()
         {
-            if (!ValidateBotRole(Context)) { NoPermissionAlert(Context); return; }
+            if (!ValidateBotRole(Context))
+                return NoPermissionAlert(Context);
 
             var amode = _handler.integration.audienceMode ^= true;
-
-            await UpdatePlayingStatus(_handler.integration.charInfo, Context.Client, amode); ;
-            await Context.Message.ReplyAsync("⚠ Audience mode " + (amode ? "enabled" : "disabled") + '!');
+            return Task.Run(() =>
+            {
+                UpdatePlayingStatus(_handler.integration.charInfo, Context.Client, amode).ConfigureAwait(false);
+                Context.Message.ReplyAsync("⚠ Audience mode " + (amode ? "enabled" : "disabled") + '!');
+            });
         }
 
         [Command("ping")]

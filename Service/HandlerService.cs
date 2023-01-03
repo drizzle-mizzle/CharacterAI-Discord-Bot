@@ -1,23 +1,16 @@
 ﻿using Discord.WebSocket;
 using Discord;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using static CharacterAI_Discord_Bot.Service.CommonService;
-
 namespace CharacterAI_Discord_Bot.Service
 {
-    public class HandlerService : CommonService
+    public partial class HandlerService : CommonService
     {
-        public static async Task<string> ReplyOnMessage(SocketUserMessage message, dynamic reply)
+        public static async Task<ulong> ReplyOnMessage(SocketUserMessage message, dynamic reply)
         {
             string replyText = reply.text;
             string replyImage = reply.image_rel_path ?? "";
             // (3 or more) "\n\n\n..." -> (exactly 2) "\n\n"
-            replyText = new Regex("(\\n){3,}").Replace(replyText, "\n\n");
+            replyText = LBRegex().Replace(replyText, "\n\n");
 
             IUserMessage? botReply;
             // If has attachments
@@ -28,7 +21,7 @@ namespace CharacterAI_Discord_Bot.Service
 
             await SetArrowButtons(botReply);
 
-            return botReply!.Id.ToString();
+            return botReply!.Id;
         }
 
         public static async Task<IUserMessage?> ReplyWithImage(SocketUserMessage message, byte[] image, string text)
@@ -46,5 +39,17 @@ namespace CharacterAI_Discord_Bot.Service
 
             return await message.Channel.SendFileAsync(tempImgPath, text, messageReference: mRef);
         }
+
+        public static async Task RemoveButtons(ulong lastMsgId, SocketUserMessage message)
+        {
+            if (lastMsgId != 0)
+            {
+                var lastMessage = await message.Channel.GetMessageAsync(lastMsgId);
+                await lastMessage.RemoveAllReactionsAsync().ConfigureAwait(false);
+            }
+        }
+
+        [GeneratedRegex("(\\n){3,}")]
+        private static partial Regex LBRegex();
     }
 }

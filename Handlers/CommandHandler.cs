@@ -10,12 +10,12 @@ namespace CharacterAI_Discord_Bot.Handlers
 {
     public class CommandHandler : HandlerService
     {
+        public ulong lastCharacterCallMsgId = 0;
         public readonly Integration integration;
+        public readonly dynamic lastResponse;
         private readonly DiscordSocketClient _client;
         private readonly IServiceProvider _services;
         private readonly CommandService _commands;
-        private readonly dynamic _lastResponse;
-        private string? _lastCharacterCallMsgId;
 
         public CommandHandler(IServiceProvider services)
         {
@@ -25,15 +25,15 @@ namespace CharacterAI_Discord_Bot.Handlers
 
             integration = new Integration(Config.userToken);
 
-            _lastResponse = new ExpandoObject();
-            _lastResponse.SetDefaults = (Action)(() =>
+            lastResponse = new ExpandoObject();
+            lastResponse.SetDefaults = (Action)(() =>
             {
-                _lastResponse.replies = (dynamic?)null;
-                _lastResponse.currReply = 0;
-                _lastResponse.primaryMsgId = 0;
-                _lastResponse.lastUserMsgId = 0;
+                lastResponse.replies = (dynamic?)null;
+                lastResponse.currReply = 0;
+                lastResponse.primaryMsgId = 0;
+                lastResponse.lastUserMsgId = 0;
             });
-            _lastResponse.SetDefaults();
+            lastResponse.SetDefaults();
 
             _client.MessageReceived += HandleMessage;
             _client.ReactionAdded += HandleReaction;
@@ -42,8 +42,8 @@ namespace CharacterAI_Discord_Bot.Handlers
 
         private Task HandleMessage(SocketMessage rawMessage)
         {
-            var message = rawMessage as SocketUserMessage;
-            if (message is null) return Task.CompletedTask;
+            if (rawMessage is not SocketUserMessage message)
+                return Task.CompletedTask;
 
             int argPos = 0;
             string[] prefixes = Config.botPrefixes;
@@ -67,7 +67,7 @@ namespace CharacterAI_Discord_Bot.Handlers
 
         private Task HandleReaction(Cacheable<IUserMessage, ulong> rawMessage, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
         {
-            if (_lastResponse.replies is null || rawMessage.Id.ToString() != _lastCharacterCallMsgId)
+            if (lastResponse.replies is null || rawMessage.Id.ToString() != lastCharacterCallMsgId.ToString())
                 return Task.CompletedTask;
 
             var message = rawMessage.DownloadAsync().Result;
@@ -77,12 +77,12 @@ namespace CharacterAI_Discord_Bot.Handlers
 
             if (reaction.Emote.Name == new Emoji("\u27A1").Name)
             {   // right arrow
-                _lastResponse.currReply++;
+                lastResponse.currReply++;
                 Task.Run(() => UpdateMessageAsync(message));
             }
-            else if (reaction.Emote.Name == new Emoji("\u2B05").Name && _lastResponse.currReply > 0)
+            else if (reaction.Emote.Name == new Emoji("\u2B05").Name && lastResponse.currReply > 0)
             {   // left arrow
-                _lastResponse.currReply--;
+                lastResponse.currReply--;
                 Task.Run(() => UpdateMessageAsync(message));
             }
 
@@ -92,33 +92,35 @@ namespace CharacterAI_Discord_Bot.Handlers
         private async Task UpdateMessageAsync(IUserMessage message)
         {
             dynamic? newReply = null;
-            try { newReply = _lastResponse.replies[_lastResponse.currReply]; }
+            try { newReply = lastResponse.replies[lastResponse.currReply]; }
             catch
             {
-                await message.ModifyAsync(msg => { msg.Content = $"( 🕓 Wait... )"; });
-                var response = await integration.CallCharacter("", "", parentMsgId: _lastResponse.lastUserMsgId);
+                await message.ModifyAsync(msg => { msg.Content = $"( 🕓 Wait... )"; }).ConfigureAwait(false);
+                var response = await integration.CallCharacter("", "", parentMsgId: lastResponse.lastUserMsgId);
                 if (response is string) return;
 
-                _lastResponse.replies.Merge(response!.replies);
-                newReply = _lastResponse.replies[_lastResponse.currReply];
+                lastResponse.replies.Merge(response!.replies);
+                newReply = lastResponse.replies[lastResponse.currReply];
             }
 
-            _lastResponse.primaryMsgId = (int)newReply.id;
+            lastResponse.primaryMsgId = (int)newReply.id;
 
             if (newReply.image_rel_path == null)
-                await message.ModifyAsync(msg => { msg.Content = $"{newReply.text}"; });
+                await message.ModifyAsync(msg => { msg.Content = $"{newReply.text}"; }).ConfigureAwait(false);
             else
             {   // There's no way to modify attachments in discord messages
                 var refMsg = message.ReferencedMessage as SocketUserMessage;
-                await message.DeleteAsync(); // so we just delete it and send a new one
-                _lastCharacterCallMsgId = await ReplyOnMessage(refMsg, newReply);
+                await message.DeleteAsync().ConfigureAwait(false); // so we just delete it and send a new one
+                lastCharacterCallMsgId = await ReplyOnMessage(refMsg, newReply);
             }
         }
 
-        private async Task CallCharacterAsync(SocketUserMessage message)
+        private async Task<Task> CallCharacterAsync(SocketUserMessage message)
         {
-            if (integration.charInfo.CharId == null) { await message.ReplyAsync("⚠ Set a character first"); return; }
+            if (integration.charInfo.CharId == null)
+                return Task.Run(() => message.ReplyAsync("⚠ Set a character first"));
 
+            await RemoveButtons(lastCharacterCallMsgId, message).ConfigureAwait(false);
             string text = RemoveMention(message.Content);
             string imgPath = "";
 
@@ -133,18 +135,21 @@ namespace CharacterAI_Discord_Bot.Handlers
             }
 
             // Send message to character
-            var response = await integration.CallCharacter(text, imgPath, primaryMsgId: _lastResponse.primaryMsgId);
-            _lastResponse.SetDefaults();
+            var response = await integration.CallCharacter(text, imgPath, primaryMsgId: lastResponse.primaryMsgId);
+            lastResponse.SetDefaults();
 
             // Alert with error message if call returns string
-            if (response is string) { await message.ReplyAsync((string)response); return; }
-
-            _lastResponse.replies = response!.replies;
-            _lastResponse.lastUserMsgId = (int)response!.last_user_msg_id;
+            if (response is string @string)
+                return Task.Run(() => message.ReplyAsync(@string));
+            
+            lastResponse.replies = response!.replies;
+            lastResponse.lastUserMsgId = (int)response!.last_user_msg_id;
 
             // Take first character answer by default and reply with it
-            var reply = _lastResponse.replies[0];
-            _lastCharacterCallMsgId = await ReplyOnMessage(message, reply);
+            var reply = lastResponse.replies[0];
+            lastCharacterCallMsgId = await ReplyOnMessage(message, reply);
+
+            return Task.CompletedTask;
         }
 
         public async Task InitializeAsync()

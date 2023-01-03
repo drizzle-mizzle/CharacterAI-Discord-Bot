@@ -3,6 +3,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using CharacterAI_Discord_Bot.Handlers;
+using System.Reflection.Metadata;
 
 namespace CharacterAI_Discord_Bot.Service
 {
@@ -14,30 +15,40 @@ namespace CharacterAI_Discord_Bot.Service
 
             var integration = services.GetRequiredService<CommandHandler>().integration;
             integration.audienceMode = Config.defaultAudienceMode;
-            if (!await integration.Setup(Config.autoCharID)) return;
+            if (await integration.Setup(Config.autoCharID) is false) return;
 
             var charInfo = integration.charInfo;
 
-            await UpdatePlayingStatus(integration.charInfo, client, integration.audienceMode);
-            await SetBotNickname(charInfo, client);
-            await SetBotAvatar(client.CurrentUser);
+            await UpdatePlayingStatus(integration.charInfo, client, integration.audienceMode).ConfigureAwait(false);
+            await SetBotNickname(charInfo, client).ConfigureAwait(false);
+            await SetBotAvatar(client.CurrentUser).ConfigureAwait(false);
         }
 
-        public static async Task SetCharacterAsync(string charID, Integration integration, SocketCommandContext context)
+        public static async Task<Task> SetCharacterAsync(string charID, CommandHandler handler, SocketCommandContext context)
         {
-            if (!await integration.Setup(charID)) { await context.Message.ReplyAsync("⚠️ Failed to set character!"); return; }
+            var integration = handler.integration;
+            ulong lastMsgId = handler.lastCharacterCallMsgId;
+            
+            await HandlerService.RemoveButtons(lastMsgId, context.Message).ConfigureAwait(false);
+            handler.lastResponse.SetDefaults();
+
+            if (await integration.Setup(charID) is false)
+                return Task.Run(() => context.Message.ReplyAsync("⚠️ Failed to set character!"));
 
             var charInfo = integration.charInfo;
             string reply = $"{charInfo.Greeting}\n*\"{charInfo.Description}\"*";
 
-            try { await SetBotNickname(charInfo, context.Client); }
+            try { await SetBotNickname(charInfo, context.Client).ConfigureAwait(false); }
             catch { reply += "\n⚠️ Failed to set bot name! Probably, missing permissions?"; }
 
-            try { await SetBotAvatar(context.Client.CurrentUser); }
+            try { await SetBotAvatar(context.Client.CurrentUser).ConfigureAwait(false); }
             catch { reply += "\n⚠️ Failed to set bot avatar!"; }
 
-            await UpdatePlayingStatus(charInfo, context.Client, integration.audienceMode);
-            await context.Message.ReplyAsync(reply);
+            return Task.Run(() =>
+            {
+                UpdatePlayingStatus(charInfo, context.Client, integration.audienceMode).ConfigureAwait(false);
+                context.Message.ReplyAsync(reply);
+            });
         }
 
         public static async Task SetBotNickname(Character charInfo, DiscordSocketClient client)
@@ -60,6 +71,15 @@ namespace CharacterAI_Discord_Bot.Service
 
             await client.SetGameAsync($"Audience mode: " + (amode ? "✔️" : "✖️") + " | " + desc);
         }
+        public static Task NoPermissionAlert(SocketCommandContext context)
+        {
+            if (string.IsNullOrEmpty(nopowerPath) || !File.Exists(nopowerPath))
+                return Task.CompletedTask;
+            
+            var mRef = new MessageReference(messageId: context.Message.Id);
+
+            return Task.Run(() => context.Channel.SendFileAsync(nopowerPath, messageReference: mRef));
+        }
 
         public static bool ValidateBotRole(SocketCommandContext context)
         {
@@ -71,15 +91,5 @@ namespace CharacterAI_Discord_Bot.Service
 
             return user.Roles.Contains(requiredRole);
         }
-
-        public static void NoPermissionAlert(SocketCommandContext context)
-        {
-            if (!string.IsNullOrEmpty(nopowerPath) || File.Exists(nopowerPath))
-            {
-                var mRef = new MessageReference(messageId: context.Message.Id);
-                Task.Run(() => context.Channel.SendFileAsync(nopowerPath, messageReference: mRef));
-            }
-        }
-
     }
 }

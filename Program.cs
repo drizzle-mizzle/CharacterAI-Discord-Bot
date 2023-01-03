@@ -59,10 +59,6 @@ namespace CharacterAI_Discord_Bot
         }
 
         private Task Log(LogMessage log)
-        {
-            Console.WriteLine(log.ToString());
-
-            return Task.CompletedTask;
-        }
+            => Task.Run(() => Console.WriteLine(log.ToString()));
     }
 }

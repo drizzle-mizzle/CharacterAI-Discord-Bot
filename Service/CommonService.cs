@@ -2,11 +2,7 @@
 using Newtonsoft.Json;
 using System.Text.RegularExpressions;
 using Discord.WebSocket;
-using Microsoft.Extensions.DependencyInjection;
 using Discord;
-using System.Reflection.Metadata;
-using Discord.Commands;
-using Microsoft.VisualBasic;
 
 namespace CharacterAI_Discord_Bot.Service
 {

@@ -1,6 +1,9 @@
 ﻿using Discord.WebSocket;
 using Discord;
 using System.Text.RegularExpressions;
+using System.Dynamic;
+using Discord.Rest;
+
 namespace CharacterAI_Discord_Bot.Service
 {
     public partial class HandlerService : CommonService
@@ -20,6 +23,9 @@ namespace CharacterAI_Discord_Bot.Service
                 botReply = await message.ReplyAsync(replyText);
 
             await SetArrowButtons(botReply);
+
+            if (Config.autoRemove)
+                _ = RemoveButtons(botReply, delay: 60000).ConfigureAwait(false);
 
             return botReply!.Id;
         }
@@ -50,17 +56,14 @@ namespace CharacterAI_Discord_Bot.Service
             await message.AddReactionsAsync(new Emoji[] { btn1, btn2 });
         }
 
-        public static async Task RemoveButtons(ulong lastMsgId, SocketUserMessage message)
+        public static async Task RemoveButtons(IMessage? lastMessage = null, int delay = 0)
         {
-            if (lastMsgId == 0) return;
-            
-            try
-            {
-                var lastMessage = await message.Channel.GetMessageAsync(lastMsgId);
-                if (lastMessage is not null)
-                    await lastMessage.RemoveAllReactionsAsync();
-            }
-            catch { Log("Failed to remove buttons from last message. Missing permission?\n", ConsoleColor.DarkGray); }
+            if (lastMessage is null) return;
+
+            if (delay > 0)
+                await Task.Delay(delay);
+
+            try { await lastMessage.RemoveAllReactionsAsync(); } catch { }
         }
 
         [GeneratedRegex("(\\n){3,}")]

@@ -18,19 +18,19 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 
 ## Commands
 - `set character <id>` - set character by id
-	- Aliases: `set!`, `sc`
-    - Example: `set! thep9Jza4nSUQQ_ok7YCEI2uMim5oH9OXcVUyo5-C7E`
+    - Aliases: `set`, `sc`
+    - Example: `set thep9Jza4nSUQQ_ok7YCEI2uMim5oH9OXcVUyo5-C7E`
 - `reset character` - save and start new chat
-    - Alias: `reset!`
+    - Alias: `reset`
 - `audience toggle` - enable/disable audience mode *(What is the audience mode - read below)*
-	- Alias: `amode!`
+	- Alias: `amode`
 - `call user <@user_mention> <any text>` - Make character call other user *(use it to make two bots talk to each other)*
-    - Aliases: `call!`, `cu`
-    - Example: `call! @another_character Do you love donuts?`
+    - Aliases: `call`, `cu`
+    - Example: `call @another_character Do you love donuts?`
     - *(if no text argument provided, default `"Hey!"` will be used)*
-- `skip! <amount>` - Make character ignore next few messages *(use it to stop bots' conversation)*
-    - Alias: `delay!`
-    - Example: `skip! 2` => `Next 2 message(s) will be ignored`
+- `skip <amount>` - Make character ignore next few messages *(use it to stop bots' conversation)*
+    - Alias: `delay`
+    - Example: `skip 2` => `Next 2 message(s) will be ignored`
     - *(if no amount argument provided, default '3' will be used)*
     - *(commands will not be ignored, amount can be reduced with another call)*
 - `reply chance <chance>` - Change the probability of random replies on new users' messages `in %` *(It's better to use it with audience mode enabled)*
@@ -38,11 +38,13 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
     - Example: `rc 50` => `Probability of random answers was changed from 0% to 50%`
     - *(argument always required)*
     - *(keep in mind that with this feature enabled, commands can be executed without bot prefix/mention)*
-- `hunt! <@user_mention>` - Make character always reply on messages of certain user
-- `unhunt! <@user_mention>` - Stop hunting user
+- `hunt <@user_mention>` - Make character always reply on messages of certain user
+- `unhunt <@user_mention>` - Stop hunting user
 - `hunt chance <chance>` - Change the probability of replies to hunted user `in %`
-	- Alias: `hc`
-	- *(default value = 100)*
+    - Alias: `hc`
+    - *(default value = 100)*
+- `ignore<@user_mention>` - Prevent user from calling the bot
+- `allow <@user_mention>` - Allow user to call the bot
 - `ping` - check latency
 
 ## Additional configuration
@@ -55,7 +57,7 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 ##  How to set up
 1. Download [last release](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/releases/tag/1.55_hotfix)
 2. Create a new Discord application with bot (you can easily find guide on the internet, so I won't focus on this part here).
-	- *(don't forget to enable all **"Privileged Gateway Intents"** switchers)*
+	- *(don't forget to give it basic text permissions and enable all **"Privileged Gateway Intents"** switchers)*
 3. Get your bot token and place it in `Config.json` file.
 4. Create character.ai account if you don't have one.
 5. Sign in, open DevTools (<Ctrl+Shift+J> in Chrome), find "Network" page and go to the "Fetch/XHR" section.

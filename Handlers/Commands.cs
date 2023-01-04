@@ -1,4 +1,5 @@
-﻿using Discord;
+﻿using CharacterAI_Discord_Bot.Service;
+using Discord;
 using Discord.Commands;
 using System.Threading.Channels;
 using System.Xml.Linq;
@@ -17,7 +18,7 @@ namespace CharacterAI_Discord_Bot.Handlers
         }
 
         [Command("set character")]
-        [Alias("sc", "set!")]
+        [Alias("sc", "set")]
         public async Task SetCharacter(string charID)
         {
             if (!ValidateBotRole(Context)) await NoPermissionAlert(Context);
@@ -26,7 +27,7 @@ namespace CharacterAI_Discord_Bot.Handlers
         }
 
         [Command("reset character")]
-        [Alias("reset!")]
+        [Alias("reset")]
         public async Task ResetCharacter()
         {
             if (!ValidateBotRole(Context)) await NoPermissionAlert(Context);
@@ -36,7 +37,7 @@ namespace CharacterAI_Discord_Bot.Handlers
 
         [Command("audience toggle")]
         [Summary("Enable/disable audience mode")]
-        [Alias("amode!")]
+        [Alias("amode")]
         public async Task AudienceToggle()
         {
             if (!ValidateBotRole(Context)) await NoPermissionAlert(Context);
@@ -50,7 +51,7 @@ namespace CharacterAI_Discord_Bot.Handlers
 
         [Command("call user")]
         [Summary("Make character call other user")]
-        [Alias("call!", "cu")]
+        [Alias("call", "cu")]
         public async Task CallUser(IUser user, string msg = "Hey!")
         {
             if (!ValidateBotRole(Context)) await NoPermissionAlert(Context);
@@ -58,9 +59,9 @@ namespace CharacterAI_Discord_Bot.Handlers
                 await Context.Channel.SendMessageAsync(user.Mention + " " + msg);
         }
 
-        [Command("skip!")]
+        [Command("skip")]
         [Summary("Make character ignore next few messages")]
-        [Alias("delay!")]
+        [Alias("delay")]
         public async Task StopTalk(int amount = 3)
         {
             if (!ValidateBotRole(Context)) await NoPermissionAlert(Context);
@@ -84,7 +85,7 @@ namespace CharacterAI_Discord_Bot.Handlers
             }
         }
 
-        [Command("hunt!")]
+        [Command("hunt")]
         [Summary("Reply on every user's message")]
         public async Task Hunt(IUser user)
         {
@@ -96,7 +97,7 @@ namespace CharacterAI_Discord_Bot.Handlers
             }
         }
 
-        [Command("unhunt!")]
+        [Command("unhunt")]
         public async Task Ununt(IUser user)
         {
             if (!ValidateBotRole(Context)) await NoPermissionAlert(Context);
@@ -108,7 +109,7 @@ namespace CharacterAI_Discord_Bot.Handlers
         }
 
         [Command("hunt chance")]
-        [Summary("Change the probability of replies on hunted user (%)")]
+        [Summary("Change the probability of replies on a hunted user (%)")]
         [Alias("hc")]
         public async Task HuntChance(int chance)
         {
@@ -120,7 +121,31 @@ namespace CharacterAI_Discord_Bot.Handlers
             }
         }
 
-        [Command("ping!")]
+        [Command("ignore")]
+        [Summary("Prevent user from calling the bot.")]
+        public async Task Ignore(IUser user)
+        {
+            if (!ValidateBotRole(Context)) await NoPermissionAlert(Context);
+            else
+            {
+                await Context.Message.ReplyAsync($"⚠ {user.Mention} was added to the blacklist!");
+                _handler.blackList.Add(user.Id);
+            }
+        }
+
+        [Command("allow")]
+        [Summary("Allow user to call the bot.")]
+        public async Task Allow(IUser user)
+        {
+            if (!ValidateBotRole(Context)) await NoPermissionAlert(Context);
+            else
+            {
+                await Context.Message.ReplyAsync($"⚠ {user.Mention} was removed from the blacklist!");
+                _handler.blackList.Remove(user.Id);
+            }
+        }
+
+        [Command("ping")]
         public async Task Ping()
             => await Context.Message.ReplyAsync($"Pong! - {Context.Client.Latency} ms");
     }

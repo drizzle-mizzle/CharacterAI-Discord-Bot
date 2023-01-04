@@ -13,7 +13,9 @@ namespace CharacterAI_Discord_Bot.Handlers
         public int replyChance = 0;
         public int huntChance = 100;
         public int skipMessages = 0;
+        public List<ulong> blackList = new();
         public List<ulong> huntedUsers = new();
+        public Dictionary<ulong, dynamic> userMsgCount = new();
         public ulong lastCharacterCallMsgId = 0;
         public readonly Integration integration;
         public readonly dynamic lastResponse;
@@ -56,16 +58,21 @@ namespace CharacterAI_Discord_Bot.Handlers
             bool hasMention = message.HasMentionPrefix(_client.CurrentUser, ref argPos);
             bool hasPrefix = !hasMention && prefixes.Any(p => message.HasStringPrefix(p, ref argPos));
             bool hasReply = !hasPrefix && !hasMention && message.ReferencedMessage != null && message.ReferencedMessage.Author.Id == _client.CurrentUser.Id; // SO FUCKING BIG UUUGHH!
-            bool randomReply = replyChance >= RandomGen.Next(100);
-            bool huntedUser = huntedUsers.Contains(message.Author.Id) && huntChance >= RandomGen.Next(100);
+            bool randomReply = replyChance >= RandomGen.Next(100) + 1;
+            bool userIsHunted = huntedUsers.Contains(message.Author.Id) && huntChance >= RandomGen.Next(100) + 1;
 
-            if (hasMention || hasPrefix || hasReply || huntedUser || randomReply)
+            if (hasMention || hasPrefix || hasReply || userIsHunted || randomReply)
             {
+                if (UserIsBanned(message).Result) return Task.CompletedTask;
+
                 var context = new SocketCommandContext(_client, message);
                 var cmdResponse = _commands.ExecuteAsync(context, argPos, _services).Result;
 
                 if (!cmdResponse.IsSuccess)
                 {
+                    if (RemoveMention(message.Content).StartsWith('.'))
+                        return Task.Run(() => message.ReplyAsync($"⚠ {cmdResponse.ErrorReason}"));
+
                     if (skipMessages > 0)
                         skipMessages--;
                     else
@@ -79,25 +86,28 @@ namespace CharacterAI_Discord_Bot.Handlers
 
         private Task HandleReaction(Cacheable<IUserMessage, ulong> rawMessage, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
         {
-            if (lastResponse.replies is null || rawMessage.Id != lastCharacterCallMsgId)
-                return Task.CompletedTask;
+            try
+            {
+                if (lastResponse.replies is null || rawMessage.Id != lastCharacterCallMsgId)
+                    return Task.CompletedTask;
 
-            var message = rawMessage.DownloadAsync().Result;
-            var user = reaction.User.Value as SocketGuildUser;
-            if (user!.IsBot || user.Id != message.ReferencedMessage.Author.Id)
-                return Task.CompletedTask;
+                var message = rawMessage.DownloadAsync().Result;
+                var user = reaction.User.Value as SocketGuildUser;
+                if (user!.IsBot || user.Id != message.ReferencedMessage.Author.Id)
+                    return Task.CompletedTask;
 
-            if (reaction.Emote.Name == new Emoji("\u27A1").Name)
-            {   // right arrow
-                lastResponse.currReply++;
-                Task.Run(() => UpdateMessageAsync(message));
+                if (reaction.Emote.Name == new Emoji("\u27A1").Name)
+                {   // right arrow
+                    lastResponse.currReply++;
+                    Task.Run(() => UpdateMessageAsync(message));
+                }
+                else if (reaction.Emote.Name == new Emoji("\u2B05").Name && lastResponse.currReply > 0)
+                {   // left arrow
+                    lastResponse.currReply--;
+                    Task.Run(() => UpdateMessageAsync(message));
+                }
             }
-            else if (reaction.Emote.Name == new Emoji("\u2B05").Name && lastResponse.currReply > 0)
-            {   // left arrow
-                lastResponse.currReply--;
-                Task.Run(() => UpdateMessageAsync(message));
-            }
-
+            catch (Exception e) { FailureLog(e.ToString()); } 
             return Task.CompletedTask;
         }
 
@@ -122,7 +132,8 @@ namespace CharacterAI_Discord_Bot.Handlers
             else
             {   // There's no way to modify attachments in discord messages
                 var refMsg = message.ReferencedMessage as SocketUserMessage;
-                await message.DeleteAsync().ConfigureAwait(false); // so we just delete it and send a new one
+                // so we just delete it and send a new one
+                await message.DeleteAsync().ConfigureAwait(false);
                 lastCharacterCallMsgId = await ReplyOnMessage(refMsg, newReply);
             }
         }
@@ -132,7 +143,12 @@ namespace CharacterAI_Discord_Bot.Handlers
             if (integration.charInfo.CharId == null)
                 return Task.Run(() => message.ReplyAsync("⚠ Set a character first"));
 
-            await RemoveButtons(lastCharacterCallMsgId, message).ConfigureAwait(false);
+            if (lastCharacterCallMsgId != 0)
+            {
+                var lastMessage = await message.Channel.GetMessageAsync(lastCharacterCallMsgId);
+                await RemoveButtons(lastMessage).ConfigureAwait(false);
+            }
+
             string text = RemoveMention(message.Content);
             string imgPath = "";
 
@@ -152,8 +168,8 @@ namespace CharacterAI_Discord_Bot.Handlers
 
             // Alert with error message if call returns string
             if (response is string @string)
-                return Task.Run(() => message.ReplyAsync(@string));
-            
+                return Task.Run(async() => await message.ReplyAsync(@string));
+
             lastResponse.replies = response!.replies;
             lastResponse.lastUserMsgId = (int)response!.last_user_msg_id;
 
@@ -162,6 +178,44 @@ namespace CharacterAI_Discord_Bot.Handlers
             lastCharacterCallMsgId = await ReplyOnMessage(message, reply);
 
             return Task.CompletedTask;
+        }
+
+        private async Task<bool> UserIsBanned(SocketUserMessage message)
+        {
+            ulong currUser = message.Author.Id;
+            var context = new SocketCommandContext(_client, message);
+            if (blackList.Contains(currUser)) return true;
+            if (currUser == context.Guild.OwnerId) return false;
+
+            int currMinute = message.CreatedAt.Minute + message.CreatedAt.Hour * 60;
+
+            if (!userMsgCount.ContainsKey(currUser))
+            {
+                userMsgCount.Add(currUser, new ExpandoObject());
+                userMsgCount[currUser].minute = currMinute;
+                userMsgCount[currUser].count = 0;
+            }
+
+            if (userMsgCount[currUser].minute != currMinute)
+            {
+                userMsgCount[currUser].minute = currMinute;
+                userMsgCount[currUser].count = 0;
+            }
+
+            userMsgCount[currUser].count++;
+            if (userMsgCount[currUser].count == Config.rateLimit)
+                await message.ReplyAsync($"⚠ Warning! If you proceed to call {_client.CurrentUser.Mention} so fast," +
+                                         " your messages will be ignored.");
+
+            if (userMsgCount[currUser].count > Config.rateLimit)
+            {
+                blackList.Add(currUser);
+                userMsgCount.Remove(currUser);
+
+                return true;
+            }
+
+            return false;
         }
 
         public async Task InitializeAsync()

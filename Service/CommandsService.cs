@@ -26,10 +26,13 @@ namespace CharacterAI_Discord_Bot.Service
         public static async Task<Task> SetCharacterAsync(string charID, CommandHandler handler, SocketCommandContext context, bool reset = false)
         {
             var integration = handler.integration;
-            ulong lastMsgId = handler.lastCharacterCallMsgId;
-            
-            await HandlerService.RemoveButtons(lastMsgId, context.Message).ConfigureAwait(false);
-            handler.lastResponse.SetDefaults();
+
+            if (handler.lastCharacterCallMsgId != 0)
+            {
+                var lastMessage = await context.Message.Channel.GetMessageAsync(handler.lastCharacterCallMsgId);
+                await HandlerService.RemoveButtons(lastMessage).ConfigureAwait(false);
+                handler.lastResponse.SetDefaults();
+            }
 
             if (await integration.Setup(charID, reset: reset) is false)
                 return Task.Run(() => context.Message.ReplyAsync("⚠️ Failed to set character!"));
@@ -77,14 +80,16 @@ namespace CharacterAI_Discord_Bot.Service
 
             await client.SetGameAsync($"Audience mode: " + (amode ? "✔️" : "✖️") + " | " + desc);
         }
+
         public static Task NoPermissionAlert(SocketCommandContext context)
         {
             if (string.IsNullOrEmpty(nopowerPath) || !File.Exists(nopowerPath))
                 return Task.CompletedTask;
             
-            var mRef = new MessageReference(messageId: context.Message.Id);
+            var mRef = new MessageReference(context.Message.Id);
+            Task.Run(() => context.Channel.SendFileAsync(nopowerPath, messageReference: mRef));
 
-            return Task.Run(() => context.Channel.SendFileAsync(nopowerPath, messageReference: mRef));
+            return Task.CompletedTask;
         }
 
         public static bool ValidateBotRole(SocketCommandContext context)

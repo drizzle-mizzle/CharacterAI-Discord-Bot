@@ -28,7 +28,7 @@ namespace CharacterAI_Discord_Bot.Service
             if (!await GetInfo() || !(reset ? await CreateNewDialog() : await GetHistory()))
                 return FailureLog($"\nSetup has been aborted\n{new string('<', 50)}\n");
 
-            Log("(History ID: " + charInfo.HistoryExternalId + ")\n", ConsoleColor.DarkMagenta);
+            Log("(History ID: " + charInfo.HistoryExternalId + ")\n", ConsoleColor.DarkGray);
 
             await DownloadAvatar();
             SetupCompleteLog(charInfo);

@@ -37,7 +37,7 @@ namespace CharacterAI_Discord_Bot.Service
             for (int i = 0; i < 10; i++)
             {
                 try { return await client.GetByteArrayAsync(url); }
-                catch { Thread.Sleep(2000); }
+                catch { await Task.Delay(2500); }
             }
 
             return null;

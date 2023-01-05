@@ -50,7 +50,7 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 ## Additional configuration
 - If you want to give other users ability to configure a bot, give them a role and place it's name in `discord_bot_role`.
 - Specify prefixes in `discord_bot_prefixes` field so you could call your bot without mention or reply.
-- Set `default_audience_mode` to `frue` if you want it to be enabled by default on a bot launch.
+- Set `default_audience_mode` to `true` if you want it to be enabled by default on a bot launch.
 - Specify `default_no_permission_file` with a name of the gif/image you want to be shown when non-privileged user tries to execute bot commands (or just leave it empty to disable this feature)
 - Set `auto_setup` to `true` and specify `auto_char_id` with id of a character if you want bot to set character automatically after every relaunch. 
 - Specify `rate_limit` with amount of maximum allowed messages per minute for each user.

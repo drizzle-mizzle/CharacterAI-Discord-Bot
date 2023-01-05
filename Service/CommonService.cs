@@ -9,7 +9,7 @@ namespace CharacterAI_Discord_Bot.Service
     public partial class CommonService
     {
         public static readonly dynamic Config = GetConfig()!;
-        public static readonly string imgPath = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + ".." + Path.DirectorySeparatorChar + "img" + Path.DirectorySeparatorChar;
+        public static readonly string imgPath = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "img" + Path.DirectorySeparatorChar;
         public static readonly string avatarPath = imgPath + "characterAvatar.webp";
         public static readonly string defaultAvatarPath = imgPath + "defaultAvatar.webp";
         public static readonly string tempImgPath = imgPath + "temp.webp";

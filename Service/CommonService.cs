@@ -23,7 +23,8 @@ namespace CharacterAI_Discord_Bot.Service
                 text = new Regex("\\<(.*?)\\>").Replace(text, "", 1);
             // Remove prefix
             foreach (string prefix in Config.botPrefixes)
-                text = text.Replace(prefix, "");
+                if (text.StartsWith(prefix))
+                    text = text.Replace(prefix, "");
 
             return text;
         }
@@ -92,7 +93,7 @@ namespace CharacterAI_Discord_Bot.Service
                     defaultAudienceMode = bool.Parse(configParsed["default_audience_mode"]!.Value<string>()!),
                     nopower = configParsed["default_no_permission_file"]!.Value<string>(),
                     rateLimit = configParsed["rate_limit"]!.Value<int>(),
-                    autoRemove = bool.Parse(configParsed["auto_buttons_remove"]!.Value<string>()!),
+                    removeDelay = configParsed["buttons_remove_delay"]!.Value<int>(),
                     autoSetupEnabled = bool.Parse(configParsed["auto_setup"]!.Value<string>()!),
                     autoCharID = configParsed["auto_char_id"]!.Value<string>()
                 };

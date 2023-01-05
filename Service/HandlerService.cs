@@ -24,8 +24,7 @@ namespace CharacterAI_Discord_Bot.Service
 
             await SetArrowButtons(botReply);
 
-            if (Config.autoRemove)
-                _ = RemoveButtons(botReply, delay: 60000).ConfigureAwait(false);
+            _ = RemoveButtons(botReply, delay: Config.removeDelay).ConfigureAwait(false);
 
             return botReply!.Id;
         }
@@ -61,7 +60,7 @@ namespace CharacterAI_Discord_Bot.Service
             if (lastMessage is null) return;
 
             if (delay > 0)
-                await Task.Delay(delay);
+                await Task.Delay(delay * 1000);
 
             try { await lastMessage.RemoveAllReactionsAsync(); } catch { }
         }

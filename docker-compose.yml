@@ -1,0 +1,8 @@
+
+version: "3.4"
+services:
+
+  character-ai-discord-bot:
+    build:
+      context: ./
+    container_name: character-ai-discord-bot

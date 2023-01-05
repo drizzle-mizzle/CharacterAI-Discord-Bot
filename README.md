@@ -57,7 +57,7 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 - Specify `buttons_remove_delay` with a time (in seconds) when swipe buttons should be automatically removed (you can set it to 0 to disable it completely, but it can cause a problem when buttons on some messages do not disappear at all')
 
 ##  How to set up
-1. Download [Last Release](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/releases/tag/1.6)
+1. Download [Last Release](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/releases/tag/1.63)
 2. Create a new Discord application with bot (you can easily find guide on the internet, so I won't focus on this part here).
 	- *(don't forget to give it basic text permissions and enable all **"Privileged Gateway Intents"** switchers)*
 3. Get your bot token and place it in `Config.json` file.

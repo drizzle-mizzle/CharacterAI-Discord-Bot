@@ -6,7 +6,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
-    <SelfContained>true</SelfContained>
   </PropertyGroup>
 
   <ItemGroup>

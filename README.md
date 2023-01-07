@@ -99,7 +99,7 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 When you talk with a character you can use only one character.ai account for every user on your server, and it does puts some limitations on a conversation. Thinking about it, I decided to try to "explain" character that there are many different users who speak with him using a single account. And... it really worked lol.
 If you add a nickname and a quote to your reply, the character will, usually, understand the context, and his answers will be more consistent.
 > This feature is disabled by default, but you can enable it with `amode` command.
-> Be careful, as it can brake some characters or make their answers look strange.
+> Be careful, as it can break some characters or make their answers look strange.
 
 **How does it looks in Discord:**
 

@@ -47,10 +47,10 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 - If you want to give other users ability to configure a bot, give them a role and place it's name in `discord_bot_role`.
 - Specify prefixes in `discord_bot_prefixes`.
 - Set `default_audience_mode` to `true` if you want it to be enabled by default on a bot launch.
-- Specify `default_no_permission_file` with a name of the gif/image you want to be shown when non-privileged user tries to execute bot commands (or just leave it empty to disable it)
+- Specify `default_no_permission_file` with a name of the gif/image you want to be shown when non-privileged user tries to execute bot commands *(or just leave it empty to disable it)*
 - Set `auto_setup` to `true` and specify `auto_char_id` with id of a character if you want the bot to set character automatically after every relaunch. 
 - Specify `rate_limit` with amount of maximum allowed messages per minute for each user.
-- Specify `buttons_remove_delay` with a time (in seconds) when swipe buttons should be automatically removed (you can set it to 0 to disable it completely, but it can cause a problem when buttons on some messages do not disappear at all')
+- Specify `buttons_remove_delay` with a time (in seconds) when swipe buttons should be automatically removed *(you can set it to 0 to disable it completely, but it can cause a problem when buttons on some old messages, which can't be swiped anymore, do not disappear at all)*
 
 ##  How to set up
 1. Download [Last Release](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/releases/tag/1.63)

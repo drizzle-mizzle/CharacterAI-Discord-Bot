@@ -8,29 +8,25 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 ## Features
 - Talk with any character on your own server and change them on the fly.
 - Automatically sets the name and profile picture of the character.
-- Supports answers swiping.
-- Supports sending and receiving of images from character.
-- Make bots talk to each other.
-- Random replies.
-- Experimental *audience mode* feature (read below).
+- Supports answers swiping and image sending.
+- You can make two or more characters talk to each other.
+- Random replies, audience mode and some other stuff.
 
-![chrome_lqjAER1cug](https://user-images.githubusercontent.com/55811932/208914718-5e6fa518-da30-4807-92c7-c2238f4bef87.gif)
+![chrome_cshYMsGIaB](https://user-images.githubusercontent.com/55811932/211129383-c7cd4ca2-ceb4-42c5-8449-bc6ce9b2d538.gif)
 
 ## Commands
 - `set character <id>` - set character by id
     - Aliases: `set`, `sc`
-    - Example: `set thep9Jza4nSUQQ_ok7YCEI2uMim5oH9OXcVUyo5-C7E`
 - `reset character` - save and start new chat
     - Alias: `reset`
 - `audience toggle` - enable/disable audience mode *(What is the audience mode - read below)*
 	- Alias: `amode`
 - `call user <@user_mention> <any text>` - Make character call other user *(use it to make two bots talk to each other)*
     - Aliases: `call`, `cu`
-    - Example: `call @another_character Do you love donuts?`
+    - Example: `@some_character call @another_character Do you love donuts?`
     - *(if no text argument provided, default `"Hey!"` will be used)*
 - `skip <amount>` - Make character ignore next few messages *(use it to stop bots' conversation)*
     - Alias: `delay`
-    - Example: `skip 2` => `Next 2 message(s) will be ignored`
     - *(if no amount argument provided, default '3' will be used)*
     - *(commands will not be ignored, amount can be reduced with another call)*
 - `reply chance <chance>` - Change the probability of random replies on new users' messages `in %` *(It's better to use it with audience mode enabled)*
@@ -42,26 +38,26 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 - `unhunt <@user_mention>` - Stop hunting user
 - `hunt chance <chance>` - Change the probability of replies to hunted user `in %`
     - Alias: `hc`
-    - *(default value = 100)*
+    - *(default value = 100%)*
 - `ignore <@user_mention>` - Prevent user from calling the bot
 - `allow <@user_mention>` - Allow user to call the bot
 - `ping` - check latency
 
 ## Additional configuration
 - If you want to give other users ability to configure a bot, give them a role and place it's name in `discord_bot_role`.
-- Specify prefixes in `discord_bot_prefixes` field so you could call your bot without mention or reply.
+- Specify prefixes in `discord_bot_prefixes`.
 - Set `default_audience_mode` to `true` if you want it to be enabled by default on a bot launch.
-- Specify `default_no_permission_file` with a name of the gif/image you want to be shown when non-privileged user tries to execute bot commands (or just leave it empty to disable this feature)
-- Set `auto_setup` to `true` and specify `auto_char_id` with id of a character if you want bot to set character automatically after every relaunch. 
+- Specify `default_no_permission_file` with a name of the gif/image you want to be shown when non-privileged user tries to execute bot commands (or just leave it empty to disable it)
+- Set `auto_setup` to `true` and specify `auto_char_id` with id of a character if you want the bot to set character automatically after every relaunch. 
 - Specify `rate_limit` with amount of maximum allowed messages per minute for each user.
 - Specify `buttons_remove_delay` with a time (in seconds) when swipe buttons should be automatically removed (you can set it to 0 to disable it completely, but it can cause a problem when buttons on some messages do not disappear at all')
 
 ##  How to set up
-1. Download [Last Release](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/releases/tag/1.6)
+1. Download [Last Release](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/releases/tag/1.63)
 2. Create a new Discord application with bot (you can easily find guide on the internet, so I won't focus on this part here).
 	- *(don't forget to give it basic text permissions and enable all **"Privileged Gateway Intents"** switchers)*
 3. Get your bot token and place it in `Config.json` file.
-4. Create character.ai account if you don't have one.
+4. Create [CharacterAI](https://beta.character.ai/) account if you don't have one.
 5. Sign in, open DevTools (<Ctrl+Shift+J> in Chrome), find "Network" page and go to the "Fetch/XHR" section.
 
 ![image](https://user-images.githubusercontent.com/55811932/208903651-17ffef98-6a88-47d2-92ec-6940e76fbf77.png)
@@ -91,8 +87,8 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 
 13. Go to your server and run bot command `set <id>`
 	- (Bot will automatically set it's avatar and nickname)
-
-![chrome_NJ88RGQgdn](https://user-images.githubusercontent.com/55811932/208912215-8ecbb70b-5f12-4739-9b6d-20bfebbe81eb.gif)
+	
+![chrome_2fdXOMDEcS](https://user-images.githubusercontent.com/55811932/211129208-8cb7cc80-d1cd-4c04-a0f1-e146345972cc.gif)
 
 **14. Enjoy converstaion!**
 
@@ -103,6 +99,7 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 When you talk with a character you can use only one character.ai account for every user on your server, and it does puts some limitations on a conversation. Thinking about it, I decided to try to "explain" character that there are many different users who speak with him using a single account. And... it really worked lol.
 If you add a nickname and a quote to your reply, the character will, usually, understand the context, and his answers will be more consistent.
 > This feature is disabled by default, but you can enable it with `amode` command.
+> Be careful, as it can brake some characters or make their answers look strange.
 
 **How does it looks in Discord:**
 

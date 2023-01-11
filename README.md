@@ -15,6 +15,8 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 ![chrome_cshYMsGIaB](https://user-images.githubusercontent.com/55811932/211129383-c7cd4ca2-ceb4-42c5-8449-bc6ce9b2d538.gif)
 
 ## Commands
+- `help`
+- `link` - Get original character link.
 - `set character <id>` - set character by id
     - Aliases: `set`, `sc`
 - `reset character` - save and start new chat

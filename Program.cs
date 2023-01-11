@@ -26,7 +26,7 @@ namespace CharacterAI_Discord_Bot
 
             await _client.LoginAsync(TokenType.Bot, Config.botToken);
             await _client.StartAsync();
-            await _services.GetRequiredService<CommandHandler>().InitializeAsync();
+            await _services.GetRequiredService<CommandsHandler>().InitializeAsync();
 
             await Task.Delay(-1);
         }
@@ -53,7 +53,7 @@ namespace CharacterAI_Discord_Bot
             var services = new ServiceCollection();
             services.AddSingleton(new DiscordSocketClient(clientConfig))
                     .AddSingleton(new CommandService())
-                    .AddSingleton<CommandHandler>();
+                    .AddSingleton<CommandsHandler>();
 
             return services.BuildServiceProvider();
         }

@@ -4,22 +4,13 @@ using static CharacterAI_Discord_Bot.Service.CommandsService;
 
 namespace CharacterAI_Discord_Bot.Handlers
 {
-    public class NewCommands : ModuleBase<SocketCommandContext>
+    public class Commands : ModuleBase<SocketCommandContext>
     {
-        private readonly CommandHandler _handler;
+        private readonly CommandsHandler _handler;
 
-        public NewCommands(CommandHandler handler)
+        public Commands(CommandsHandler handler)
         {
             _handler = handler;
-        }
-
-        [Command("link")]
-        public async Task ShowId()
-        {
-            var charInfo = _handler.integration.charInfo;
-            string link = $"https://beta.character.ai/chat?char={charInfo.CharId}";
-
-            await Context.Message.ReplyAsync($"Chat with **{charInfo.Name}**:\n{link}");
         }
 
         [Command("set character")]
@@ -148,6 +139,15 @@ namespace CharacterAI_Discord_Bot.Handlers
                 await Context.Message.ReplyAsync($"⚠ {user.Mention} was removed from the blacklist!");
                 _handler.blackList.Remove(user.Id);
             }
+        }
+
+        [Command("link")]
+        public async Task ShowLink()
+        {
+            var charInfo = _handler.integration.charInfo;
+            string link = $"https://beta.character.ai/chat?char={charInfo.CharId}";
+
+            await Context.Message.ReplyAsync($"Chat with **{charInfo.Name}**:\n{link}");
         }
 
         [Command("help")]

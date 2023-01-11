@@ -10,7 +10,7 @@ namespace CharacterAI_Discord_Bot.Service
     {
         public static async Task AutoSetup(ServiceProvider services, DiscordSocketClient client)
         {
-            var integration = services.GetRequiredService<CommandHandler>().integration;
+            var integration = services.GetRequiredService<CommandsHandler>().integration;
             bool result = await integration.Setup(Config.autoCharID, reset: false);
             if (!result) return;
 
@@ -21,7 +21,7 @@ namespace CharacterAI_Discord_Bot.Service
             await SetBotAvatar(client.CurrentUser).ConfigureAwait(false);
         }
 
-        public static async Task<Task> SetCharacterAsync(string charID, CommandHandler handler, SocketCommandContext context, bool reset = false)
+        public static async Task<Task> SetCharacterAsync(string charID, CommandsHandler handler, SocketCommandContext context, bool reset = false)
         {
             var integration = handler.integration;
 
@@ -51,7 +51,7 @@ namespace CharacterAI_Discord_Bot.Service
             });
         }
 
-        public static async Task ResetCharacterAsync(CommandHandler handler, SocketCommandContext context)
+        public static async Task ResetCharacterAsync(CommandsHandler handler, SocketCommandContext context)
         {
             string charId = handler.integration.charInfo.CharId!;
             await Task.Run(()

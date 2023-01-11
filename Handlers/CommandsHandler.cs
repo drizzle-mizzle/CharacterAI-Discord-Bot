@@ -8,7 +8,7 @@ using CharacterAI_Discord_Bot.Service;
 
 namespace CharacterAI_Discord_Bot.Handlers
 {
-    public class CommandHandler : HandlerService
+    public class CommandsHandler : HandlerService
     {
         public int replyChance = 0;
         public int huntChance = 100;
@@ -23,7 +23,7 @@ namespace CharacterAI_Discord_Bot.Handlers
         private readonly IServiceProvider _services;
         private readonly CommandService _commands;
 
-        public CommandHandler(IServiceProvider services)
+        public CommandsHandler(IServiceProvider services)
         {
             _services = services;
             _commands = services.GetRequiredService<CommandService>();
@@ -70,8 +70,8 @@ namespace CharacterAI_Discord_Bot.Handlers
 
                 if (!cmdResponse.IsSuccess)
                 {
-                    if (RemoveMention(message.Content).StartsWith('.'))
-                        return Task.Run(() => message.ReplyAsync($"⚠ {cmdResponse.ErrorReason}"));
+                    if (cmdResponse.ErrorReason != "Unknown command.")
+                        return Task.Run(() => message.ReplyAsync($"⚠ {cmdResponse.ErrorReason}, {cmdResponse.Error}"));
 
                     if (skipMessages > 0)
                         skipMessages--;
@@ -126,16 +126,16 @@ namespace CharacterAI_Discord_Bot.Handlers
             }
 
             lastResponse.primaryMsgId = (int)newReply.id;
+            string? replyImage = newReply?.image_rel_path;
 
-            if (newReply.image_rel_path == null)
-                await message.ModifyAsync(msg => { msg.Content = $"{newReply.text}"; }).ConfigureAwait(false);
-            else
-            {   // There's no way to modify attachments in discord messages
-                var refMsg = message.ReferencedMessage as SocketUserMessage;
-                // so we just delete it and send a new one
-                await message.DeleteAsync().ConfigureAwait(false);
-                lastCharacterCallMsgId = await ReplyOnMessage(refMsg, newReply);
-            }
+            Embed? embed = null;
+            if (replyImage != null && await TryGetImage(replyImage))
+                embed = new EmbedBuilder().WithImageUrl(replyImage).Build();
+
+            await message.ModifyAsync(msg => {
+                msg.Content = $"{newReply!.text}";
+                msg.Embed = embed;
+            }).ConfigureAwait(false);
         }
 
         private async Task<Task> CallCharacterAsync(SocketUserMessage message)
@@ -158,8 +158,8 @@ namespace CharacterAI_Discord_Bot.Handlers
             if (message.Attachments.Any())
             {   // Downloads first image from attachments and uploads it to server
                 string url = message.Attachments.First().Url;
-                if (await DownloadImg(url) is byte[] img && integration.UploadImg(img).Result is string path)
-                    imgPath = $"https://characterai.io/i/400/static/user/{path}";
+                if (await TryDownloadImg(url) is byte[] @img && await integration.UploadImg(@img) is string @path)
+                    imgPath = $"https://characterai.io/i/400/static/user/{@path}";
             }
 
             // Send message to character

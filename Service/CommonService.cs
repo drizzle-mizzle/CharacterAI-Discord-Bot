@@ -29,11 +29,11 @@ namespace CharacterAI_Discord_Bot.Service
             return text;
         }
 
-        public static async Task<byte[]?> DownloadImg(string url)
+        public static async Task<byte[]?> TryDownloadImg(string url)
         {
             if (string.IsNullOrEmpty(url)) return null;
 
-            HttpClient client = new();
+            using HttpClient client = new();
             // Try 10 times and return null
             for (int i = 0; i < 10; i++)
             {
@@ -42,6 +42,19 @@ namespace CharacterAI_Discord_Bot.Service
             }
 
             return null;
+        }
+
+        public static async Task<bool> TryGetImage(string url)
+        {
+            using HttpClient client = new();
+
+            for (int i = 0; i < 10; i++)
+                if ((await client.GetAsync(url)).IsSuccessStatusCode)
+                    return true;
+                else
+                    await Task.Delay(2500);
+
+            return false;
         }
 
         // Test feature that makes character aware that he's talking to many different people

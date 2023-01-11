@@ -8,45 +8,46 @@ namespace CharacterAI_Discord_Bot.Service
 {
     public class Integration : IntegrationService
     {
-        public bool audienceMode = false;
+        public bool audienceMode;
         public Character charInfo = new();
-        private readonly HttpClient _httpClient = new();
+
         private readonly string? _userToken;
+        private readonly HttpClient _httpClient = new();
 
         public Integration(string userToken)
-        {
-            _userToken = userToken;
-        }
+            => _userToken = userToken;
 
         public async Task<bool> Setup(string charID, bool reset)
         {
             Log("\n" + new string ('>', 50), ConsoleColor.Green);
             Log("\nStarting character setup...\n", ConsoleColor.Yellow);
             Log("(ID: " + charID + ")\n\n", ConsoleColor.DarkMagenta);
+
             charInfo.CharId = charID;
-
             if (!await GetInfo() || !(reset ? await CreateNewDialog() : await GetHistory()))
-                return FailureLog($"\nSetup has been aborted\n{new string('<', 50)}\n");
-
-            Log("(History ID: " + charInfo.HistoryExternalId + ")\n", ConsoleColor.DarkGray);
+                return Failure($"\nSetup has been aborted\n{ new string('<', 50) }\n");
 
             await DownloadAvatar();
-            SetupCompleteLog(charInfo);
+            HelloLog(charInfo);
 
-            return SuccessLog(new string('<', 50) + "\n");
+            return Success(new string('<', 50) + "\n");
         }
 
         public async Task<dynamic> CallCharacter(string msg, string imgPath, int primaryMsgId = 0, int parentMsgId = 0)
         {
             var dynamicContent = BasicCallContent(charInfo, msg, imgPath);
 
+            // Fetch an new answer (swipe)
             if (parentMsgId != 0)
                 dynamicContent.parent_msg_id = parentMsgId;
-            if (primaryMsgId != 0)
+            // Reply to the new answer
+            else if (primaryMsgId != 0)
             {
                 dynamicContent.primary_msg_id = primaryMsgId;
                 dynamicContent.seen_msg_ids = new int[] { primaryMsgId };
             }
+
+            // Prepare request data
             var requestContent = new ByteArrayContent(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(dynamicContent)));
             requestContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
 
@@ -55,11 +56,11 @@ namespace CharacterAI_Discord_Bot.Service
             request.Headers.Add("accept-encoding", "gzip");
             request = SetHeaders(request);
 
-            // Sending message
+            // Send message
             using var response = await _httpClient.SendAsync(request);
             if (!response.IsSuccessStatusCode)
             {
-                FailureLog("\nFailed to send message!\n" +
+                Failure("\nFailed to send message!\n" +
                         $"Details: { response }\n" +
                         $"Response: { await response.Content.ReadAsStringAsync() }\n" +
                         $"Request: { request?.Content?.ReadAsStringAsync().Result }");
@@ -68,7 +69,7 @@ namespace CharacterAI_Discord_Bot.Service
             }
             request.Dispose();
 
-            // Getting answer
+            // Get character answer
             string[] chunks = (await response.Content.ReadAsStringAsync()).Split("\n");
             string finalChunk;
             try { finalChunk = chunks.First(c => JsonConvert.DeserializeObject<dynamic>(c)!.is_final_chunk == true); }
@@ -88,11 +89,13 @@ namespace CharacterAI_Discord_Bot.Service
             request = SetHeaders(request);
 
             using var response = await _httpClient.SendAsync(request);
-            if (!response.IsSuccessStatusCode) return FailureLog("Error!\n Request failed! (https://beta.character.ai/chat/character/info/)");
+            if (!response.IsSuccessStatusCode)
+                return Failure("Error!\n Request failed! (https://beta.character.ai/chat/character/info/)");
 
             var content = await response.Content.ReadAsStringAsync();
             var charParsed = JsonConvert.DeserializeObject<dynamic>(content)?.character;
-            if (charParsed is null) return FailureLog("Something went wrong...");   
+            if (charParsed is null)
+                return Failure("Something went wrong...");
 
             charInfo.Name = charParsed.name;
             charInfo.Greeting = charParsed.greeting;
@@ -101,7 +104,7 @@ namespace CharacterAI_Discord_Bot.Service
             charInfo.Tgt = charParsed.participant__user__username;
             charInfo.AvatarUrl = $"https://characterai.io/i/400/static/avatars/{charParsed.avatar_file_name}";
 
-            return SuccessLog("OK");
+            return Success("OK");
         }
 
         private async Task<bool> GetHistory()
@@ -116,25 +119,19 @@ namespace CharacterAI_Discord_Bot.Service
 
             using var response = await _httpClient.SendAsync(request);
             if (!response.IsSuccessStatusCode)
-                return FailureLog("Error!\n Request failed! (https://beta.character.ai/chat/history/continue/)");
+                return Failure("Error!\n Request failed! (https://beta.character.ai/chat/history/continue/)");
 
             var content = await response.Content.ReadAsStringAsync();
-            dynamic historyInfo;
-
-            try { historyInfo = JsonConvert.DeserializeObject<dynamic>(content)!; }
-            catch (Exception e) { return FailureLog("Something went wrong...\n" + e.ToString()); }
-
-            // If no status field, then history external_id is provided.
-            if (historyInfo.status == null)
-                charInfo.HistoryExternalId = historyInfo.external_id;
-            // If there's status field, then response is "status: No Such History".
-            else
+            var externalId = JsonConvert.DeserializeObject<dynamic>(content)?.external_id;
+            if (externalId is null)
             {
                 Log("No chat history found\n", ConsoleColor.Magenta);
                 return await CreateNewDialog();
             }
 
-            return SuccessLog("OK");
+            charInfo.HistoryExternalId = externalId;
+
+            return Success($"OK\n(History ID: { charInfo.HistoryExternalId })");
         }
 
         private async Task<bool> CreateNewDialog()
@@ -150,43 +147,51 @@ namespace CharacterAI_Discord_Bot.Service
 
             using var response = await _httpClient.SendAsync(request);
             if (!response.IsSuccessStatusCode)
-                return FailureLog("Error!\n  Request failed! (https://beta.character.ai/chat/history/create/)");
+                return Failure("Error!\n  Request failed! (https://beta.character.ai/chat/history/create/)");
 
             var content = await response.Content.ReadAsStringAsync();
-            try { charInfo.HistoryExternalId = JsonConvert.DeserializeObject<dynamic>(content)!.external_id; }
-            catch (Exception e) { return FailureLog("Something went wrong...\n" + e.ToString()); }
+            var externalId = JsonConvert.DeserializeObject<dynamic>(content)?.external_id;
+            if (externalId is null)
+                return Failure("Something went wrong...");
 
-            return SuccessLog("OK");
+            charInfo.HistoryExternalId = externalId;
+
+            return Success($"OK\n(History ID: {charInfo.HistoryExternalId})");
         }
 
-        private async Task<bool> DownloadAvatar()
+        private async Task DownloadAvatar()
         {
             Log("Downloading character avatar... ");
-            Stream image;
 
             try { if (File.Exists(avatarPath)) File.Delete(avatarPath); }
-            catch (Exception e) { return FailureLog("Something went wrong...\n" + e.ToString()); }
+            catch (Exception e)
+            {
+                Failure("Something went wrong...\n   Check if img/characterAvatar.webp is not open anywhere." + e.ToString());
+                return;
+            }
 
             using var avatar = File.Create(avatarPath);
             using var response = await _httpClient.GetAsync(charInfo.AvatarUrl);
 
+            Stream image;
             if (response.IsSuccessStatusCode)
-            {
-                try { image = await response.Content.ReadAsStreamAsync(); }
-                catch (Exception e) { return FailureLog("Something went wrong...\n" + e.ToString()); }
-            }
+                image = await response.Content.ReadAsStreamAsync();
             else
             {
                 Log($"Error! Request failed! ({charInfo.AvatarUrl})\n", ConsoleColor.Magenta);
                 Log(" Setting default avatar... ", ConsoleColor.DarkCyan);
 
                 try { image = new FileStream(defaultAvatarPath, FileMode.Open); }
-                catch { return FailureLog($"Something went wrong.\n   Check if img/defaultAvatar.webp does exist."); }
+                catch
+                {
+                    Failure($"Something went wrong.\n   Check if img/defaultAvatar.webp does exist.");
+                    return;
+                }
             }
             image.CopyTo(avatar);
             image.Close();
 
-            return SuccessLog("OK");
+            Success("OK");
         }
 
         public async Task<string?> UploadImg(byte[] img)
@@ -199,15 +204,16 @@ namespace CharacterAI_Discord_Bot.Service
             request = SetHeaders(request);
 
             using var response = await _httpClient.SendAsync(request);
-            if (response.IsSuccessStatusCode)
+            if (!response.IsSuccessStatusCode)
             {
-                var content = await response.Content.ReadAsStringAsync();
-                try { return JsonConvert.DeserializeObject<dynamic>(content)!.value.ToString(); }
-                catch { FailureLog("Something went wrong"); return null; }
+                Failure("\nRequest failed! (https://beta.character.ai/chat/upload-image/)\n");
+                return null;
             }
 
-            FailureLog("\nRequest failed! (https://beta.character.ai/chat/upload-image/)\n");
-            return null;
+            var content = await response.Content.ReadAsStringAsync();
+            string? imgPath = JsonConvert.DeserializeObject<dynamic>(content)?.value;
+            
+            return imgPath;
         }
 
         private HttpRequestMessage SetHeaders(HttpRequestMessage request)

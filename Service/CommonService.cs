@@ -51,19 +51,19 @@ namespace CharacterAI_Discord_Bot.Service
             if (!string.IsNullOrEmpty(text) && !string.IsNullOrWhiteSpace(text))
                 text = $"User [{author}] says:\n{text}";
             if (message.ReferencedMessage != null)
-                text = $"(In response to: \"{RemoveMention(message.ReferencedMessage.Content)}\")\n{text}";
+                text = $"((In response to: \"{RemoveMention(message.ReferencedMessage.Content)}\"))\n{text}";
 
             return text;
         }
 
-        public static bool SuccessLog(string logText = "")
+        public static bool Success(string logText = "")
         {
             Log(logText + "\n", ConsoleColor.Green);
 
             return true;
         }
 
-        public static bool FailureLog(string logText = "")
+        public static bool Failure(string logText = "")
         {
             Log(logText + "\n", ConsoleColor.Red);
 
@@ -80,7 +80,7 @@ namespace CharacterAI_Discord_Bot.Service
         public static dynamic? GetConfig()
         {
             var path = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "Config.json";
-            using StreamReader configJson = new StreamReader(path);
+            using StreamReader configJson = new(path);
             try
             {
                 var configParsed = (JObject)JsonConvert.DeserializeObject(configJson.ReadToEnd())!;
@@ -100,7 +100,7 @@ namespace CharacterAI_Discord_Bot.Service
             }
             catch
             {
-                FailureLog("Something went wrong... Check your Config file.\n");
+                Failure("Something went wrong... Check your Config file.\n");
                 return null;
             }
         }

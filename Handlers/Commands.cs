@@ -48,9 +48,9 @@ namespace CharacterAI_Discord_Bot.Handlers
             if (!ValidateBotRole(Context)) await NoPermissionAlert(Context);
             else 
             {
-                var amode = _handler.integration.audienceMode ^= true;
-                await UpdatePlayingStatus(_handler.integration.charInfo, Context.Client, amode).ConfigureAwait(false);
-                await Context.Message.ReplyAsync("⚠ Audience mode " + (amode ? "enabled" : "disabled") + '!');
+                _handler.integration.audienceMode ^= true;
+                await UpdatePlayingStatus(_handler.integration, Context.Client).ConfigureAwait(false);
+                await Context.Message.ReplyAsync("⚠ Audience mode " + (_handler.integration.audienceMode ? "enabled" : "disabled") + '!');
             }
         }
 

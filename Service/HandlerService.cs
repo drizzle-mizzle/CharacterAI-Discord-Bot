@@ -38,7 +38,7 @@ namespace CharacterAI_Discord_Bot.Service
                 using var file = File.Create(tempImgPath);
                 mc.CopyTo(file);
             }
-            catch (Exception e) { FailureLog("Something went wrong...\n" + e.ToString()); return null; }
+            catch (Exception e) { Failure("Something went wrong...\n" + e.ToString()); return null; }
 
             var mRef = new MessageReference(messageId: message.Id);
 

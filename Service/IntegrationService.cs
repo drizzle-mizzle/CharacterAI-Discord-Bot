@@ -4,7 +4,7 @@ namespace CharacterAI_Discord_Bot.Service
 {
     public partial class IntegrationService : CommonService
     {
-        public static void SetupCompleteLog(Character charInfo)
+        public static void HelloLog(Character charInfo)
         {
             Log("\nCharacterAI - Connected\n\n", ConsoleColor.Green);
             Log($" [{charInfo.Name}]\n\n", ConsoleColor.Cyan);

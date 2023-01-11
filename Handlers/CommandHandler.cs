@@ -107,7 +107,7 @@ namespace CharacterAI_Discord_Bot.Handlers
                     Task.Run(() => UpdateMessageAsync(message));
                 }
             }
-            catch (Exception e) { FailureLog(e.ToString()); } 
+            catch (Exception e) { Failure(e.ToString()); } 
             return Task.CompletedTask;
         }
 
@@ -158,7 +158,7 @@ namespace CharacterAI_Discord_Bot.Handlers
             if (message.Attachments.Any())
             {   // Downloads first image from attachments and uploads it to server
                 string url = message.Attachments.First().Url;
-                if (await DownloadImg(url) is byte[] img && integration.UploadImg(img) is Task<string> path)
+                if (await DownloadImg(url) is byte[] img && integration.UploadImg(img).Result is string path)
                     imgPath = $"https://characterai.io/i/400/static/user/{path}";
             }
 

@@ -10,16 +10,14 @@ namespace CharacterAI_Discord_Bot.Service
     {
         public static async Task AutoSetup(ServiceProvider services, DiscordSocketClient client)
         {
-            if (Config is null) return;
-
             var integration = services.GetRequiredService<CommandHandler>().integration;
+            bool result = await integration.Setup(Config.autoCharID, reset: false);
+            if (!result) return;
+
             integration.audienceMode = Config.defaultAudienceMode;
-            if (await integration.Setup(Config.autoCharID, reset: false) is false) return;
 
-            var charInfo = integration.charInfo;
-
-            await UpdatePlayingStatus(integration.charInfo, client, integration.audienceMode).ConfigureAwait(false);
-            await SetBotNickname(charInfo, client).ConfigureAwait(false);
+            await UpdatePlayingStatus(integration, client).ConfigureAwait(false);
+            await SetBotNickname(integration.charInfo, client).ConfigureAwait(false);
             await SetBotAvatar(client.CurrentUser).ConfigureAwait(false);
         }
 
@@ -48,7 +46,7 @@ namespace CharacterAI_Discord_Bot.Service
 
             return Task.Run(() =>
             {
-                UpdatePlayingStatus(charInfo, context.Client, integration.audienceMode).ConfigureAwait(false);
+                UpdatePlayingStatus(integration, context.Client).ConfigureAwait(false);
                 context.Message.ReplyAsync(reply);
             });
         }
@@ -73,11 +71,12 @@ namespace CharacterAI_Discord_Bot.Service
             await bot.ModifyAsync(u => { u.Avatar = new Discord.Image(fs); });
         }
 
-        public static async Task UpdatePlayingStatus(Character charInfo, DiscordSocketClient client, bool amode)
+        public static async Task UpdatePlayingStatus(Integration integration, DiscordSocketClient client)
         {
-            string? charID = charInfo.CharId;
-            string desc = charID is null ? "No character selected" : charInfo.Title!;
+            bool amode = integration.audienceMode;
+            var charInfo = integration.charInfo;
 
+            string desc = charInfo.CharId is null ? "No character selected" : charInfo.Title;
             await client.SetGameAsync($"Audience mode: " + (amode ? "✔️" : "✖️") + " | " + desc);
         }
 

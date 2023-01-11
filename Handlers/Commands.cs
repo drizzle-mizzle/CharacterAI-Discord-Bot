@@ -154,31 +154,31 @@ namespace CharacterAI_Discord_Bot.Handlers
         public async Task ShowHelp()
             => await Context.Message.ReplyAsync(
                 "`set character<id>` - set character by id\n" +
-                "   Aliases: `set`, `sc`\n" +
+                "    Aliases: `set`, `sc`\n" +
                 "`reset character` - save and start new chat\n" +
-                "   Alias: `reset`\n" +
+                "    Alias: `reset`\n" +
                 "`audience toggle` - enable/disable audience mode\n" +
-                "   Alias: `amode`\n" +
-                "`call user <@user_mention> <any text>` - Make character call other user*(use it to make two bots talk to each other)*\n" +
-                "   Aliases: `call`, `cu`\n" +
-                "   Example: `@some_character call @another_character Do you love donuts?`\n" +
-                "   *(if no text argument provided, default `\"Hey!\"` will be used)*\n" +
-                "`skip<amount>` - Make character ignore next few messages *(use it to stop bots' conversation)*\n" +
-                "   Alias: `delay`\n" +
-                "   *(if no amount argument provided, default `3` will be used)*\n" +
-                "   *(commands will not be ignored, amount can be reduced with another call)*\n" +
-                "`reply chance <chance>` - Change the probability of random replies on new users' messages `in %` *(It's better to use it with audience mode enabled)*\n" +
-                "   Alias: `rc`\n" +
-                "   Example: `rc 50` => `Probability of random answers was changed from 0% to 50%`\n" +
-                "   *(argument always required)*\n" +
-                "   *(keep in mind that with this feature enabled, commands can be executed without bot prefix/mention)*\n" +
+                "    Alias: `amode`\n" +
+                "`call user <@user_mention> <any text>` - Make character call other user *(use it to make two bots talk to each other)*\n" +
+                "    Aliases: `call`, `cu`\n" +
+                "    Example: `@some_character call @another_character Do you love donuts?`\n" +
+                "    *(if no text argument provided, default **\"Hey!\"** will be used)*\n" +
+                "`skip <amount>` - Make character ignore next few messages *(use it to stop bots' conversation)*\n" +
+                "    Alias: `delay`\n" +
+                "    *(if no amount argument provided, default **3** will be used)*\n" +
+                "    *(commands will not be ignored, amount can be reduced with another call)*\n" +
+                "`reply chance <chance>` - Change the probability of random replies on new users' messages (in %) *(It's better to use it with audience mode enabled)*\n" +
+                "    Alias: `rc`\n" +
+                "    Example: `rc 50` => `Probability of random answers was changed from 0% to 50%`\n" +
+                "    *(argument always required)*\n" +
+                "    *(keep in mind that with this feature enabled, commands can be executed without bot prefix/mention)*\n" +
                 "`hunt <@user_mention>` - Make character always reply on messages of certain user\n" +
                 "`unhunt <@user_mention>` - Stop hunting user\n" +
-                "`hunt chance <chance>` - Change the probability of replies to hunted user `in %`\n" +
-                "   Alias: `hc`\n" +
-                "   *(default value = 100%)*\n" +
-                "`ignore<@user_mention>` - Prevent user from calling the bot\n" +
-                "`allow<@user_mention>` - Allow user to call the bot\n" +
+                "`hunt chance <chance>` - Change the probability of replies to hunted user (in %)\n" +
+                "    Alias: `hc`\n" +
+                "    *(default value = 100%)*\n" +
+                "`ignore <@user_mention>` - Prevent user from calling the bot\n" +
+                "`allow <@user_mention>` - Allow user to call the bot\n" +
                 "`ping` - check latency");
 
         [Command("ping")]

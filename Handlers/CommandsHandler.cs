@@ -37,7 +37,7 @@ namespace CharacterAI_Discord_Bot.Handlers
                 lastResponse.replies = (dynamic?)null;
                 lastResponse.currReply = 0;
                 lastResponse.primaryMsgId = 0;
-                lastResponse.lastUserMsgId = 0;
+                lastResponse.lastUserMsgId = (ulong)0;
             });
             lastResponse.SetDefaults();
 
@@ -168,10 +168,10 @@ namespace CharacterAI_Discord_Bot.Handlers
 
             // Alert with error message if call returns string
             if (response is string @string)
-                return Task.Run(async() => await message.ReplyAsync(@string));
+                return Task.Run(async () => await message.ReplyAsync(@string));
 
             lastResponse.replies = response!.replies;
-            lastResponse.lastUserMsgId = (int)response!.last_user_msg_id;
+            lastResponse.lastUserMsgId = (ulong)response!.last_user_msg_id;
 
             // Take first character answer by default and reply with it
             var reply = lastResponse.replies[0];

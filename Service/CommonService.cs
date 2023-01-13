@@ -21,7 +21,8 @@ namespace CharacterAI_Discord_Bot.Service
                             .WithFooter($"Page {page}/{pages}");
 
             // Fill with first 10 or less
-            for (int i = 0; i < (characters.Count > 10 ? 10 : characters.Count); i++)
+            int remain = characters.Count - (page - 1) * 10;
+            for (int i = 0; i < (i > remain ? 10 : remain); i++)
             {
                 int index = (page - 1) * 10 + i;
                 var character = characters[index];

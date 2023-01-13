@@ -21,6 +21,34 @@ namespace CharacterAI_Discord_Bot.Service
             await SetBotAvatar(client.CurrentUser).ConfigureAwait(false);
         }
 
+        public static async Task<Task> FindCharacterAsync(string query, CommandsHandler handler, SocketCommandContext context)
+        {
+            return Task.CompletedTask;
+            //var integration = handler.integration;
+            //var characters = await integration.Search(query);
+            //if (characters is null)
+            //    return Task.Run(() => context.Message.ReplyAsync("⚠️ No characters were found"));
+
+            //var btns = new ComponentBuilder()
+            //    .WithButton(emote: new Emoji("\u2B06"), label: "up", style: ButtonStyle.Secondary)
+            //    .WithButton(emote: new Emoji("\u2B07"), label: "down", style: ButtonStyle.Secondary)
+            //    .WithButton(emote: new Emoji("\u2705"), label: "select", style: ButtonStyle.Success);
+
+            //if (characters.Count > 10)
+            //    btns.WithButton(emote: new Emoji("\u2B05"), label: "left", style: ButtonStyle.Secondary)
+            //        .WithButton(emote: new Emoji("\u27A1"), label: "right", style: ButtonStyle.Secondary);
+
+            //var list = new EmbedBuilder().WithTitle($"Characters found by query \"{query}\":")
+            //    .WithFooter($"Page 1/{characters.Count}");
+
+            //foreach (var character in characters)
+            //{
+            //    list.AddField()
+            //}
+
+            //await context.Message.ReplyAsync(embed: list.Build());
+        }
+
         public static async Task<Task> SetCharacterAsync(string charID, CommandsHandler handler, SocketCommandContext context, bool reset = false)
         {
             var integration = handler.integration;
@@ -77,7 +105,7 @@ namespace CharacterAI_Discord_Bot.Service
             var charInfo = integration.charInfo;
 
             string desc = charInfo.CharId is null ? "No character selected" : charInfo.Title;
-            await client.SetGameAsync($"Audience mode: " + (amode ? "✔️" : "✖️") + " | " + desc);
+            await client.SetGameAsync($"Audience mode: " + (amode ? "✅" : "❌") + " | " + desc);
         }
 
         public static Task NoPermissionAlert(SocketCommandContext context)

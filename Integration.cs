@@ -1,4 +1,6 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System.Linq;
 using System.Net.Http.Headers;
 using System.Reflection.PortableExecutable;
 using System.Text;
@@ -33,18 +35,18 @@ namespace CharacterAI_Discord_Bot.Service
             return Success(new string('<', 50) + "\n");
         }
 
-        public async Task<dynamic> CallCharacter(string msg, string imgPath, int primaryMsgId = 0, int parentMsgId = 0)
+        public async Task<dynamic> CallCharacter(string msg, string imgPath, string? primaryMsgId = null, string? parentMsgId = null)
         {
             var dynamicContent = BasicCallContent(charInfo, msg, imgPath);
 
             // Fetch an new answer (swipe)
-            if (parentMsgId != 0)
+            if (parentMsgId is not null)
                 dynamicContent.parent_msg_id = parentMsgId;
             // Reply to the new answer
-            else if (primaryMsgId != 0)
+            else if (primaryMsgId is not null)
             {
                 dynamicContent.primary_msg_id = primaryMsgId;
-                dynamicContent.seen_msg_ids = new int[] { primaryMsgId };
+                dynamicContent.seen_msg_ids = new string[] { primaryMsgId };
             }
 
             // Prepare request data
@@ -61,9 +63,9 @@ namespace CharacterAI_Discord_Bot.Service
             if (!response.IsSuccessStatusCode)
             {
                 Failure("\nFailed to send message!\n" +
-                        $"Details: { response }\n" +
-                        $"Response: { await response.Content.ReadAsStringAsync() }\n" +
-                        $"Request: { request?.Content?.ReadAsStringAsync().Result }");
+                        $"Details: {response}\n" +
+                        $"Response: {await response.Content.ReadAsStringAsync()}\n" +
+                        $"Request: {request?.Content?.ReadAsStringAsync().Result}");
 
                 return "⚠️ Failed to send message!";
             }
@@ -214,6 +216,25 @@ namespace CharacterAI_Discord_Bot.Service
             string? imgPath = JsonConvert.DeserializeObject<dynamic>(content)?.value;
             
             return imgPath;
+        }
+
+        public async Task<List<dynamic>?> Search(string query)
+        {
+            string url = $"https://beta.character.ai/chat/characters/search/?query={query}";
+            var request = new HttpRequestMessage(HttpMethod.Get, url);
+            //request.Content = new FormUrlEncodedContent(new Dictionary<string, string> { { "query", query } });
+            request = SetHeaders(request);
+
+            using var response = await _httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                Failure("\nRequest failed! (https://beta.character.ai/chat/characters/search/)\n");
+                return null;
+            }
+            var content = await response.Content.ReadAsStringAsync();
+            JArray characters = JsonConvert.DeserializeObject<dynamic>(content)!.characters;
+            
+            return characters.HasValues ? characters.ToObject<List<dynamic>>() : null;
         }
 
         private HttpRequestMessage SetHeaders(HttpRequestMessage request)

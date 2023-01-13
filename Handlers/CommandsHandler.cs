@@ -36,8 +36,8 @@ namespace CharacterAI_Discord_Bot.Handlers
             {
                 lastResponse.replies = (dynamic?)null;
                 lastResponse.currReply = 0;
-                lastResponse.primaryMsgId = 0;
-                lastResponse.lastUserMsgId = (ulong)0;
+                lastResponse.primaryMsgId = (string?)null;
+                lastResponse.lastUserMsgId = (string?)null;
             });
             lastResponse.SetDefaults();
 
@@ -125,7 +125,7 @@ namespace CharacterAI_Discord_Bot.Handlers
                 newReply = lastResponse.replies[lastResponse.currReply];
             }
 
-            lastResponse.primaryMsgId = (int)newReply.id;
+            lastResponse.primaryMsgId = newReply.id;
             string? replyImage = newReply?.image_rel_path;
 
             Embed? embed = null;
@@ -165,13 +165,13 @@ namespace CharacterAI_Discord_Bot.Handlers
             // Send message to character
             var response = await integration.CallCharacter(text, imgPath, primaryMsgId: lastResponse.primaryMsgId);
             lastResponse.SetDefaults();
-
+            
             // Alert with error message if call returns string
             if (response is string @string)
                 return Task.Run(async () => await message.ReplyAsync(@string));
 
             lastResponse.replies = response!.replies;
-            lastResponse.lastUserMsgId = (ulong)response!.last_user_msg_id;
+            lastResponse.lastUserMsgId = (string)response!.last_user_msg_id;
 
             // Take first character answer by default and reply with it
             var reply = lastResponse.replies[0];

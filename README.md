@@ -7,7 +7,7 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 
 ## Features
 - Talk with any character on your own server and change them on the fly.
-- Embedded character search
+- Embedded character search.
 - Automatically sets the name and profile picture of the character.
 - Supports answers swiping and image sending.
 - You can make two or more characters talk to each other.
@@ -17,7 +17,7 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 
 ## Commands
 - `help`
-- `link` - Get original character link.
+- `link` - Get original character link
 - find <query> - find and set character by name
 - `set character <id>` - set character by id
     - Aliases: `set`, `sc`

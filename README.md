@@ -7,6 +7,7 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 
 ## Features
 - Talk with any character on your own server and change them on the fly.
+- Embedded character search.
 - Automatically sets the name and profile picture of the character.
 - Supports answers swiping and image sending.
 - You can make two or more characters talk to each other.
@@ -16,7 +17,8 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 
 ## Commands
 - `help`
-- `link` - Get original character link.
+- `link` - Get original character link
+- `find <query>` - find and set character by name
 - `set character <id>` - set character by id
     - Aliases: `set`, `sc`
 - `reset character` - save and start new chat
@@ -82,17 +84,23 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
   - **Linux**
     - Execute `chmod 777 ./CharacterAI_Discord_Bot`
     - Run `./CharacterAI_Discord_Bot`
-11. Open a chat with a character you want to add on your server.
-12. In adress bar locate and copy character's id (it's right after '/chat?char=...').
+11. Set character:
+	- **With an embedded search:**
+		Run command `find <query>` and select a character
+		
+		![image](https://user-images.githubusercontent.com/55811932/212414571-eb43a01f-00db-4f47-9199-8d0cc0db7f24.png)
 
-![image](https://user-images.githubusercontent.com/55811932/208032897-71a459f4-4db3-47b0-a042-d772a3f0c01b.png)
+	- **With a browser:**
+		- Open a chat with a character you want to add on your server.
+		- In adress bar locate and copy character's id (it's right after '/chat?char=...').
+		
+		![image](https://user-images.githubusercontent.com/55811932/208032897-71a459f4-4db3-47b0-a042-d772a3f0c01b.png)
+		
+		- Run bot command `set <id>`
+		
+		![chrome_2fdXOMDEcS](https://user-images.githubusercontent.com/55811932/211129208-8cb7cc80-d1cd-4c04-a0f1-e146345972cc.gif)
 
-13. Go to your server and run bot command `set <id>`
-	- (Bot will automatically set it's avatar and nickname)
-	
-![chrome_2fdXOMDEcS](https://user-images.githubusercontent.com/55811932/211129208-8cb7cc80-d1cd-4c04-a0f1-e146345972cc.gif)
-
-**14. Enjoy converstaion!**
+**12. Enjoy converstaion!**
 
 ## Audience mode (experimental)
 

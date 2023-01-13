@@ -1,10 +1,8 @@
-﻿using Newtonsoft.Json;
+﻿using CharacterAI_Discord_Bot.Models;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Linq;
 using System.Net.Http.Headers;
-using System.Reflection.PortableExecutable;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace CharacterAI_Discord_Bot.Service
 {
@@ -29,7 +27,6 @@ namespace CharacterAI_Discord_Bot.Service
             if (!await GetInfo() || !(reset ? await CreateNewDialog() : await GetHistory()))
                 return Failure($"\nSetup has been aborted\n{ new string('<', 50) }\n");
 
-            await DownloadAvatar();
             HelloLog(charInfo);
 
             return Success(new string('<', 50) + "\n");
@@ -161,41 +158,6 @@ namespace CharacterAI_Discord_Bot.Service
             return Success($"OK\n(History ID: {charInfo.HistoryExternalId})");
         }
 
-        private async Task DownloadAvatar()
-        {
-            Log("Downloading character avatar... ");
-
-            try { if (File.Exists(avatarPath)) File.Delete(avatarPath); }
-            catch (Exception e)
-            {
-                Failure("Something went wrong...\n   Check if img/characterAvatar.webp is not open anywhere." + e.ToString());
-                return;
-            }
-
-            using var avatar = File.Create(avatarPath);
-            using var response = await _httpClient.GetAsync(charInfo.AvatarUrl);
-
-            Stream image;
-            if (response.IsSuccessStatusCode)
-                image = await response.Content.ReadAsStreamAsync();
-            else
-            {
-                Log($"Error! Request failed! ({charInfo.AvatarUrl})\n", ConsoleColor.Magenta);
-                Log(" Setting default avatar... ", ConsoleColor.DarkCyan);
-
-                try { image = new FileStream(defaultAvatarPath, FileMode.Open); }
-                catch
-                {
-                    Failure($"Something went wrong.\n   Check if img/defaultAvatar.webp does exist.");
-                    return;
-                }
-            }
-            image.CopyTo(avatar);
-            image.Close();
-
-            Success("OK");
-        }
-
         public async Task<string?> UploadImg(byte[] img)
         {
             var image = new ByteArrayContent(img);
@@ -218,22 +180,22 @@ namespace CharacterAI_Discord_Bot.Service
             return imgPath;
         }
 
-        public async Task<List<dynamic>?> Search(string query)
+        public async Task<List<dynamic>?> Search(string text)
         {
-            string url = $"https://beta.character.ai/chat/characters/search/?query={query}";
+            string url = $"https://beta.character.ai/chat/characters/search/?query={text}";
             var request = new HttpRequestMessage(HttpMethod.Get, url);
-            //request.Content = new FormUrlEncodedContent(new Dictionary<string, string> { { "query", query } });
             request = SetHeaders(request);
 
             using var response = await _httpClient.SendAsync(request);
             if (!response.IsSuccessStatusCode)
             {
-                Failure("\nRequest failed! (https://beta.character.ai/chat/characters/search/)\n");
+                Failure($"\nRequest failed! ({url})\n");
                 return null;
             }
+
             var content = await response.Content.ReadAsStringAsync();
             JArray characters = JsonConvert.DeserializeObject<dynamic>(content)!.characters;
-            
+
             return characters.HasValues ? characters.ToObject<List<dynamic>>() : null;
         }
 
@@ -245,11 +207,10 @@ namespace CharacterAI_Discord_Bot.Service
                 "Authorization", $"Token {_userToken}",
                 "accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
                 "accept-encoding", "deflate, br",
-                "ContentLength", request.Content!.ToString()!.Length.ToString() ?? "0",
                 "ContentType", "application/json",
                 "dnt", "1",
                 "Origin", "https://beta.character.ai",
-                "Referer", $"https://beta.character.ai/chat?char={charInfo.CharId}",
+                "Referer", $"https://beta.character.ai/" + (charInfo?.CharId is null ? "search?" : $"chat?char={charInfo.CharId}"),
                 "sec-ch-ua", "\"Not?A_Brand\";v=\"8\", \"Chromium\";v=\"108\", \"Google Chrome\";v=\"108\"",
                 "sec-ch-ua-mobile", "?0",
                 "sec-ch-ua-platform", "Windows",
@@ -258,10 +219,11 @@ namespace CharacterAI_Discord_Bot.Service
                 "sec-fetch-site", "same-origin",
                 "User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
             };
-            for (int i = 0; i < headers.Length-1; i+=2)
-                request.Headers.Add(headers[i], headers[i+1]);
 
-            return request;
+            for (int i = 0; i < headers.Length-1; i+=2)
+                request!.Headers.Add(headers[i], headers[i+1]);
+
+            return request!;
         }
     }
 }

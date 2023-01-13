@@ -17,10 +17,10 @@ namespace CharacterAI_Discord_Bot.Service
             if (replyImage != null && await TryGetImage(replyImage))
                 embed = new EmbedBuilder().WithImageUrl(replyImage).Build();
 
-            var botReply = await message.ReplyAsync(replyText, embed: embed);
+            var botReply = await message.ReplyAsync(replyText, embed: embed).ConfigureAwait(false);
 
-            await SetArrowButtons(botReply);
-            _ = RemoveButtons(botReply, delay: Config.removeDelay).ConfigureAwait(false);
+            await SetArrowButtons(botReply).ConfigureAwait(false);
+            _ = RemoveButtons(botReply, delay: Config.removeDelay);
 
             return botReply!.Id;
         }
@@ -48,7 +48,7 @@ namespace CharacterAI_Discord_Bot.Service
             var btn1 = new Emoji("\u2B05");
             var btn2 = new Emoji("\u27A1");
 
-            await message.AddReactionsAsync(new Emoji[] { btn1, btn2 });
+            await message.AddReactionsAsync(new Emoji[] { btn1, btn2 }).ConfigureAwait(false);
         }
 
         public static async Task RemoveButtons(IMessage? lastMessage = null, int delay = 0)
@@ -58,7 +58,7 @@ namespace CharacterAI_Discord_Bot.Service
             if (delay > 0)
                 await Task.Delay(delay * 1000);
 
-            try { await lastMessage.RemoveAllReactionsAsync(); } catch { }
+            try { await lastMessage.RemoveAllReactionsAsync().ConfigureAwait(false); } catch { }
         }
 
         [GeneratedRegex("(\\n){3,}")]

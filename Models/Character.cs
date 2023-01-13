@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace CharacterAI_Discord_Bot
+﻿namespace CharacterAI_Discord_Bot.Models
 {
     public class Character
     {

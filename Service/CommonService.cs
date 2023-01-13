@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System.Text.RegularExpressions;
 using Discord.WebSocket;
 using Discord;
+using CharacterAI_Discord_Bot.Models;
 
 namespace CharacterAI_Discord_Bot.Service
 {
@@ -10,10 +11,33 @@ namespace CharacterAI_Discord_Bot.Service
     {
         public static readonly dynamic Config = GetConfig()!;
         public static readonly string imgPath = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "img" + Path.DirectorySeparatorChar;
-        public static readonly string avatarPath = imgPath + "characterAvatar.webp";
-        public static readonly string defaultAvatarPath = imgPath + "defaultAvatar.webp";
-        public static readonly string tempImgPath = imgPath + "temp.webp";
+        public static readonly string defaultAvatarPath = imgPath + "defaultAvatar.png";
         public static readonly string nopowerPath = imgPath + Config.nopower;
+
+        public static Embed BuildCharactersList(List<dynamic> characters, int pages, string query, int row, int page)
+        {
+            var list = new EmbedBuilder()
+                            .WithTitle($"Characters found by query \"{query}\":\n({characters.Count})\n")
+                            .WithFooter($"Page {page}/{pages}");
+
+            // Fill with first 10 or less
+            for (int i = 0; i < (characters.Count > 10 ? 10 : characters.Count); i++)
+            {
+                int index = (page - 1) * 10 + i;
+                var character = characters[index];
+
+                string charName = character.participant__name;
+                string charInts = character.participant__num_interactions;
+                string author = character.user__username;
+
+                string fValue = $"Interactions: {charInts} | Author: {author}";
+                if (i+1 == row) fValue += "  ✅";
+
+                list.AddField($"{index + 1}. {charName}", fValue);
+            }
+
+            return list.Build();
+        }
 
         public static string RemoveMention(string text)
         {
@@ -29,15 +53,15 @@ namespace CharacterAI_Discord_Bot.Service
             return text;
         }
 
-        public static async Task<byte[]?> TryDownloadImg(string url)
+        public static async Task<byte[]?> TryDownloadImg(string url, int attempts)
         {
             if (string.IsNullOrEmpty(url)) return null;
 
             using HttpClient client = new();
-            // Try 10 times and return null
-            for (int i = 0; i < 10; i++)
+            // Try n times and return null
+            for (int i = 0; i < attempts; i++)
             {
-                try { return await client.GetByteArrayAsync(url); }
+                try { return await client.GetByteArrayAsync(url).ConfigureAwait(false); }
                 catch { await Task.Delay(2500); }
             }
 
@@ -49,7 +73,7 @@ namespace CharacterAI_Discord_Bot.Service
             using HttpClient client = new();
 
             for (int i = 0; i < 10; i++)
-                if ((await client.GetAsync(url)).IsSuccessStatusCode)
+                if ((await client.GetAsync(url).ConfigureAwait(false)).IsSuccessStatusCode)
                     return true;
                 else
                     await Task.Delay(2500);

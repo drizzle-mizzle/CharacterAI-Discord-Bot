@@ -1,4 +1,5 @@
 ﻿using System.Dynamic;
+using CharacterAI_Discord_Bot.Models;
 
 namespace CharacterAI_Discord_Bot.Service
 {

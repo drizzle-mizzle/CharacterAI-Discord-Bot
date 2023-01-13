@@ -18,31 +18,32 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 ## Commands
 - `help`
 - `link` - Get original character link
-- `find <query>` - find and set character by name
+- `find character <query>` - find and set character by name
+	- Alias: `find`
 - `set character <id>` - set character by id
-    - Aliases: `set`, `sc`
+  - Aliases: `set`, `sc`
 - `reset character` - save and start new chat
-    - Alias: `reset`
+	- Alias: `reset`
 - `audience toggle` - enable/disable audience mode *(What is the audience mode - read below)*
 	- Alias: `amode`
 - `call user <@user_mention> <any text>` - Make character call other user *(use it to make two bots talk to each other)*
-    - Aliases: `call`, `cu`
-    - Example: `@some_character call @another_character Do you love donuts?`
-    - *(if no text argument provided, default `"Hey!"` will be used)*
+  - Aliases: `call`, `cu`
+  - Example: `@some_character call @another_character Do you love donuts?`
+  - *(if no text argument provided, default `"Hey!"` will be used)*
 - `skip <amount>` - Make character ignore next few messages *(use it to stop bots' conversation)*
-    - Alias: `delay`
-    - *(if no amount argument provided, default '3' will be used)*
-    - *(commands will not be ignored, amount can be reduced with another call)*
+  - Alias: `delay`
+  - *(if no amount argument provided, default '3' will be used)*
+  - *(commands will not be ignored, amount can be reduced with another call)*
 - `reply chance <chance>` - Change the probability of random replies on new users' messages `in %` *(It's better to use it with audience mode enabled)*
-    - Alias: `rc`
-    - Example: `rc 50` => `Probability of random answers was changed from 0% to 50%`
-    - *(argument always required)*
-    - *(keep in mind that with this feature enabled, commands can be executed without bot prefix/mention)*
+  - Alias: `rc`
+  - Example: `rc 50` => `Probability of random answers was changed from 0% to 50%`
+  - *(argument always required)*
+  - *(keep in mind that with this feature enabled, commands can be executed without bot prefix/mention)*
 - `hunt <@user_mention>` - Make character always reply on messages of certain user
 - `unhunt <@user_mention>` - Stop hunting user
 - `hunt chance <chance>` - Change the probability of replies to hunted user `in %`
-    - Alias: `hc`
-    - *(default value = 100%)*
+  - Alias: `hc`
+  - *(default value = 100%)*
 - `ignore <@user_mention>` - Prevent user from calling the bot
 - `allow <@user_mention>` - Allow user to call the bot
 - `ping` - check latency

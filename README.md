@@ -91,9 +91,7 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
   - **With an embedded search:**
    Run command `find <query>` and select a character
    
-    ![image](https://user-images.githubusercontent.com/55811932/212528484-3359acb9-e105-489e-a2e7-215c728f92e5.png)
-    ![image](https://user-images.githubusercontent.com/55811932/212528490-19c2c9e1-ef88-44af-b51a-16720fdf9e41.png)
-
+    ![image](https://user-images.githubusercontent.com/55811932/212528681-95b70fc8-9d42-4103-b5ba-444348595d42.png)
 
   - **With a browser:**
     - Open a chat with a character you want to add on your server.

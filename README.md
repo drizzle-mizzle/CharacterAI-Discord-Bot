@@ -13,7 +13,7 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 - You can make two or more characters talk to each other.
 - Random replies, audience mode and some other stuff.
 
-![chrome_cshYMsGIaB](https://user-images.githubusercontent.com/55811932/211129383-c7cd4ca2-ceb4-42c5-8449-bc6ce9b2d538.gif)
+    ![chrome_cshYMsGIaB](https://user-images.githubusercontent.com/55811932/211129383-c7cd4ca2-ceb4-42c5-8449-bc6ce9b2d538.gif)
 
 ## Commands
 - `help`
@@ -67,18 +67,18 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 4. Create [CharacterAI](https://beta.character.ai/) account if you don't have one.
 5. Sign in, open DevTools (<Ctrl+Shift+J> in Chrome), find "Network" page and go to the "Fetch/XHR" section.
 
-![image](https://user-images.githubusercontent.com/55811932/208903651-17ffef98-6a88-47d2-92ec-6940e76fbf77.png)
+    ![image](https://user-images.githubusercontent.com/55811932/208903651-17ffef98-6a88-47d2-92ec-6940e76fbf77.png)
 
-![image](https://user-images.githubusercontent.com/55811932/208903737-1ec8741a-3151-455b-bca0-9b2cf878dd48.png)
+    ![image](https://user-images.githubusercontent.com/55811932/208903737-1ec8741a-3151-455b-bca0-9b2cf878dd48.png)
 
 6. Reload page (DevTools should remain open).
 7. Now you should see a list of requests. Locate "auth0/" and open it's Response/Preview page.
 
-![image](https://user-images.githubusercontent.com/55811932/208904061-f2628020-3e77-4f01-865b-809a8234c70b.png)
+    ![image](https://user-images.githubusercontent.com/55811932/208904061-f2628020-3e77-4f01-865b-809a8234c70b.png)
 
 8. That's your accout auth token.
 
-![image](https://user-images.githubusercontent.com/55811932/208904455-8331a2d5-5160-448e-9464-77fb62d410b7.png)
+   ![image](https://user-images.githubusercontent.com/55811932/208904455-8331a2d5-5160-448e-9464-77fb62d410b7.png)
 
 9. Copy it's value and place in `char_ai_user_token` field in `Config.json` file.
 10. Launch the bot:
@@ -91,8 +91,8 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
   - **With an embedded search:**
    Run command `find <query>` and select a character
    
-   ![image](https://user-images.githubusercontent.com/55811932/212528260-d05c2099-f649-472c-a8d4-ba21dee265d8.png)
-   ![image](https://user-images.githubusercontent.com/55811932/212528258-431c8218-3140-47ac-8537-4013592c83c7.png)
+     ![image](https://user-images.githubusercontent.com/55811932/212528260-d05c2099-f649-472c-a8d4-ba21dee265d8.png)
+     ![image](https://user-images.githubusercontent.com/55811932/212528258-431c8218-3140-47ac-8537-4013592c83c7.png)
 
   - **With a browser:**
     - Open a chat with a character you want to add on your server.

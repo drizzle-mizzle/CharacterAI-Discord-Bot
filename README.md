@@ -89,7 +89,7 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
     - Run `./CharacterAI_Discord_Bot`
 11. Set character:
   - **With an embedded search:**
-   Run command `find <query>` and select a character
+    - Run command `find <query>` and select a character
    
     ![image](https://user-images.githubusercontent.com/55811932/212528681-95b70fc8-9d42-4103-b5ba-444348595d42.png)
 

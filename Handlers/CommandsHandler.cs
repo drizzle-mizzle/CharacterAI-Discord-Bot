@@ -145,7 +145,8 @@ namespace CharacterAI_Discord_Bot.Handlers
                             c.Embed = new EmbedBuilder()
                             {
                                 Title = $"✅ Selected - {character.participant__name}",
-                                Description = $"Original link: [Chat with {character.participant__name}](https://beta.character.ai/chat?char={charId})",
+                                Description = $"{character.description.ToString().Trim(' ')}\n\n" +
+                                    $"*Original link: [Chat with {character.participant__name}](https://beta.character.ai/chat?char={charId})*",
                                 ImageUrl = charImg,
                                 Footer = new EmbedFooterBuilder().WithText($"Created by {character.user__username}")
                             }.Build();

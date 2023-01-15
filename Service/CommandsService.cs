@@ -40,8 +40,7 @@ namespace CharacterAI_Discord_Bot.Service
             }
 
             var charInfo = integration.charInfo;
-            string reply = charInfo.Greeting + (string.IsNullOrEmpty(charInfo.Description.Trim(' ')) ?
-                "" : $"\n*\"{charInfo.Description}\"*");
+            string reply = charInfo.Greeting!;
 
             _ = UpdatePlayingStatus(integration, context.Client).ConfigureAwait(false);
 

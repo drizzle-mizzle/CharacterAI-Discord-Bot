@@ -61,15 +61,13 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 
 ##  How to set up
 1. Download [Last Release](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/releases/latest)
-2. Create a new Discord application with bot (you can easily find guide on the internet, so I won't focus on this part here).
-  - *(don't forget to give it basic text permissions and enable all **"Privileged Gateway Intents"** switchers)*
+2. Create a new Discord application with a bot (you can easily find guide on the internet, so I won't focus on this part here).
+    - *(don't forget to give it basic text permissions and enable all **"Privileged Gateway Intents"** switchers)*
 3. Get your bot token and place it in `Config.json` file.
 4. Create [CharacterAI](https://beta.character.ai/) account if you don't have one.
 5. Sign in, open DevTools (<Ctrl+Shift+J> in Chrome), find "Network" page and go to the "Fetch/XHR" section.
 
-    ![image](https://user-images.githubusercontent.com/55811932/208903651-17ffef98-6a88-47d2-92ec-6940e76fbf77.png)
-
-    ![image](https://user-images.githubusercontent.com/55811932/208903737-1ec8741a-3151-455b-bca0-9b2cf878dd48.png)
+    ![image](https://user-images.githubusercontent.com/55811932/212528975-9a162993-9c70-4e18-aab1-68a9df09f69e.png)
 
 6. Reload page (DevTools should remain open).
 7. Now you should see a list of requests. Locate "auth0/" and open it's Response/Preview page.

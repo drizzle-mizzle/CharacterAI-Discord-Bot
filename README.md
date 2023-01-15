@@ -91,17 +91,18 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
   - **With an embedded search:**
    Run command `find <query>` and select a character
    
-   ![image](https://user-images.githubusercontent.com/55811932/212414571-eb43a01f-00db-4f47-9199-8d0cc0db7f24.png)
+   ![image](https://user-images.githubusercontent.com/55811932/212528260-d05c2099-f649-472c-a8d4-ba21dee265d8.png)
+   ![image](https://user-images.githubusercontent.com/55811932/212528258-431c8218-3140-47ac-8537-4013592c83c7.png)
 
   - **With a browser:**
-   - Open a chat with a character you want to add on your server.
-   - In adress bar locate and copy character's id (it's right after '/chat?char=...').
+    - Open a chat with a character you want to add on your server.
+    - In adress bar locate and copy character's id (it's right after '/chat?char=...').
    
-   ![image](https://user-images.githubusercontent.com/55811932/208032897-71a459f4-4db3-47b0-a042-d772a3f0c01b.png)
+    ![image](https://user-images.githubusercontent.com/55811932/208032897-71a459f4-4db3-47b0-a042-d772a3f0c01b.png)
    
-   - Run bot command `set <id>`
+    - Run bot command `set <id>`
    
-   ![chrome_2fdXOMDEcS](https://user-images.githubusercontent.com/55811932/211129208-8cb7cc80-d1cd-4c04-a0f1-e146345972cc.gif)
+    ![chrome_2fdXOMDEcS](https://user-images.githubusercontent.com/55811932/211129208-8cb7cc80-d1cd-4c04-a0f1-e146345972cc.gif)
 
 **12. Enjoy converstaion!**
 

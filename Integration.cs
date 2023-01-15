@@ -27,9 +27,7 @@ namespace CharacterAI_Discord_Bot.Service
             if (!await GetInfo() || !(reset ? await CreateNewDialog() : await GetHistory()))
                 return Failure($"\nSetup has been aborted\n{ new string('<', 50) }\n");
 
-            HelloLog(charInfo);
-
-            return Success(new string('<', 50) + "\n");
+            return HelloLog(charInfo);
         }
 
         public async Task<dynamic> CallCharacter(string msg, string imgPath, string? primaryMsgId = null, string? parentMsgId = null)

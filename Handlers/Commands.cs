@@ -17,7 +17,7 @@ namespace CharacterAI_Discord_Bot.Handlers
 
         [Command("find character")]
         [Alias("find")]
-        public async Task FindCharacter(string query)
+        public async Task FindCharacter([Remainder] string query)
         {
             if (!ValidateBotRole(Context))
                 await NoPermissionAlert(Context).ConfigureAwait(false);
@@ -146,6 +146,7 @@ namespace CharacterAI_Discord_Bot.Handlers
         }
 
         [Command("ignore")]
+        [Alias("ban")]
         [Summary("Prevent user from calling the bot.")]
         public async Task Ignore(IUser user)
         {
@@ -159,6 +160,7 @@ namespace CharacterAI_Discord_Bot.Handlers
         }
 
         [Command("allow")]
+        [Alias("unban")]
         [Summary("Allow user to call the bot.")]
         public async Task Allow(IUser user)
         {
@@ -183,6 +185,9 @@ namespace CharacterAI_Discord_Bot.Handlers
         [Command("help")]
         public async Task ShowHelp()
             => await Context.Message.ReplyAsync(
+                "`link` - Get original character link\n" +
+                "`find character <query>` - find and set character by name\n" +
+                "    Alias: `find`\n" +
                 "`set character<id>` - set character by id\n" +
                 "    Aliases: `set`, `sc`\n" +
                 "`reset character` - save and start new chat\n" +
@@ -208,7 +213,9 @@ namespace CharacterAI_Discord_Bot.Handlers
                 "    Alias: `hc`\n" +
                 "    *(default value = 100%)*\n" +
                 "`ignore <@user_mention>` - Prevent user from calling the bot\n" +
+                "    Alias: `ban`\n" +
                 "`allow <@user_mention>` - Allow user to call the bot\n" +
+                "    Alias: `unban`\n" +
                 "`ping` - check latency"
                 ).ConfigureAwait(false);
 

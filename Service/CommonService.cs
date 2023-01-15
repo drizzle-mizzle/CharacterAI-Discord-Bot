@@ -21,8 +21,8 @@ namespace CharacterAI_Discord_Bot.Service
                             .WithFooter($"Page {page}/{pages}");
 
             // Fill with first 10 or less
-            int remain = characters.Count - (page - 1) * 10;
-            for (int i = 0; i < (i > remain ? 10 : remain); i++)
+            int tail = characters.Count - (page - 1) * 10;
+            for (int i = 0; i < (tail > 10 ? 10 : tail); i++)
             {
                 int index = (page - 1) * 10 + i;
                 var character = characters[index];
@@ -31,10 +31,10 @@ namespace CharacterAI_Discord_Bot.Service
                 string charInts = character.participant__num_interactions;
                 string author = character.user__username;
 
-                string fValue = $"Interactions: {charInts} | Author: {author}";
-                if (i+1 == row) fValue += "  ✅";
+                string fTitle = charName;
+                if (i+1 == row) fTitle += " - ✅";
 
-                list.AddField($"{index + 1}. {charName}", fValue);
+                list.AddField($"{index + 1}. {fTitle}", $"Interactions: {charInts} | Author: {author}");
             }
 
             return list.Build();

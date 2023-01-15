@@ -19,13 +19,13 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 - `help`
 - `link` - Get original character link
 - `find character <query>` - find and set character by name
-	- Alias: `find`
+  - Alias: `find`
 - `set character <id>` - set character by id
   - Aliases: `set`, `sc`
 - `reset character` - save and start new chat
-	- Alias: `reset`
+  - Alias: `reset`
 - `audience toggle` - enable/disable audience mode *(What is the audience mode - read below)*
-	- Alias: `amode`
+  - Alias: `amode`
 - `call user <@user_mention> <any text>` - Make character call other user *(use it to make two bots talk to each other)*
   - Aliases: `call`, `cu`
   - Example: `@some_character call @another_character Do you love donuts?`
@@ -45,7 +45,9 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
   - Alias: `hc`
   - *(default value = 100%)*
 - `ignore <@user_mention>` - Prevent user from calling the bot
+  - Alias: `ban`
 - `allow <@user_mention>` - Allow user to call the bot
+  - Alias: `unban`
 - `ping` - check latency
 
 ## Additional configuration
@@ -60,7 +62,7 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 ##  How to set up
 1. Download [Last Release](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/releases/latest)
 2. Create a new Discord application with bot (you can easily find guide on the internet, so I won't focus on this part here).
-	- *(don't forget to give it basic text permissions and enable all **"Privileged Gateway Intents"** switchers)*
+  - *(don't forget to give it basic text permissions and enable all **"Privileged Gateway Intents"** switchers)*
 3. Get your bot token and place it in `Config.json` file.
 4. Create [CharacterAI](https://beta.character.ai/) account if you don't have one.
 5. Sign in, open DevTools (<Ctrl+Shift+J> in Chrome), find "Network" page and go to the "Fetch/XHR" section.
@@ -86,20 +88,20 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
     - Execute `chmod 777 ./CharacterAI_Discord_Bot`
     - Run `./CharacterAI_Discord_Bot`
 11. Set character:
-	- **With an embedded search:**
-		Run command `find <query>` and select a character
-		
-		![image](https://user-images.githubusercontent.com/55811932/212414571-eb43a01f-00db-4f47-9199-8d0cc0db7f24.png)
+  - **With an embedded search:**
+   Run command `find <query>` and select a character
+   
+   ![image](https://user-images.githubusercontent.com/55811932/212414571-eb43a01f-00db-4f47-9199-8d0cc0db7f24.png)
 
-	- **With a browser:**
-		- Open a chat with a character you want to add on your server.
-		- In adress bar locate and copy character's id (it's right after '/chat?char=...').
-		
-		![image](https://user-images.githubusercontent.com/55811932/208032897-71a459f4-4db3-47b0-a042-d772a3f0c01b.png)
-		
-		- Run bot command `set <id>`
-		
-		![chrome_2fdXOMDEcS](https://user-images.githubusercontent.com/55811932/211129208-8cb7cc80-d1cd-4c04-a0f1-e146345972cc.gif)
+  - **With a browser:**
+   - Open a chat with a character you want to add on your server.
+   - In adress bar locate and copy character's id (it's right after '/chat?char=...').
+   
+   ![image](https://user-images.githubusercontent.com/55811932/208032897-71a459f4-4db3-47b0-a042-d772a3f0c01b.png)
+   
+   - Run bot command `set <id>`
+   
+   ![chrome_2fdXOMDEcS](https://user-images.githubusercontent.com/55811932/211129208-8cb7cc80-d1cd-4c04-a0f1-e146345972cc.gif)
 
 **12. Enjoy converstaion!**
 

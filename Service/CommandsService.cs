@@ -22,6 +22,38 @@ namespace CharacterAI_Discord_Bot.Service
             await SetBotNickname(integration.charInfo, client).ConfigureAwait(false);
         }
 
+        public static async Task SetCharacterAsync(string charID, CommandsHandler handler, SocketCommandContext context, bool reset = false)
+        {
+            var integration = handler.integration;
+
+            if (handler.temps.lastCharacterCallMsgId != 0)
+            {
+                var lastMessage = await context.Message.Channel.GetMessageAsync(handler.temps.lastCharacterCallMsgId);
+                _ = HandlerService.RemoveButtons(lastMessage);
+                handler.lastResponse.SetDefaults();
+            }
+
+            if (await integration.Setup(charID, reset: reset) is false)
+            {
+                await context.Message.ReplyAsync("⚠️ Failed to set character!").ConfigureAwait(false);
+                return;
+            }
+
+            var charInfo = integration.charInfo;
+            string reply = charInfo.Greeting + (string.IsNullOrEmpty(charInfo.Description.Trim(' ')) ?
+                "" : $"\n*\"{charInfo.Description}\"*");
+
+            _ = UpdatePlayingStatus(integration, context.Client).ConfigureAwait(false);
+
+            try { await SetBotNickname(charInfo, context.Client).ConfigureAwait(false); }
+            catch { reply += "\n⚠️ Failed to set bot name! Probably, missing permissions?"; }
+
+            try { await SetBotAvatar(context.Client.CurrentUser, charInfo.AvatarUrl!).ConfigureAwait(false); }
+            catch { reply += "\n⚠️ Failed to set bot avatar!"; }
+
+            await context.Message.ReplyAsync(reply).ConfigureAwait(false);
+        }
+
         public static async Task FindCharacterAsync(string query, CommandsHandler handler, SocketCommandContext context)
         {
             var integration = handler.integration;
@@ -46,38 +78,9 @@ namespace CharacterAI_Discord_Bot.Service
 
             handler.lastSearch = new LastSearch() { pages = pages, characters = characters, query = query };
 
+            
             var list = BuildCharactersList(characters, pages, query, row: 1, page: 1);
             await context.Message.ReplyAsync(embed: list, components: buttons.Build()).ConfigureAwait(false);
-        }
-
-        public static async Task SetCharacterAsync(string charID, CommandsHandler handler, SocketCommandContext context, bool reset = false)
-        {
-            var integration = handler.integration;
-
-            if (handler.temps.lastCharacterCallMsgId != 0)
-            {
-                var lastMessage = await context.Message.Channel.GetMessageAsync(handler.temps.lastCharacterCallMsgId);
-                _ = HandlerService.RemoveButtons(lastMessage);
-                handler.lastResponse.SetDefaults();
-            }
-
-            if (await integration.Setup(charID, reset: reset) is false)
-            {
-                await context.Message.ReplyAsync("⚠️ Failed to set character!").ConfigureAwait(false);
-                return;
-            }
-
-            var charInfo = integration.charInfo;
-            string reply = $"{charInfo.Greeting}\n*\"{charInfo.Description}\"*";
-
-            try { _ = SetBotNickname(charInfo, context.Client).ConfigureAwait(false); }
-            catch { reply += "\n⚠️ Failed to set bot name! Probably, missing permissions?"; }
-
-            try { _ = SetBotAvatar(context.Client.CurrentUser, charInfo.AvatarUrl!).ConfigureAwait(false); }
-            catch { reply += "\n⚠️ Failed to set bot avatar!"; }
-
-            _ = UpdatePlayingStatus(integration, context.Client).ConfigureAwait(false);
-            await context.Message.ReplyAsync(reply).ConfigureAwait(false);
         }
 
         public static Task ResetCharacter(CommandsHandler handler, SocketCommandContext context)
@@ -119,7 +122,7 @@ namespace CharacterAI_Discord_Bot.Service
                 Success("OK");
             }
 
-            _ = bot.ModifyAsync(u => { u.Avatar = new Discord.Image(image); }).ConfigureAwait(false);
+            await bot.ModifyAsync(u => { u.Avatar = new Discord.Image(image); }).ConfigureAwait(false);
         }
 
         public static async Task UpdatePlayingStatus(Integration integration, DiscordSocketClient client)

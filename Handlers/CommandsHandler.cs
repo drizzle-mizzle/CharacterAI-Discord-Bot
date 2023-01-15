@@ -96,49 +96,68 @@ namespace CharacterAI_Discord_Bot.Handlers
         {
             if (lastSearch is null) return;
 
+            int tail = lastSearch.characters!.Count - (lastSearch.currentPage - 1) * 10;
+            int maxRow = tail > 10 ? 10 : tail;
+
             switch (component.Data.CustomId)
             {
                 case "up":
-                    if (lastSearch.currentRow != 1)
+                    if (lastSearch.currentRow == 1)
+                        lastSearch.currentRow = maxRow;
+                    else
                         lastSearch.currentRow--;
                     break;
                 case "down":
-                    if (lastSearch.currentRow < lastSearch.characters!.Count)
+                    if (lastSearch.currentRow > maxRow)
+                        lastSearch.currentRow = 1;
+                    else 
                         lastSearch.currentRow++;
                     break;
                 case "left":
-                    if (lastSearch.currentPage == 1) break;
-
-                    lastSearch.currentPage--;
                     lastSearch.currentRow = 1;
+
+                    if (lastSearch.currentPage == 1)
+                        lastSearch.currentPage = lastSearch.pages;
+                    else
+                        lastSearch.currentPage--;
                     break;
                 case "right":
-                    if (lastSearch.currentPage == lastSearch.pages) break;
-
-                    lastSearch.currentPage++;
                     lastSearch.currentRow = 1;
+
+                    if (lastSearch.currentPage == lastSearch.pages)
+                        lastSearch.currentPage = 1;
+                    else
+                        lastSearch.currentPage++;
                     break;
                 case "select":
-                    int index = (lastSearch.currentPage - 1) * 10 + lastSearch.currentRow - 1;
                     var context = new SocketCommandContext(_client, component.Message);
-                    var character = lastSearch.characters![index];
-                    string charId = (string)character.external_id;
-                    string charImg = $"https://characterai.io/i/400/static/avatars/{character.avatar_file_name}";
 
-                    _ = CommandsService.SetCharacterAsync(charId, this, context);
-                    _ = component.UpdateAsync(c =>
+                    using (context.Message.Channel.EnterTypingState())
                     {
-                        c.Embed = new EmbedBuilder()
+                        int index = (lastSearch.currentPage - 1) * 10 + lastSearch.currentRow - 1;
+                        var character = lastSearch.characters![index];
+                        string charId = (string)character.external_id;
+                        string charImg = $"https://characterai.io/i/400/static/avatars/{character.avatar_file_name}";
+
+                        _ = CommandsService.SetCharacterAsync(charId, this, context);
+                        await component.UpdateAsync(c =>
                         {
-                            Title = $"Selected - {character.participant__name}",
-                            ImageUrl = charImg
-                        }.Build();
-                        c.Components = null;
-                    }).ConfigureAwait(false);
+                            c.Embed = new EmbedBuilder()
+                            {
+                                Title = $"✅ Selected - {character.participant__name}",
+                                Description = $"Original link: [Chat with {character.participant__name}](https://beta.character.ai/chat?char={charId})",
+                                ImageUrl = charImg,
+                                Footer = new EmbedFooterBuilder().WithText($"Created by {character.user__username}")
+                            }.Build();
+                            c.Components = null;
+                        }).ConfigureAwait(false);
+                    }
                     return;
-                default: return;
+                default:
+                    return;
             }
 
+            // If left/right/up/down is selected
             await component.UpdateAsync(c => c.Embed = BuildCharactersList(
                 lastSearch.characters!, lastSearch.pages, lastSearch.query!,
                 row: lastSearch.currentRow,

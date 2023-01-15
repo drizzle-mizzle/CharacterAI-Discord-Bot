@@ -5,7 +5,7 @@ namespace CharacterAI_Discord_Bot.Service
 {
     public partial class IntegrationService : CommonService
     {
-        public static void HelloLog(Character charInfo)
+        public static bool HelloLog(Character charInfo)
         {
             Log("\nCharacterAI - Connected\n\n", ConsoleColor.Green);
             Log($" [{charInfo.Name}]\n\n", ConsoleColor.Cyan);
@@ -13,6 +13,8 @@ namespace CharacterAI_Discord_Bot.Service
             if (!string.IsNullOrEmpty(charInfo.Description))
                 Log($"\"{charInfo.Description}\"\n");
             Log("\nSetup complete\n", ConsoleColor.Yellow);
+
+            return Success(new string('<', 50) + "\n");
         }
         
         public static dynamic BasicCallContent(Character charInfo, string msg, string imgPath)

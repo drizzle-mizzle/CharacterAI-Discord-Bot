@@ -10,7 +10,6 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 - Embedded character search.
 - Automatically sets the name and profile picture of the character.
 - Supports answers swiping and image sending.
-- You can make two or more characters talk to each other.
 - Random replies, audience mode and some other stuff.
 
     ![chrome_cshYMsGIaB](https://user-images.githubusercontent.com/55811932/211129383-c7cd4ca2-ceb4-42c5-8449-bc6ce9b2d538.gif)
@@ -32,12 +31,12 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
   - *(if no text argument provided, default `"Hey!"` will be used)*
 - `skip <amount>` - Make character ignore next few messages *(use it to stop bots' conversation)*
   - Alias: `delay`
-  - *(if no amount argument provided, default '3' will be used)*
+  - *(if no amount argument provided, default `3` will be used)*
   - *(commands will not be ignored, amount can be reduced with another call)*
 - `reply chance <chance>` - Change the probability of random replies on new users' messages `in %` *(It's better to use it with audience mode enabled)*
   - Alias: `rc`
   - Example: `rc 50` => `Probability of random answers was changed from 0% to 50%`
-  - *(argument always required)*
+  - *(default value = 0%)*
   - *(keep in mind that with this feature enabled, commands can be executed without bot prefix/mention)*
 - `hunt <@user_mention>` - Make character always reply on messages of certain user
 - `unhunt <@user_mention>` - Stop hunting user
@@ -69,7 +68,7 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 
     ![image](https://user-images.githubusercontent.com/55811932/212528975-9a162993-9c70-4e18-aab1-68a9df09f69e.png)
 
-6. Reload page (DevTools should remain open).
+6. Reload the page (DevTools should remain open).
 7. Now you should see a list of requests. Locate "auth0/" and open it's Response/Preview page.
 
     ![image](https://user-images.githubusercontent.com/55811932/208904061-f2628020-3e77-4f01-865b-809a8234c70b.png)

@@ -9,13 +9,23 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Discord.Net" Version="3.8.1" />
-    <PackageReference Include="Discord.Net.WebSocket" Version="3.8.1" />
+    <PackageReference Include="Discord.Net" Version="3.9.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    <PackageReference Include="YamlDotNet" Version="13.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="config.json">
+    <Reference Include="CharacterAI">
+      <HintPath>..\CharacterAI-API-Wrap\bin\Debug\net7.0\CharacterAI.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="__Config.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="storage\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="img\**">

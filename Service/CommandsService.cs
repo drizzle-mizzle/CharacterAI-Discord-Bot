@@ -1,113 +1,209 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Microsoft.Extensions.DependencyInjection;
 using CharacterAI_Discord_Bot.Handlers;
 using CharacterAI_Discord_Bot.Models;
+using CharacterAI;
+using CharacterAI.Models;
+using System.Reflection.Metadata;
 
 namespace CharacterAI_Discord_Bot.Service
 {
     public partial class CommandsService : CommonService
     {
-        public static async Task AutoSetup(ServiceProvider services, DiscordSocketClient client)
+        public static async Task SetCharacterAsync(string charId, CommandsHandler handler, SocketCommandContext context, bool reset = false)
         {
-            var integration = services.GetRequiredService<CommandsHandler>().integration;
-            bool result = await integration.Setup(Config.autoCharID, reset: false);
-            if (result is false) return;
+            var cI = handler.CurrentIntegration;
+            var result = await cI.SetupAsync(charId, startWithNewChat: reset);
 
-            integration.audienceMode = Config.defaultAudienceMode;
-
-            _ = SetBotAvatar(client.CurrentUser, integration.charInfo.AvatarUrl!).ConfigureAwait(false);
-            await UpdatePlayingStatus(integration, client).ConfigureAwait(false);
-            await SetBotNickname(integration.charInfo, client).ConfigureAwait(false);
-        }
-
-        public static async Task SetCharacterAsync(string charID, CommandsHandler handler, SocketCommandContext context, bool reset = false)
-        {
-            var integration = handler.integration;
-
-            if (handler.temps.lastCharacterCallMsgId != 0)
+            if (!result.IsSuccessful)
             {
-                var lastMessage = await context.Message.Channel.GetMessageAsync(handler.temps.lastCharacterCallMsgId);
-                _ = HandlerService.RemoveButtons(lastMessage);
-                handler.lastResponse.SetDefaults();
-            }
-
-            if (await integration.Setup(charID, reset: reset) is false)
-            {
-                await context.Message.ReplyAsync("⚠️ Failed to set character!").ConfigureAwait(false);
+                await context.Message.ReplyAsync("⚠️ Failed to set a character!").ConfigureAwait(false);
                 return;
             }
 
-            var charInfo = integration.charInfo;
-            string reply = charInfo.Greeting!;
+            bool firstLaunch = !handler.Channels.Any();
+            if (firstLaunch)
+            {
+                var savedData = GetStoredData(charId);
 
-            _ = UpdatePlayingStatus(integration, context.Client).ConfigureAwait(false);
+                if (savedData.BlackList is List<ulong>)
+                {
+                    handler.BlackList = savedData.BlackList;
+                    Log("Restored blocked users: ");
+                    Success(handler.BlackList.Count.ToString());
+                }
 
-            try { await SetBotNickname(charInfo, context.Client).ConfigureAwait(false); }
+                var channels = (List<Channel>)savedData.Channels;
+                if (channels.Any())
+                {
+                    Log("Restored channels:\n");
+                    foreach (var channel in channels)
+                        Success($"Id: {channel.Id} | HistoryId: {channel.Data.HistoryId}");
+
+                    handler.Channels = channels;
+                }
+
+                if (channels.Find(c => c.Id == context.Channel.Id) is null)
+                    handler.Channels.Add(new Channel(context.Channel.Id, context.User.Id, cI.Chats[0], cI.CurrentCharacter.Id!));
+            }
+            else
+            {
+                handler.Channels.Clear();
+                handler.Channels.Add(new Channel(context.Channel.Id, context.User.Id, cI.Chats[0], cI.CurrentCharacter.Id!));
+            }
+
+            SaveData(channels: handler.Channels);
+
+            string reply = cI.CurrentCharacter.Greeting!;
+            try { await SetBotNickname(cI.CurrentCharacter.Name!, context.Client).ConfigureAwait(false); }
             catch { reply += "\n⚠️ Failed to set bot name! Probably, missing permissions?"; }
 
-            try { await SetBotAvatar(context.Client.CurrentUser, charInfo.AvatarUrl!).ConfigureAwait(false); }
+            try { await SetBotAvatar(context.Client.CurrentUser, cI.CurrentCharacter!).ConfigureAwait(false); }
             catch { reply += "\n⚠️ Failed to set bot avatar!"; }
 
-            await context.Message.ReplyAsync(reply).ConfigureAwait(false);
+            Success(BotConfig.DescriptionInPlaying.ToString());
+            if (BotConfig.DescriptionInPlaying)
+                _ = UpdatePlayingStatus(context.Client, integration: cI).ConfigureAwait(false);
+
+            await context.Message
+                .ReplyAsync($"{context.Message.Author.Mention} {reply}")
+                .ConfigureAwait(false);
         }
 
         public static async Task FindCharacterAsync(string query, CommandsHandler handler, SocketCommandContext context)
         {
-            var integration = handler.integration;
-            var characters = await integration.Search(query);
+            var integration = handler.CurrentIntegration;
+            var response = await integration.SearchAsync(query);
 
-            if (characters is null)
+            if (response.IsEmpty)
             {
                 await context.Message.ReplyAsync("⚠️ No characters were found").ConfigureAwait(false);
                 return;
             }
 
-            int pages = (int)Math.Ceiling((float)characters.Count / 10);
+            int pages = (int)Math.Ceiling((float)response.Characters.Count / 10);
 
+            // List navigation buttons
             var buttons = new ComponentBuilder()
                 .WithButton(emote: new Emoji("\u2B06"), customId: "up", style: ButtonStyle.Secondary)
                 .WithButton(emote: new Emoji("\u2B07"), customId: "down", style: ButtonStyle.Secondary)
                 .WithButton(emote: new Emoji("\u2705"), customId: "select", style: ButtonStyle.Success);
-            // Page selection buttons
+            // Pages navigation buttons
             if (pages > 1) buttons
                 .WithButton(emote: new Emoji("\u2B05"), customId: "left", row: 1)
                 .WithButton(emote: new Emoji("\u27A1"), customId: "right", row: 1);
 
-            handler.lastSearch = new LastSearch() { pages = pages, characters = characters, query = query };
+            handler.LastSearch = new LastSearchQuery(response) { Pages = pages, Query = query };
 
-            
-            var list = BuildCharactersList(characters, pages, query, row: 1, page: 1);
+            var list = BuildCharactersList(handler.LastSearch);
             await context.Message.ReplyAsync(embed: list, components: buttons.Build()).ConfigureAwait(false);
         }
 
-        public static Task ResetCharacter(CommandsHandler handler, SocketCommandContext context)
+        public static async Task ResetCharacterAsync(CommandsHandler handler, SocketCommandContext context)
         {
-            string charId = handler.integration.charInfo.CharId!;
-            _ = SetCharacterAsync(charId, handler, context, reset: true);
-            
-            return Task.CompletedTask;
+            var newHistoryId = await handler.CurrentIntegration.CreateNewChatAsync();
+            if (newHistoryId is null) return;
+
+            var currentChannel = handler.Channels.Find(c => c.Id == context.Channel.Id);
+            if (currentChannel is not null)
+                currentChannel.Data.HistoryId = newHistoryId;
+            else
+            {
+                var newChannel = new Channel(context.Channel.Id, context.User.Id, newHistoryId, handler.CurrentIntegration.CurrentCharacter.Id!);
+                handler.Channels.Add(newChannel);
+            }
+            SaveData(handler.Channels);
+
+            await context.Message.ReplyAsync(handler.CurrentIntegration.CurrentCharacter.Greeting!);
         }
 
-        public static async Task SetBotNickname(Character charInfo, DiscordSocketClient client)
+        public static async Task CreatePrivateChatAsync(CommandsHandler handler, SocketCommandContext context)
+        {
+            var cI = handler.CurrentIntegration;
+            var newChatHistoryId = await cI.CreateNewChatAsync();
+            if (newChatHistoryId is null)
+            {
+                await context.Message.ReplyAsync("Failed to create new chat!");
+                return;
+            }
+
+            // Create a separate category if it doesn't exist 
+            ulong categoryId;
+            var category = context.Guild.CategoryChannels.FirstOrDefault(c => c.Name == "cAI private channels");
+            if (category is not null)
+                categoryId = category.Id;
+            else
+                categoryId = (await context.Guild.CreateCategoryChannelAsync("cAI private channels", c =>
+                {
+                    var perms = new List<Overwrite>();
+                    var hideChannel = new OverwritePermissions(viewChannel: PermValue.Deny);
+                    perms.Add(new Overwrite(context.Guild.EveryoneRole.Id, PermissionTarget.Role, hideChannel));
+                    c.PermissionOverwrites = perms;
+                })).Id;
+
+            // Create text channel
+            string channelName = $"private chat with {cI.CurrentCharacter.Name}";
+            var channel = await context.Guild.CreateTextChannelAsync(channelName, c =>
+            {
+                var perms = new List<Overwrite>();
+                var hideChannel = new OverwritePermissions(viewChannel: PermValue.Deny);
+                var showChannel = new OverwritePermissions(viewChannel: PermValue.Allow);
+
+                perms.Add(new Overwrite(context.Guild.EveryoneRole.Id, PermissionTarget.Role, hideChannel));
+                perms.Add(new Overwrite(context.Message.Author.Id, PermissionTarget.User, showChannel));
+                perms.Add(new Overwrite(context.Client.CurrentUser.Id, PermissionTarget.User, showChannel));
+
+                c.PermissionOverwrites = perms;
+                c.CategoryId = categoryId;
+            });
+
+            var msg = await channel.SendMessageAsync($"Use `add {channel.Id} @user` to add other users to this channel.");
+            await msg.PinAsync();
+            await channel.SendMessageAsync(cI.CurrentCharacter.Greeting);
+
+            // Update channels list
+            var newChannel = new Channel(channel.Id, context.User.Id, newChatHistoryId, cI.CurrentCharacter.Id!);
+            handler.Channels.Add(newChannel);
+
+            // forget old channels
+            if (context.User.Id != context.Guild.OwnerId ||
+                !((SocketGuildUser)context.User).Roles.Any(r => r.Name == BotConfig.BotRole))
+            {
+                var userChannels = handler.Channels.Where(c => c.AuthorId == context.User.Id);
+                var newChannelsList = new List<Channel>();
+                newChannelsList.AddRange(handler.Channels);
+
+                foreach (var uC in userChannels)
+                {
+                    var delChannel = handler.Channels.Find(c => c.Id == uC.Id && c.Id != newChannel.Id);
+                    if (delChannel is not null)
+                        newChannelsList.Remove(delChannel);
+                }
+                handler.Channels = newChannelsList;
+            }
+
+            SaveData(channels: handler.Channels);
+        }
+
+        public static async Task SetBotNickname(string name, DiscordSocketClient client)
         {
             var guildID = client.Guilds.First().Id;
             var botAsGuildUser = client.GetGuild(guildID).GetUser(client.CurrentUser.Id);
 
-            await botAsGuildUser.ModifyAsync(u => { u.Nickname = charInfo.Name; }).ConfigureAwait(false);
+            await botAsGuildUser.ModifyAsync(u => { u.Nickname = name; }).ConfigureAwait(false);
         }
 
-        public static async Task SetBotAvatar(SocketSelfUser bot, string url)
+        public static async Task SetBotAvatar(SocketSelfUser bot, Character character)
         {
             Stream image;
-            var response = await TryDownloadImg(url, 1);
-            if (response is not null)
-                image = new MemoryStream(response);
-            else
+            byte[]? response = await TryDownloadImg(character.AvatarUrlFull!, 1);
+            response ??= await TryDownloadImg(character.AvatarUrlMini!, 1);
+
+            if (response is null)
             {
-                Log($"Failed to set bot avatar\n", ConsoleColor.Magenta);
-                Log(" Setting default avatar... ", ConsoleColor.DarkCyan);
+                Failure($"Failed to set bot avatar");
+                Log("Setting default avatar... ");
 
                 try
                 {
@@ -119,18 +215,22 @@ namespace CharacterAI_Discord_Bot.Service
                     return;
                 }
                 Success("OK");
+
+                return;
             }
 
+            image = new MemoryStream(response);
             await bot.ModifyAsync(u => { u.Avatar = new Discord.Image(image); }).ConfigureAwait(false);
         }
 
-        public static async Task UpdatePlayingStatus(Integration integration, DiscordSocketClient client)
+        public static async Task UpdatePlayingStatus(DiscordSocketClient client, int type = 0, string? status = null, Integration? integration = null)
         {
-            var charInfo = integration.charInfo;
-            bool amode = integration.audienceMode;
-            string desc = charInfo.CharId is null ? "No character selected" : charInfo.Title;
-
-            await client.SetGameAsync($"Audience mode: " + (amode ? "✅" : "❌") + " | " + desc).ConfigureAwait(false);
+            if (integration is not null)
+                status = integration.CurrentCharacter.IsEmpty ? "No character selected" : integration.CurrentCharacter.Title;
+            else if (status == "0")
+                status = null;
+            
+            await client.SetGameAsync(status, type: (ActivityType)type).ConfigureAwait(false);
         }
 
         public static Task NoPermissionAlert(SocketCommandContext context)
@@ -149,7 +249,7 @@ namespace CharacterAI_Discord_Bot.Service
             if (user!.Id == context.Guild.OwnerId) return true;
 
             var roles = (user as IGuildUser).Guild.Roles;
-            var requiredRole = roles.FirstOrDefault(role => role.Name == Config.botRole);
+            var requiredRole = roles.FirstOrDefault(role => role.Name == BotConfig.BotRole);
 
             return user.Roles.Contains(requiredRole);
         }

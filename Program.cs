@@ -11,6 +11,7 @@ namespace CharacterAI_Discord_Bot
     {
         private ServiceProvider _services = null!;
         private DiscordSocketClient _client = null!;
+
         static void Main()
             => new Program().MainAsync().GetAwaiter().GetResult();
 
@@ -19,12 +20,12 @@ namespace CharacterAI_Discord_Bot
             _services = CreateServices();
             _client = _services.GetRequiredService<DiscordSocketClient>();
 
-            if (Config is null) return;
+            if (BotConfig is null) return;
 
             _client.Log += Log;
             _client.Ready += OnClientReady;
 
-            await _client.LoginAsync(TokenType.Bot, Config.botToken);
+            await _client.LoginAsync(TokenType.Bot, BotConfig.BotToken);
             await _client.StartAsync();
             await _services.GetRequiredService<CommandsHandler>().InitializeAsync();
 
@@ -33,7 +34,7 @@ namespace CharacterAI_Discord_Bot
 
         public Task OnClientReady()
         {
-            if (Config.autoSetupEnabled)
+            if (BotConfig.AutoSetupEnabled)
                 Task.Run(() => AutoSetup(_services, _client));
 
             return Task.CompletedTask;
@@ -44,21 +45,24 @@ namespace CharacterAI_Discord_Bot
             var clientConfig = new DiscordSocketConfig
             {
                 GatewayIntents = GatewayIntents.All
-                ^ GatewayIntents.GuildPresences
                 ^ GatewayIntents.GuildScheduledEvents
                 ^ GatewayIntents.GuildInvites,
                 MessageCacheSize = 5
             };
 
-            var services = new ServiceCollection();
-            services.AddSingleton(new DiscordSocketClient(clientConfig))
-                    .AddSingleton(new CommandService())
-                    .AddSingleton<CommandsHandler>();
+            var services = new ServiceCollection()
+                .AddSingleton(new DiscordSocketClient(clientConfig))
+                .AddSingleton(new CommandService())
+                .AddSingleton<CommandsHandler>();
 
             return services.BuildServiceProvider();
         }
 
         private Task Log(LogMessage log)
-            => Task.Run(() => Console.WriteLine(log.ToString()));
+        {
+            Console.WriteLine(log.ToString());
+
+            return Task.CompletedTask;
+        }
     }
 }

@@ -6,21 +6,30 @@ using System.Reflection;
 using System.Dynamic;
 using CharacterAI_Discord_Bot.Service;
 using CharacterAI_Discord_Bot.Models;
+using CharacterAI;
+using Microsoft.VisualBasic;
+using Discord.Interactions;
 
 namespace CharacterAI_Discord_Bot.Handlers
 {
     public class CommandsHandler : HandlerService
     {
-        public LastSearch? lastSearch;
-        public HandlerTemps temps = new();
-        public LastResponse lastResponse = new();
-        public readonly Integration integration = new(Config.userToken);
+        internal Integration CurrentIntegration { get; }
+        internal int ReplyChance { get; set; } // 0
+        internal List<ulong> BlackList { get; set; } = new();
+        internal List<Channel> Channels { get; set; } = new();
+        internal LastSearchQuery? LastSearch { get; set; }
+        internal Dictionary<ulong, int> HuntedUsers { get; set; } = new(); // user id : reply chance
+
+        private readonly Dictionary<ulong, int[]> _userMsgCount = new();
         private readonly DiscordSocketClient _client;
         private readonly IServiceProvider _services;
         private readonly CommandService _commands;
 
         public CommandsHandler(IServiceProvider services)
         {
+            CurrentIntegration = new(BotConfig.UserToken);
+
             _services = services;
             _commands = services.GetRequiredService<CommandService>();
             _client = services.GetRequiredService<DiscordSocketClient>();
@@ -33,122 +42,147 @@ namespace CharacterAI_Discord_Bot.Handlers
 
         private async Task HandleMessage(SocketMessage rawMsg)
         {
-            if (rawMsg is not SocketUserMessage message || message.Author.Id == _client.CurrentUser.Id)
+            var authorId = rawMsg.Author.Id;
+            if (rawMsg is not SocketUserMessage message || authorId == _client.CurrentUser.Id)
                 return;
 
             int argPos = 0;
-            string[] prefixes = Config.botPrefixes;
             var RandomGen = new Random();
+            string[] prefixes = BotConfig.BotPrefixes;
 
             bool hasMention = message.HasMentionPrefix(_client.CurrentUser, ref argPos);
             bool hasPrefix = !hasMention && prefixes.Any(p => message.HasStringPrefix(p, ref argPos));
-            bool hasReply = !hasPrefix && !hasMention && message.ReferencedMessage != null && message.ReferencedMessage.Author.Id == _client.CurrentUser.Id; // SO FUCKING BIG UUUGHH!
-            bool randomReply = temps.replyChance >= RandomGen.Next(100) + 1;
-            bool userIsHunted = temps.huntedUsers.Contains(message.Author.Id) && temps.huntChance >= RandomGen.Next(100) + 1;
+            bool hasReply = !hasPrefix && !hasMention && message.ReferencedMessage != null && message.ReferencedMessage.Author.Id == _client.CurrentUser.Id; // IT'S SO FUCKING BIG UUUGHH!
+            bool randomReply = ReplyChance >= RandomGen.Next(100) + 1;
+            bool userIsHunted = HuntedUsers.ContainsKey(authorId) && HuntedUsers[authorId] >= RandomGen.Next(100) + 1;
 
             if (hasMention || hasPrefix || hasReply || userIsHunted || randomReply)
             {
-                if (UserIsBanned(message).Result) return;
-
                 var context = new SocketCommandContext(_client, message);
-                var cmdResponse = await _commands.ExecuteAsync(context, argPos, _services);
+                var cI = CurrentIntegration; // shortcut for readability
 
-                if (!cmdResponse.IsSuccess)
+                // Update messages-per-minute counter and returns if user had exceeded rate limit
+                if (UserIsBanned(context)) return;
+
+                var cmdResponse = await _commands.ExecuteAsync(context, argPos, _services);
+                if (cmdResponse.IsSuccess) return;
+
+                // If command was found but failed to execute, don't interpret it as a reply
+                if (cmdResponse.ErrorReason != "Unknown command.")
                 {
-                    if (cmdResponse.ErrorReason != "Unknown command.")
-                        await message.ReplyAsync($"⚠ {cmdResponse.ErrorReason}, {cmdResponse.Error}").ConfigureAwait(false);
-                    else if (temps.skipMessages > 0)
-                        temps.skipMessages--;
-                    else
-                        using (message.Channel.EnterTypingState())
-                            _ = CallCharacterAsync(message);
+                    await message.ReplyAsync($"⚠ {cmdResponse.ErrorReason}, {cmdResponse.Error}")
+                                 .ConfigureAwait(false);
+                    return;
                 }
+
+                var currentChannel = Channels.Find(c => c.Id == context.Channel.Id);
+                if (currentChannel is null) return;
+
+                if (currentChannel!.Data.SkipMessages > 0)
+                    currentChannel.Data.SkipMessages--;
+                else
+                    using (message.Channel.EnterTypingState())
+                        _ = TryToCallCharacterAsync(context, currentChannel);
             }
         }
 
         private async Task HandleReaction(Cacheable<IUserMessage, ulong> rawMessage, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
         {
-            if (lastResponse.replies is null || rawMessage.Id != temps.lastCharacterCallMsgId)
+            var message = await rawMessage.DownloadAsync();
+            var currentChannel = Channels.Find(c => c.Id == message.Channel.Id);
+            if (currentChannel is null) return;
+
+            if (currentChannel.Data.LastCall is null || rawMessage.Id != currentChannel.Data.LastCharacterCallMsgId)
                 return;
 
-            var message = await rawMessage.DownloadAsync();
             var user = reaction.User.Value as SocketGuildUser;
             if (user!.IsBot || user.Id != message.ReferencedMessage.Author.Id)
                 return;
 
-            if (reaction.Emote.Name == new Emoji("\u2B05").Name && lastResponse.currReply > 0)
+            if (reaction.Emote.Name == new Emoji("\u2B05").Name && currentChannel.Data.LastCall!.CurrentReplyIndex > 0)
             {   // left arrow
-                lastResponse.currReply--;
+                currentChannel.Data.LastCall!.CurrentReplyIndex--;
                 _ = UpdateMessageAsync(message);
 
                 return;
             }
             if (reaction.Emote.Name == new Emoji("\u27A1").Name)
             {   // right arrow
-                lastResponse.currReply++;
+                currentChannel.Data.LastCall!.CurrentReplyIndex++;
                 _ = UpdateMessageAsync(message);
 
                 return;
             }
         }
 
+        // Navigate in search modal
         private async Task HandleButton(SocketMessageComponent component)
         {
-            if (lastSearch is null) return;
+            if (LastSearch is null) return;
 
-            int tail = lastSearch.characters!.Count - (lastSearch.currentPage - 1) * 10;
+            var context = new SocketCommandContext(_client, component.Message);
+            var refMessage = await context.Message.Channel.GetMessageAsync(context.Message.Reference!.MessageId.Value);
+            bool notAuthor = component.User.Id != refMessage.Author.Id;
+            bool noPages = LastSearch!.Response.IsEmpty;
+            if (notAuthor || UserIsBanned(context) || noPages) return;
+
+            int tail = LastSearch!.Response!.Characters!.Count - (LastSearch.CurrentPage - 1) * 10;
             int maxRow = tail > 10 ? 10 : tail;
 
             switch (component.Data.CustomId)
-            {
+            { // looks like shit...
                 case "up":
-                    if (lastSearch.currentRow == 1)
-                        lastSearch.currentRow = maxRow;
+                    if (LastSearch.CurrentRow == 1)
+                        LastSearch.CurrentRow = maxRow;
                     else
-                        lastSearch.currentRow--;
+                        LastSearch.CurrentRow--;
                     break;
                 case "down":
-                    if (lastSearch.currentRow > maxRow)
-                        lastSearch.currentRow = 1;
-                    else 
-                        lastSearch.currentRow++;
+                    if (LastSearch.CurrentRow > maxRow)
+                        LastSearch.CurrentRow = 1;
+                    else
+                        LastSearch.CurrentRow++;
                     break;
                 case "left":
-                    lastSearch.currentRow = 1;
+                    LastSearch.CurrentRow = 1;
 
-                    if (lastSearch.currentPage == 1)
-                        lastSearch.currentPage = lastSearch.pages;
+                    if (LastSearch.CurrentPage == 1)
+                        LastSearch.CurrentPage = LastSearch.Pages;
                     else
-                        lastSearch.currentPage--;
+                        LastSearch.CurrentPage--;
                     break;
                 case "right":
-                    lastSearch.currentRow = 1;
+                    LastSearch.CurrentRow = 1;
 
-                    if (lastSearch.currentPage == lastSearch.pages)
-                        lastSearch.currentPage = 1;
+                    if (LastSearch.CurrentPage == LastSearch.Pages)
+                        LastSearch.CurrentPage = 1;
                     else
-                        lastSearch.currentPage++;
+                        LastSearch.CurrentPage++;
                     break;
                 case "select":
-                    var context = new SocketCommandContext(_client, component.Message);
+                    var refContext = new SocketCommandContext(_client, (SocketUserMessage)refMessage);
 
-                    using (context.Message.Channel.EnterTypingState())
+                    using (refContext.Message.Channel.EnterTypingState())
                     {
-                        int index = (lastSearch.currentPage - 1) * 10 + lastSearch.currentRow - 1;
-                        var character = lastSearch.characters![index];
-                        string charId = (string)character.external_id;
-                        string charImg = $"https://characterai.io/i/400/static/avatars/{character.avatar_file_name}";
+                        int index = (LastSearch.CurrentPage - 1) * 10 + LastSearch.CurrentRow - 1;
+                        var character = LastSearch.Response!.Characters![index];
+                        if (character.IsEmpty) return;
 
-                        _ = CommandsService.SetCharacterAsync(charId, this, context);
+                        _ = CommandsService.SetCharacterAsync(character.Id!, this, refContext);
                         await component.UpdateAsync(c =>
                         {
+                            var imageUrl = TryGetImage(character.AvatarUrlFull!).Result ?
+                                            character.AvatarUrlFull : TryGetImage(character.AvatarUrlMini!).Result ?
+                                                character.AvatarUrlMini : null;
+
+                            string desc = $"{character.Description}\n\n" +
+                                          $"*Original link: [Chat with {character.Name}](https://beta.character.ai/chat?char={character.Id})*";
                             c.Embed = new EmbedBuilder()
                             {
-                                Title = $"✅ Selected - {character.participant__name}",
-                                Description = $"{character.description.ToString().Trim(' ')}\n\n" +
-                                    $"*Original link: [Chat with {character.participant__name}](https://beta.character.ai/chat?char={charId})*",
-                                ImageUrl = charImg,
-                                Footer = new EmbedFooterBuilder().WithText($"Created by {character.user__username}")
+                                Title = $"✅ Selected - {character.Name}",
+                                Description = desc,
+                                ImageUrl = imageUrl,
+                                Footer = new EmbedFooterBuilder().WithText($"Created by {character.Author}")
                             }.Build();
                             c.Components = null;
                         }).ConfigureAwait(false);
@@ -158,115 +192,117 @@ namespace CharacterAI_Discord_Bot.Handlers
                     return;
             }
 
-            // If left/right/up/down is selected
-            await component.UpdateAsync(c => c.Embed = BuildCharactersList(
-                lastSearch.characters!, lastSearch.pages, lastSearch.query!,
-                row: lastSearch.currentRow,
-                page: lastSearch.currentPage
-            )).ConfigureAwait(false);
+            // Only if left/right/up/down is selected
+            await component.UpdateAsync(c => c.Embed = BuildCharactersList(LastSearch))
+                           .ConfigureAwait(false);
         }
 
+        // Swipes
         private async Task UpdateMessageAsync(IUserMessage message)
         {
-            dynamic? newReply = null;
-            try { newReply = lastResponse.replies[lastResponse.currReply]; }
-            catch
+            var currentChannel = Channels.Find(c => c.Id == message.Channel.Id);
+            if (currentChannel!.Data.LastCall!.RepliesList.Count < currentChannel.Data.LastCall.CurrentReplyIndex + 1)
             {
                 _ = message.ModifyAsync(msg => { msg.Content = $"( 🕓 Wait... )"; });
-                var response = await integration.CallCharacter("", "", parentMsgId: lastResponse.lastUserMsgId);
-                if (response is string) return;
+                var response = await CurrentIntegration.CallCharacterAsync(parentMsgId: currentChannel.Data.LastCall.OriginalResponse!.LastUserMsgId);
+                if (!response.IsSuccessful)
+                {
+                    _ = message.ModifyAsync(msg => { msg.Content = $"⚠ Somethinh went wrong!"; });
+                    return;
+                }
 
-                lastResponse.replies.Merge(response!.replies);
-                newReply = lastResponse.replies[lastResponse.currReply];
+                currentChannel.Data.LastCall.RepliesList.AddRange(response.Replies);
             }
-
-            lastResponse.primaryMsgId = newReply.id;
-            string? replyImage = newReply?.image_rel_path;
+            var newReply = currentChannel.Data.LastCall.RepliesList[currentChannel.Data.LastCall.CurrentReplyIndex];
+            currentChannel.Data.LastCall.CurrentPrimaryMsgId = newReply.Id;
 
             Embed? embed = null;
-            if (replyImage != null && await TryGetImage(replyImage))
-                embed = new EmbedBuilder().WithImageUrl(replyImage).Build();
+            if (newReply.HasImage && await TryGetImage(newReply.ImageRelPath!))
+                embed = new EmbedBuilder().WithImageUrl(newReply.ImageRelPath).Build();
 
-            _ = message.ModifyAsync(msg => { msg.Content = $"{newReply!.text}"; msg.Embed = embed; }).ConfigureAwait(false);
+            _ = message.ModifyAsync(msg => { msg.Content = $"{newReply.Text}"; msg.Embed = embed; })
+                .ConfigureAwait(false);
         }
 
-        private async Task CallCharacterAsync(SocketUserMessage message)
+        private async Task TryToCallCharacterAsync(SocketCommandContext context, Channel currentChannel)
         {
-            if (integration.charInfo.CharId == null)
+            if (CurrentIntegration.CurrentCharacter.IsEmpty)
             {
-                await message.ReplyAsync("⚠ Set a character first").ConfigureAwait(false);
+                await context.Message.ReplyAsync("⚠ Set a character first").ConfigureAwait(false);
                 return;
             }
-
-            if (temps.lastCharacterCallMsgId != 0)
+            // Get last call and remove buttons from it
+            if (currentChannel.Data.LastCharacterCallMsgId != 0)
             {
-                var lastMessage = await message.Channel.GetMessageAsync(temps.lastCharacterCallMsgId);
+                var lastMessage = await context.Message.Channel.GetMessageAsync(currentChannel.Data.LastCharacterCallMsgId);
                 _ = RemoveButtons(lastMessage);
             }
 
-            string text = RemoveMention(message.Content);
-            string imgPath = "";
+            string text = RemoveMention(context.Message.Content);
+            string? imgPath = null;
 
             // Prepare call data
-            if (integration.audienceMode)
-                text = MakeItThreadMessage(text, message);
-            if (message.Attachments.Any())
+            int amode = currentChannel.Data.AudienceMode;
+            if (amode == 1 || amode == 3)
+                text = AddUsername(text, context.Message);
+            if (amode == 2 || amode == 3)
+                text = AddQuote(text, context.Message);
+
+            if (context.Message.Attachments.Any())
             {   // Downloads first image from attachments and uploads it to server
-                string url = message.Attachments.First().Url;
-                if (await TryDownloadImg(url, 10) is byte[] @img && await integration.UploadImg(@img) is string @path)
+                string url = context.Message.Attachments.First().Url;
+                if (await TryDownloadImg(url, 10) is byte[] @img && await CurrentIntegration.UploadImageAsync(@img) is string @path)
                     imgPath = $"https://characterai.io/i/400/static/user/{@path}";
             }
 
-            // Send message to character
-            var response = await integration.CallCharacter(text, imgPath, primaryMsgId: lastResponse.primaryMsgId);
-            lastResponse.SetDefaults();
+            string historyId = currentChannel.Data.HistoryId;
+            ulong? primaryMsgId = currentChannel.Data.LastCall?.CurrentPrimaryMsgId;
 
-            // Alert with error message if call returns string
-            if (response is string @string)
+            // Send message to the character
+            var response = await CurrentIntegration.CallCharacterAsync(text, imgPath, historyId, primaryMsgId);
+            currentChannel.Data.LastCall = new(response);
+
+            // Alert with error message if call fails
+            if (!response.IsSuccessful)
             {
-                await message.ReplyAsync(@string).ConfigureAwait(false);
+                await context.Message.ReplyAsync(response.ErrorReason).ConfigureAwait(false);
                 return;
             }
 
-            lastResponse.replies = response!.replies;
-            lastResponse.lastUserMsgId = (string)response!.last_user_msg_id;
-
             // Take first character answer by default and reply with it
-            var reply = lastResponse.replies[0];
-            _ = Task.Run(async () => temps.lastCharacterCallMsgId = await ReplyOnMessage(message, reply));
+            var reply = currentChannel.Data.LastCall!.RepliesList.First();
+            _ = Task.Run(async () => currentChannel.Data.LastCharacterCallMsgId = await ReplyOnMessage(context.Message, reply));
         }
 
-        private async Task<bool> UserIsBanned(SocketUserMessage message)
+        private bool UserIsBanned(SocketCommandContext context)
         {
-            ulong currUser = message.Author.Id;
-            var context = new SocketCommandContext(_client, message);
-            if (temps.blackList.Contains(currUser)) return true;
-            if (currUser == context.Guild.OwnerId) return false;
+            ulong currUserId = context.Message.Author.Id;
+            if (currUserId == context.Guild.OwnerId) return false;
+            if (BlackList.Contains(currUserId)) return true;
 
-            int currMinute = message.CreatedAt.Minute + message.CreatedAt.Hour * 60;
+            int currMinute = context.Message.CreatedAt.Minute + context.Message.CreatedAt.Hour * 60;
 
-            if (!temps.userMsgCount.ContainsKey(currUser))
+            // Start watching for user
+            if (!_userMsgCount.ContainsKey(currUserId))
+                _userMsgCount.Add(currUserId, new int[] { -1, 0 }); // current minute : count
+
+            // Drop + update user stats if he replies in new minute
+            if (_userMsgCount[currUserId][0] != currMinute)
             {
-                temps.userMsgCount.Add(currUser, new ExpandoObject());
-                temps.userMsgCount[currUser].minute = currMinute;
-                temps.userMsgCount[currUser].count = 0;
+                _userMsgCount[currUserId][0] = currMinute;
+                _userMsgCount[currUserId][1] = 0;
             }
 
-            if (temps.userMsgCount[currUser].minute != currMinute)
-            {
-                temps.userMsgCount[currUser].minute = currMinute;
-                temps.userMsgCount[currUser].count = 0;
-            }
+            // Update messages count withing current minute
+            _userMsgCount[currUserId][1]++;
 
-            temps.userMsgCount[currUser].count++;
-            if (temps.userMsgCount[currUser].count == Config.rateLimit)
-                await message.ReplyAsync($"⚠ Warning! If you proceed to call {_client.CurrentUser.Mention} so fast," +
-                                         " your messages will be ignored.");
-
-            if (temps.userMsgCount[currUser].count > Config.rateLimit)
+            if (_userMsgCount[currUserId][1] == BotConfig.RateLimit)
+                context.Message.ReplyAsync($"⚠ Warning! If you proceed to call {context.Client.CurrentUser.Mention} " +
+                                            "so fast, your messages will be ignored.");
+            else if (_userMsgCount[currUserId][1] > BotConfig.RateLimit)
             {
-                temps.blackList.Add(currUser);
-                temps.userMsgCount.Remove(currUser);
+                BlackList.Add(currUserId);
+                _userMsgCount.Remove(currUserId);
 
                 return true;
             }

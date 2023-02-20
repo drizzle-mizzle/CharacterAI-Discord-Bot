@@ -1,29 +1,34 @@
 ﻿using Discord.WebSocket;
 using Discord;
 using System.Text.RegularExpressions;
+using Discord.Commands;
+using System.Dynamic;
+using CharacterAI_Discord_Bot.Models;
+using CharacterAI.Models;
 
 namespace CharacterAI_Discord_Bot.Service
 {
     public partial class HandlerService : CommonService
     {
-        public static async Task<ulong> ReplyOnMessage(SocketUserMessage message, dynamic reply)
+        public static async Task<ulong> ReplyOnMessage(SocketUserMessage message, Reply reply)
         {
-            string replyText = reply.text;
-            string? replyImage = reply?.image_rel_path;
+            string replyText = reply.Text!;
+
             // (3 or more) "\n\n\n..." -> (exactly 2) "\n\n"
             replyText = LBRegex().Replace(replyText, "\n\n");
 
             Embed? embed = null;
-            if (replyImage != null && await TryGetImage(replyImage))
-                embed = new EmbedBuilder().WithImageUrl(replyImage).Build();
+            if (reply.HasImage && await TryGetImage(reply.ImageRelPath!))
+                embed = new EmbedBuilder().WithImageUrl(reply.ImageRelPath).Build();
 
             var botReply = await message.ReplyAsync(replyText, embed: embed).ConfigureAwait(false);
 
             await SetArrowButtons(botReply).ConfigureAwait(false);
-            _ = RemoveButtons(botReply, delay: Config.removeDelay);
+            _ = RemoveButtons(botReply, delay: BotConfig.RemoveDelay);
 
             return botReply!.Id;
         }
+
 
         //public static async Task<IUserMessage?> ReplyWithImage(SocketUserMessage message, byte[] image, string text)
         //{

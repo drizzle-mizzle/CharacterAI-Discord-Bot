@@ -14,41 +14,6 @@ Simple unofficial Discord integration with [CharacterAI](https://beta.character.
 
     ![chrome_cshYMsGIaB](https://user-images.githubusercontent.com/55811932/211129383-c7cd4ca2-ceb4-42c5-8449-bc6ce9b2d538.gif)
 
-## Commands
-- `help`
-- `link` - Get original character link
-- `find character <query>` - find and set character by name
-  - Alias: `find`
-- `set character <id>` - set character by id
-  - Aliases: `set`, `sc`
-- `reset character` - save and start new chat
-  - Alias: `reset`
-- `audience toggle` - enable/disable audience mode *(What is the audience mode - read below)*
-  - Alias: `amode`
-- `call user <@user_mention> <any text>` - Make character call other user *(use it to make two bots talk to each other)*
-  - Aliases: `call`, `cu`
-  - Example: `@some_character call @another_character Do you love donuts?`
-  - *(if no text argument provided, default `"Hey!"` will be used)*
-- `skip <amount>` - Make character ignore next few messages *(use it to stop bots' conversation)*
-  - Alias: `delay`
-  - *(if no amount argument provided, default `3` will be used)*
-  - *(commands will not be ignored, amount can be reduced with another call)*
-- `reply chance <chance>` - Change the probability of random replies on new users' messages `in %` *(It's better to use it with audience mode enabled)*
-  - Alias: `rc`
-  - Example: `rc 50` => `Probability of random answers was changed from 0% to 50%`
-  - *(default value = 0%)*
-  - *(keep in mind that with this feature enabled, commands can be executed without bot prefix/mention)*
-- `hunt <@user_mention>` - Make character always reply on messages of certain user
-- `unhunt <@user_mention>` - Stop hunting user
-- `hunt chance <chance>` - Change the probability of replies to hunted user `in %`
-  - Alias: `hc`
-  - *(default value = 100%)*
-- `ignore <@user_mention>` - Prevent user from calling the bot
-  - Alias: `ban`
-- `allow <@user_mention>` - Allow user to call the bot
-  - Alias: `unban`
-- `ping` - check latency
-
 ## Additional configuration
 - If you want to give other users ability to configure a bot, give them a role and place it's name in `discord_bot_role`.
 - Specify prefixes in `discord_bot_prefixes`.

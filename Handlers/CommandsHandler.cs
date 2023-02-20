@@ -3,12 +3,9 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
-using System.Dynamic;
 using CharacterAI_Discord_Bot.Service;
 using CharacterAI_Discord_Bot.Models;
 using CharacterAI;
-using Microsoft.VisualBasic;
-using Discord.Interactions;
 
 namespace CharacterAI_Discord_Bot.Handlers
 {
@@ -102,14 +99,14 @@ namespace CharacterAI_Discord_Bot.Handlers
             if (reaction.Emote.Name == new Emoji("\u2B05").Name && currentChannel.Data.LastCall!.CurrentReplyIndex > 0)
             {   // left arrow
                 currentChannel.Data.LastCall!.CurrentReplyIndex--;
-                _ = UpdateMessageAsync(message);
+                _ = UpdateMessageAsync(message, currentChannel);
 
                 return;
             }
             if (reaction.Emote.Name == new Emoji("\u27A1").Name)
             {   // right arrow
                 currentChannel.Data.LastCall!.CurrentReplyIndex++;
-                _ = UpdateMessageAsync(message);
+                _ = UpdateMessageAsync(message, currentChannel);
 
                 return;
             }
@@ -198,19 +195,20 @@ namespace CharacterAI_Discord_Bot.Handlers
         }
 
         // Swipes
-        private async Task UpdateMessageAsync(IUserMessage message)
+        private async Task UpdateMessageAsync(IUserMessage message, Models.Channel currentChannel)
         {
-            var currentChannel = Channels.Find(c => c.Id == message.Channel.Id);
-            if (currentChannel!.Data.LastCall!.RepliesList.Count < currentChannel.Data.LastCall.CurrentReplyIndex + 1)
+            if (currentChannel.Data.LastCall!.RepliesList.Count < currentChannel.Data.LastCall.CurrentReplyIndex + 1)
             {
                 _ = message.ModifyAsync(msg => { msg.Content = $"( 🕓 Wait... )"; });
-                var response = await CurrentIntegration.CallCharacterAsync(parentMsgId: currentChannel.Data.LastCall.OriginalResponse!.LastUserMsgId);
+                var historyId = currentChannel.Data.HistoryId;
+                var parentMsgId = currentChannel.Data.LastCall.OriginalResponse.LastUserMsgId;
+                var response = await CurrentIntegration.CallCharacterAsync(parentMsgId: parentMsgId, historyId: historyId);
+
                 if (!response.IsSuccessful)
                 {
                     _ = message.ModifyAsync(msg => { msg.Content = $"⚠ Somethinh went wrong!"; });
                     return;
                 }
-
                 currentChannel.Data.LastCall.RepliesList.AddRange(response.Replies);
             }
             var newReply = currentChannel.Data.LastCall.RepliesList[currentChannel.Data.LastCall.CurrentReplyIndex];

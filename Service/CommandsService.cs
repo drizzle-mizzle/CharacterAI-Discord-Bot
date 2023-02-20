@@ -62,7 +62,6 @@ namespace CharacterAI_Discord_Bot.Service
             try { await SetBotAvatar(context.Client.CurrentUser, cI.CurrentCharacter!).ConfigureAwait(false); }
             catch { reply += "\n⚠️ Failed to set bot avatar!"; }
 
-            Success(BotConfig.DescriptionInPlaying.ToString());
             if (BotConfig.DescriptionInPlaying)
                 _ = UpdatePlayingStatus(context.Client, integration: cI).ConfigureAwait(false);
 
@@ -106,13 +105,18 @@ namespace CharacterAI_Discord_Bot.Service
             if (newHistoryId is null) return;
 
             var currentChannel = handler.Channels.Find(c => c.Id == context.Channel.Id);
+            
+            var newChannel = new Channel(context.Channel.Id, context.User.Id, newHistoryId, handler.CurrentIntegration.CurrentCharacter.Id!);
+
             if (currentChannel is not null)
-                currentChannel.Data.HistoryId = newHistoryId;
-            else
             {
-                var newChannel = new Channel(context.Channel.Id, context.User.Id, newHistoryId, handler.CurrentIntegration.CurrentCharacter.Id!);
-                handler.Channels.Add(newChannel);
+                newChannel.GuestsList = currentChannel.GuestsList;
+                newChannel.Data.AudienceMode = currentChannel.Data.AudienceMode;
+                handler.Channels.Remove(currentChannel);
             }
+
+            handler.Channels.Add(newChannel);
+
             SaveData(handler.Channels);
 
             await context.Message.ReplyAsync(handler.CurrentIntegration.CurrentCharacter.Greeting!);
@@ -144,7 +148,7 @@ namespace CharacterAI_Discord_Bot.Service
 
             // Create text channel
             string channelName = $"private chat with {cI.CurrentCharacter.Name}";
-            var channel = await context.Guild.CreateTextChannelAsync(channelName, c =>
+            var newChannel = await context.Guild.CreateTextChannelAsync(channelName, c =>
             {
                 var perms = new List<Overwrite>();
                 var hideChannel = new OverwritePermissions(viewChannel: PermValue.Deny);
@@ -158,13 +162,9 @@ namespace CharacterAI_Discord_Bot.Service
                 c.CategoryId = categoryId;
             });
 
-            var msg = await channel.SendMessageAsync($"Use `add {channel.Id} @user` to add other users to this channel.");
+            var msg = await newChannel.SendMessageAsync($"Use **`add {newChannel.Id} @user`** to add other users to this channel.");
             await msg.PinAsync();
-            await channel.SendMessageAsync(cI.CurrentCharacter.Greeting);
-
-            // Update channels list
-            var newChannel = new Channel(channel.Id, context.User.Id, newChatHistoryId, cI.CurrentCharacter.Id!);
-            handler.Channels.Add(newChannel);
+            await newChannel.SendMessageAsync(cI.CurrentCharacter.Greeting);
 
             // forget old channels
             if (context.User.Id != context.Guild.OwnerId ||
@@ -172,16 +172,20 @@ namespace CharacterAI_Discord_Bot.Service
             {
                 var userChannels = handler.Channels.Where(c => c.AuthorId == context.User.Id);
                 var newChannelsList = new List<Channel>();
-                newChannelsList.AddRange(handler.Channels);
+                newChannelsList.AddRange(handler.Channels); // add all channels
 
                 foreach (var uC in userChannels)
                 {
-                    var delChannel = handler.Channels.Find(c => c.Id == uC.Id && c.Id != newChannel.Id);
+                    var delChannel = handler.Channels.Find(c => c.Id == uC.Id);
                     if (delChannel is not null)
-                        newChannelsList.Remove(delChannel);
+                        newChannelsList.Remove(delChannel); // delete old channels
                 }
-                handler.Channels = newChannelsList;
+                handler.Channels = newChannelsList; // replace with all channels - old channels
             }
+
+            // Update channels list
+            var newChannelItem = new Channel(newChannel.Id, context.User.Id, newChatHistoryId, cI.CurrentCharacter.Id!);
+            handler.Channels.Add(newChannelItem);
 
             SaveData(channels: handler.Channels);
         }

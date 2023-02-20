@@ -25,8 +25,8 @@ namespace CharacterAI_Discord_Bot.Models
 
     internal class CharacterDialogData : CommonService
     {
-        internal string HistoryId { get; set; }
-        internal string CharacterId { get; set; }
+        internal string HistoryId { get; }
+        internal string CharacterId { get; }
         internal int AudienceMode { get; set; }
         internal ulong LastCharacterCallMsgId { get; set; } // discord message id
         internal int SkipMessages { get; set; }

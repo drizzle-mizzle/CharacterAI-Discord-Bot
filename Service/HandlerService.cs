@@ -23,10 +23,10 @@ namespace CharacterAI_Discord_Bot.Service
 
             var botReply = await message.ReplyAsync(replyText, embed: embed).ConfigureAwait(false);
 
-			// Skip adding buttons if delay is 0
-			if (BotConfig.RemoveDelay > 0)
-				await SetArrowButtons(botReply).ConfigureAwait(false);
-				_ = RemoveButtons(botReply, delay: BotConfig.RemoveDelay);
+            // Skip adding buttons if delay is 0
+            if (BotConfig.RemoveDelay > 0)
+                await SetArrowButtons(botReply).ConfigureAwait(false);
+                _ = RemoveButtons(botReply, delay: BotConfig.RemoveDelay);
 
             return botReply!.Id;
         }

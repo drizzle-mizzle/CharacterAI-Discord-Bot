@@ -8,7 +8,7 @@ An unofficial Discord integration with [CharacterAI](https://beta.character.ai/)
 ## 🪄Features
 - Talk with any character on your own server and change them on the fly.
 - Embedded character search.
-- Automatically sets the name and profile picture of the character.
+- Automatically sets the name and profile picture of a character.
 - Supports answers swiping and image sending.
 - Supports multiple parallel chats with the same character.
 - Random replies, audience mode and some other stuff.

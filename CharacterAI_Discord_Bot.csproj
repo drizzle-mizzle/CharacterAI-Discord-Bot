@@ -17,12 +17,12 @@
 
   <ItemGroup>
     <Reference Include="CharacterAI">
-      <HintPath>..\CharacterAI-API-Wrap\bin\Debug\net7.0\CharacterAI.dll</HintPath>
+      <HintPath>CharacterAI.dll</HintPath>
     </Reference>
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="__Config.json">
+    <None Update="Config.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="storage\**">

@@ -6,6 +6,7 @@ using System.Reflection;
 using CharacterAI_Discord_Bot.Service;
 using CharacterAI_Discord_Bot.Models;
 using CharacterAI;
+using System.Threading.Channels;
 
 namespace CharacterAI_Discord_Bot.Handlers
 {
@@ -14,7 +15,7 @@ namespace CharacterAI_Discord_Bot.Handlers
         internal Integration CurrentIntegration { get; }
         internal int ReplyChance { get; set; } // 0
         internal List<ulong> BlackList { get; set; } = new();
-        internal List<Channel> Channels { get; set; } = new();
+        internal List<Models.Channel> Channels { get; set; } = new();
         internal LastSearchQuery? LastSearch { get; set; }
         internal Dictionary<ulong, int> HuntedUsers { get; set; } = new(); // user id : reply chance
 
@@ -43,43 +44,67 @@ namespace CharacterAI_Discord_Bot.Handlers
             if (rawMsg is not SocketUserMessage message || authorId == _client.CurrentUser.Id)
                 return;
 
+            var context = new SocketCommandContext(_client, message);
+
             int argPos = 0;
             var RandomGen = new Random();
             string[] prefixes = BotConfig.BotPrefixes;
 
+            bool isDM = context.Guild is null;
             bool hasMention = message.HasMentionPrefix(_client.CurrentUser, ref argPos);
             bool hasPrefix = !hasMention && prefixes.Any(p => message.HasStringPrefix(p, ref argPos));
             bool hasReply = !hasPrefix && !hasMention && message.ReferencedMessage != null && message.ReferencedMessage.Author.Id == _client.CurrentUser.Id; // IT'S SO FUCKING BIG UUUGHH!
             bool randomReply = ReplyChance >= RandomGen.Next(100) + 1;
             bool userIsHunted = HuntedUsers.ContainsKey(authorId) && HuntedUsers[authorId] >= RandomGen.Next(100) + 1;
 
-            if (hasMention || hasPrefix || hasReply || userIsHunted || randomReply)
+            if (isDM || hasMention || hasPrefix || hasReply || userIsHunted || randomReply)
             {
-                var context = new SocketCommandContext(_client, message);
-                var cI = CurrentIntegration; // shortcut for readability
+                // Update messages-per-minute counter and return if user has exceeded rate limit
+                // or if message is a DM and these are disabled
+                if ((isDM && !BotConfig.DMenabled) || UserIsBanned(context))
+                    return;
 
-                // Update messages-per-minute counter and returns if user had exceeded rate limit
-                if (UserIsBanned(context)) return;
-
+                // Try to execute command
                 var cmdResponse = await _commands.ExecuteAsync(context, argPos, _services);
+                // If command was found and executed, return
                 if (cmdResponse.IsSuccess) return;
-
-                // If command was found but failed to execute, don't interpret it as a reply
+                // If command was found but failed to execute, return
                 if (cmdResponse.ErrorReason != "Unknown command.")
                 {
-                    await message.ReplyAsync($"⚠ {cmdResponse.ErrorReason}, {cmdResponse.Error}")
+                    await message.ReplyAsync($"⚠ Failed to execute command: {cmdResponse.ErrorReason} ({cmdResponse.Error})")
                                  .ConfigureAwait(false);
                     return;
                 }
 
-                var currentChannel = Channels.Find(c => c.Id == context.Channel.Id);
-                if (currentChannel is null) return;
+                var cI = CurrentIntegration; // shortcut for readability
+                if (cI.CurrentCharacter.IsEmpty)
+                {
+                    await context.Message.ReplyAsync("⚠ Set a character first").ConfigureAwait(false);
+                    return;
+                }
 
-                if (currentChannel!.Data.SkipMessages > 0)
+                var currentChannel = Channels.Find(c => c.Id == context.Channel.Id);
+                bool isPrivate = context.Channel.Name.StartsWith("private");
+
+                if (currentChannel is null)
+                {
+                    if (isPrivate) return;
+
+                    string? historyId = null;
+                    if (isDM) historyId = await cI.CreateNewChatAsync();
+                    historyId ??= cI.Chats[0];
+
+                    currentChannel = new Models.Channel(context.Channel.Id, context.User.Id, historyId, cI.CurrentCharacter.Id!);
+
+                    Channels.Add(currentChannel);
+                    SaveData(channels: Channels);
+                }
+
+                if (currentChannel.Data.SkipMessages > 0)
                     currentChannel.Data.SkipMessages--;
                 else
                     using (message.Channel.EnterTypingState())
-                        _ = TryToCallCharacterAsync(context, currentChannel);
+                        _ = TryToCallCharacterAsync(context, currentChannel, isDM || isPrivate);
             }
         }
 
@@ -92,7 +117,7 @@ namespace CharacterAI_Discord_Bot.Handlers
             if (currentChannel.Data.LastCall is null || rawMessage.Id != currentChannel.Data.LastCharacterCallMsgId)
                 return;
 
-            var user = reaction.User.Value as SocketGuildUser;
+            var user = reaction.User.Value as SocketUser;
             if (user!.IsBot || user.Id != message.ReferencedMessage.Author.Id)
                 return;
 
@@ -222,13 +247,8 @@ namespace CharacterAI_Discord_Bot.Handlers
                 .ConfigureAwait(false);
         }
 
-        private async Task TryToCallCharacterAsync(SocketCommandContext context, Channel currentChannel)
+        private async Task TryToCallCharacterAsync(SocketCommandContext context, Models.Channel currentChannel, bool isPrivate)
         {
-            if (CurrentIntegration.CurrentCharacter.IsEmpty)
-            {
-                await context.Message.ReplyAsync("⚠ Set a character first").ConfigureAwait(false);
-                return;
-            }
             // Get last call and remove buttons from it
             if (currentChannel.Data.LastCharacterCallMsgId != 0)
             {
@@ -269,13 +289,15 @@ namespace CharacterAI_Discord_Bot.Handlers
 
             // Take first character answer by default and reply with it
             var reply = currentChannel.Data.LastCall!.RepliesList.First();
-            _ = Task.Run(async () => currentChannel.Data.LastCharacterCallMsgId = await ReplyOnMessage(context.Message, reply));
+            _ = Task.Run(async () => currentChannel.Data.LastCharacterCallMsgId = await ReplyOnMessage(context.Message, reply, isPrivate));
         }
 
         private bool UserIsBanned(SocketCommandContext context)
         {
             ulong currUserId = context.Message.Author.Id;
-            if (currUserId == context.Guild.OwnerId) return false;
+            if (context.Guild is not null && currUserId == context.Guild.OwnerId)
+                return false;
+
             if (BlackList.Contains(currUserId)) return true;
 
             int currMinute = context.Message.CreatedAt.Minute + context.Message.CreatedAt.Hour * 60;
@@ -294,9 +316,9 @@ namespace CharacterAI_Discord_Bot.Handlers
             // Update messages count withing current minute
             _userMsgCount[currUserId][1]++;
 
-            if (_userMsgCount[currUserId][1] == BotConfig.RateLimit)
+            if (_userMsgCount[currUserId][1] == BotConfig.RateLimit - 1)
                 context.Message.ReplyAsync($"⚠ Warning! If you proceed to call {context.Client.CurrentUser.Mention} " +
-                                            "so fast, your messages will be ignored.");
+                                            "so fast, you'll be blocked from using it.");
             else if (_userMsgCount[currUserId][1] > BotConfig.RateLimit)
             {
                 BlackList.Add(currUserId);

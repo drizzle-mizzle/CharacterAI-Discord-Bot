@@ -33,21 +33,13 @@ namespace CharacterAI_Discord_Bot.Service
 
             var savedData = GetStoredData(_config.AutoCharId);
 
-            if (savedData.BlackList is List<ulong>)
-            {
-                handler.BlackList = savedData.BlackList;
-                Log("Restored blocked users: ");
-                Success(handler.BlackList.Count.ToString());
-            }
+            handler.BlackList = savedData.BlackList;
+            Log("Restored blocked users: ");
+            Success(handler.BlackList.Count.ToString());
 
-            var channels = (List<Models.Channel>)savedData.Channels;
-            if (channels.Any())
-            {
-                handler.Channels = channels;
-                Log("Restored channels:\n");
-                foreach (var channel in channels)
-                    Success($"Id: {channel.Id} | HistoryId: {channel.Data.HistoryId}");
-            }
+            handler.Channels = savedData.Channels;
+            Log("Restored channels: ");
+            Success(handler.Channels.Count.ToString());
 
             // GetYAML will return empty channels list if character was changed
             // This call will delete all records with previous character
@@ -55,9 +47,10 @@ namespace CharacterAI_Discord_Bot.Service
 
             if (BotConfig.DescriptionInPlaying)
                 await UpdatePlayingStatus(client, type: 0, integration: cI).ConfigureAwait(false);
-
-            await SetBotAvatar(client.CurrentUser, cI.CurrentCharacter).ConfigureAwait(false);
-            await SetBotNickname(cI.CurrentCharacter.Name!, client).ConfigureAwait(false);
+            if (BotConfig.CharacterAvatarEnabled)
+                await SetBotAvatar(client.CurrentUser, cI.CurrentCharacter).ConfigureAwait(false);
+            if (BotConfig.CharacterNameEnabled)
+                await SetBotNickname(cI.CurrentCharacter.Name!, client).ConfigureAwait(false);
         }
 
         internal static void SaveData(List<Models.Channel>? channels = null, List<ulong>? blackList = null)
@@ -113,7 +106,7 @@ namespace CharacterAI_Discord_Bot.Service
             
             foreach (string line in channelsYAML.Split("-------------------"))
             {
-                if (line.Count() < 3) continue;
+                if (line.Length < 5) continue;
 
                 var channelTemp = deserializer.Deserialize<ChannelTemp>(line);
                 string characterId = channelTemp.CharacterId!;

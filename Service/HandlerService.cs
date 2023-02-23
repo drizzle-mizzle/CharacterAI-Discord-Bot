@@ -10,7 +10,7 @@ namespace CharacterAI_Discord_Bot.Service
 {
     public partial class HandlerService : CommonService
     {
-        public static async Task<ulong> ReplyOnMessage(SocketUserMessage message, Reply reply)
+        public static async Task<ulong> ReplyOnMessage(SocketUserMessage message, Reply reply, bool isPrivate)
         {
             string replyText = reply.Text!;
 
@@ -21,10 +21,15 @@ namespace CharacterAI_Discord_Bot.Service
             if (reply.HasImage && await TryGetImage(reply.ImageRelPath!))
                 embed = new EmbedBuilder().WithImageUrl(reply.ImageRelPath).Build();
 
-            var botReply = await message.ReplyAsync(replyText, embed: embed).ConfigureAwait(false);
+            var mentions = isPrivate ? AllowedMentions.None : AllowedMentions.All;
+            var botReply = await message.ReplyAsync(replyText, embed: embed, allowedMentions: mentions).ConfigureAwait(false);
 
-            await SetArrowButtons(botReply).ConfigureAwait(false);
-            _ = RemoveButtons(botReply, delay: BotConfig.RemoveDelay);
+            if (BotConfig.SwipesEnabled)
+            {
+                await SetArrowButtons(botReply).ConfigureAwait(false);
+                if (BotConfig.RemoveDelay != 0)
+                    _ = RemoveButtons(botReply, delay: BotConfig.RemoveDelay);
+            }
 
             return botReply!.Id;
         }

@@ -1,11 +1,11 @@
 ﻿using Discord;
+using Discord.Rest;
 using Discord.Commands;
 using Discord.WebSocket;
 using CharacterAI_Discord_Bot.Handlers;
 using CharacterAI_Discord_Bot.Models;
 using CharacterAI;
 using CharacterAI.Models;
-using System.Reflection.Metadata;
 
 namespace CharacterAI_Discord_Bot.Service
 {
@@ -27,41 +27,26 @@ namespace CharacterAI_Discord_Bot.Service
             {
                 var savedData = GetStoredData(charId);
 
-                if (savedData.BlackList is List<ulong>)
-                {
-                    handler.BlackList = savedData.BlackList;
-                    Log("Restored blocked users: ");
-                    Success(handler.BlackList.Count.ToString());
-                }
+                handler.BlackList = savedData.BlackList;
+                Log("Restored blocked users: ");
+                Success(handler.BlackList.Count.ToString());
 
-                var channels = (List<Channel>)savedData.Channels;
-                if (channels.Any())
-                {
-                    Log("Restored channels:\n");
-                    foreach (var channel in channels)
-                        Success($"Id: {channel.Id} | HistoryId: {channel.Data.HistoryId}");
-
-                    handler.Channels = channels;
-                }
-
-                if (channels.Find(c => c.Id == context.Channel.Id) is null)
-                    handler.Channels.Add(new Channel(context.Channel.Id, context.User.Id, cI.Chats[0], cI.CurrentCharacter.Id!));
+                handler.Channels = savedData.Channels;
+                Log("Restored channels: ");
+                Success(handler.Channels.Count.ToString());
             }
-            else
-            {
-                handler.Channels.Clear();
-                handler.Channels.Add(new Channel(context.Channel.Id, context.User.Id, cI.Chats[0], cI.CurrentCharacter.Id!));
-            }
+            else handler.Channels.Clear();                
 
             SaveData(channels: handler.Channels);
 
             string reply = cI.CurrentCharacter.Greeting!;
-            try { await SetBotNickname(cI.CurrentCharacter.Name!, context.Client).ConfigureAwait(false); }
-            catch { reply += "\n⚠️ Failed to set bot name! Probably, missing permissions?"; }
 
-            try { await SetBotAvatar(context.Client.CurrentUser, cI.CurrentCharacter!).ConfigureAwait(false); }
-            catch { reply += "\n⚠️ Failed to set bot avatar!"; }
-
+            if (BotConfig.CharacterAvatarEnabled)
+                try { await SetBotNickname(cI.CurrentCharacter.Name!, context.Client).ConfigureAwait(false); }
+                catch { reply += "\n⚠️ Failed to set bot name! Probably, missing permissions?"; }
+            if (BotConfig.CharacterNameEnabled)
+                try { await SetBotAvatar(context.Client.CurrentUser, cI.CurrentCharacter!).ConfigureAwait(false); }
+                catch { reply += "\n⚠️ Failed to set bot avatar!"; }
             if (BotConfig.DescriptionInPlaying)
                 _ = UpdatePlayingStatus(context.Client, integration: cI).ConfigureAwait(false);
 
@@ -132,62 +117,75 @@ namespace CharacterAI_Discord_Bot.Service
                 return;
             }
 
-            // Create a separate category if it doesn't exist 
-            ulong categoryId;
-            var category = context.Guild.CategoryChannels.FirstOrDefault(c => c.Name == "cAI private channels");
-            if (category is not null)
-                categoryId = category.Id;
-            else
-                categoryId = (await context.Guild.CreateCategoryChannelAsync("cAI private channels", c =>
-                {
-                    var perms = new List<Overwrite>();
-                    var hideChannel = new OverwritePermissions(viewChannel: PermValue.Deny);
-                    perms.Add(new Overwrite(context.Guild.EveryoneRole.Id, PermissionTarget.Role, hideChannel));
-                    c.PermissionOverwrites = perms;
-                })).Id;
-
-            // Create text channel
-            string channelName = $"private chat with {cI.CurrentCharacter.Name}";
-            var newChannel = await context.Guild.CreateTextChannelAsync(channelName, c =>
-            {
-                var perms = new List<Overwrite>();
-                var hideChannel = new OverwritePermissions(viewChannel: PermValue.Deny);
-                var showChannel = new OverwritePermissions(viewChannel: PermValue.Allow);
-
-                perms.Add(new Overwrite(context.Guild.EveryoneRole.Id, PermissionTarget.Role, hideChannel));
-                perms.Add(new Overwrite(context.Message.Author.Id, PermissionTarget.User, showChannel));
-                perms.Add(new Overwrite(context.Client.CurrentUser.Id, PermissionTarget.User, showChannel));
-
-                c.PermissionOverwrites = perms;
-                c.CategoryId = categoryId;
-            });
-
-            var msg = await newChannel.SendMessageAsync($"Use **`add {newChannel.Id} @user`** to add other users to this channel.");
-            await msg.PinAsync();
+            ulong categoryId = await FindOrCreateCategoryAsync(context, BotConfig.Category);
+            var newChannel = await CreateChannelAsync(context, categoryId, cI);
+            var infoMsg = await newChannel.SendMessageAsync($"History Id: **`{newChatHistoryId}`**" +
+                                                            $"Created by: {context.User.Id}" +
+                                                            $"Use **`add {newChannel.Id} @user`** to add other users to this channel.");
+            await infoMsg.PinAsync();
             await newChannel.SendMessageAsync(cI.CurrentCharacter.Greeting);
 
-            // forget old channels
-            if (context.User.Id != context.Guild.OwnerId ||
-                !((SocketGuildUser)context.User).Roles.Any(r => r.Name == BotConfig.BotRole))
-            {
-                var userChannels = handler.Channels.Where(c => c.AuthorId == context.User.Id);
-                var newChannelsList = new List<Channel>();
-                newChannelsList.AddRange(handler.Channels); // add all channels
-
-                foreach (var uC in userChannels)
-                {
-                    var delChannel = handler.Channels.Find(c => c.Id == uC.Id);
-                    if (delChannel is not null)
-                        newChannelsList.Remove(delChannel); // delete old channels
-                }
-                handler.Channels = newChannelsList; // replace with all channels - old channels
-            }
+            bool isOwner = context.User.Id == context.Guild.OwnerId;
+            bool isManager = isOwner || ((SocketGuildUser)context.User).Roles.Any(r => r.Name == BotConfig.BotRole);
+            if (!isManager) // owner's and managers' channels will not be deactivated
+                DeactivateOldUserChannel(handler, context.User.Id);
 
             // Update channels list
             var newChannelItem = new Channel(newChannel.Id, context.User.Id, newChatHistoryId, cI.CurrentCharacter.Id!);
             handler.Channels.Add(newChannelItem);
 
             SaveData(channels: handler.Channels);
+        }
+
+        private static async Task<ulong> FindOrCreateCategoryAsync(SocketCommandContext context, string categoryName)
+        {
+            var category = context.Guild.CategoryChannels.FirstOrDefault(c => c.Name == categoryName);
+            if (category is not null) return category.Id;
+            
+            var newCategory = (await context.Guild.CreateCategoryChannelAsync(categoryName, c =>
+            {
+                var perms = new List<Overwrite>();
+                var hideChannel = new OverwritePermissions(viewChannel: PermValue.Deny);
+                perms.Add(new Overwrite(context.Guild.EveryoneRole.Id, PermissionTarget.Role, hideChannel));
+                c.PermissionOverwrites = perms;
+            }));
+
+            return newCategory.Id;
+        }
+
+        private static async Task<RestTextChannel> CreateChannelAsync(SocketCommandContext context, ulong categoryId, Integration cI)
+        {
+            string channelName = $"private chat with {cI.CurrentCharacter.Name}";
+            var hideChannel = new OverwritePermissions(viewChannel: PermValue.Deny);
+            var showChannel = new OverwritePermissions(viewChannel: PermValue.Allow);
+
+            var newChannel = await context.Guild.CreateTextChannelAsync(channelName, c =>
+            {
+                c.CategoryId = categoryId;
+                c.PermissionOverwrites = new List<Overwrite>
+                {
+                    new Overwrite(context.Guild.EveryoneRole.Id, PermissionTarget.Role, hideChannel),
+                    new Overwrite(context.Message.Author.Id, PermissionTarget.User, showChannel),
+                    new Overwrite(context.Client.CurrentUser.Id, PermissionTarget.User, showChannel)
+                };
+            });
+
+            return newChannel;
+        }
+
+        private static void DeactivateOldUserChannel(CommandsHandler handler, ulong userId)
+        {
+            var userChannels = handler.Channels.Where(c => c.AuthorId == userId);
+            var newChannelsList = new List<Channel>();
+            newChannelsList.AddRange(handler.Channels); // add all channels
+
+            foreach (var uC in userChannels)
+            {
+                var delChannel = handler.Channels.Find(c => c.Id == uC.Id);
+                if (delChannel is not null)
+                    newChannelsList.Remove(delChannel); // delete old channel
+            }
+            handler.Channels = newChannelsList;
         }
 
         public static async Task SetBotNickname(string name, DiscordSocketClient client)

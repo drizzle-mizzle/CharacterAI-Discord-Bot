@@ -4,14 +4,19 @@
 
   "discord_bot_role": "Manage Character",
   "discord_bot_prefixes": [ ".ai ", "!!" ],
+  "discord_private_category_name": "CAI PRIVATE CHANNELS",
 
-  "default_audience_mode": false,
+  "default_audience_mode": 0,
   "default_no_permission_file": "nopower.gif",
 
   "private_chat_role_required": false,
+  "use_character_avatar": true,
+  "use_character_name": true,
   "description_in_playing_status": true,
+  "allow_dm": true,
 
   "rate_limit": 10,
+  "enable_swipe_buttons": true,
   "buttons_remove_delay": 90,
 
   "auto_setup": false,

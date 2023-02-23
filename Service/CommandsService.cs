@@ -119,8 +119,8 @@ namespace CharacterAI_Discord_Bot.Service
 
             ulong categoryId = await FindOrCreateCategoryAsync(context, BotConfig.Category);
             var newChannel = await CreateChannelAsync(context, categoryId, cI);
-            var infoMsg = await newChannel.SendMessageAsync($"History Id: **`{newChatHistoryId}`**" +
-                                                            $"Created by: {context.User.Id}" +
+            var infoMsg = await newChannel.SendMessageAsync($"History Id: **`{newChatHistoryId}`**\n" +
+                                                            $"Created by: {context.User.Mention}\n" +
                                                             $"Use **`add {newChannel.Id} @user`** to add other users to this channel.");
             await infoMsg.PinAsync();
             await newChannel.SendMessageAsync(cI.CurrentCharacter.Greeting);

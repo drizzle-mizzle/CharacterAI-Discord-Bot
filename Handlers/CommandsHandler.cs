@@ -71,8 +71,10 @@ namespace CharacterAI_Discord_Bot.Handlers
                 // If command was found but failed to execute, return
                 if (cmdResponse.ErrorReason != "Unknown command.")
                 {
-                    await message.ReplyAsync($"⚠ Failed to execute command: {cmdResponse.ErrorReason} ({cmdResponse.Error})")
-                                 .ConfigureAwait(false);
+                    string text = $"⚠ Failed to execute command: {cmdResponse.ErrorReason} ({cmdResponse.Error})";
+                    if (isDM) text = "*Note: some commands are not intended to be called from DMs*\n" + text;
+
+                    await message.ReplyAsync(text).ConfigureAwait(false);
                     return;
                 }
 
@@ -224,7 +226,7 @@ namespace CharacterAI_Discord_Bot.Handlers
         {
             if (currentChannel.Data.LastCall!.RepliesList.Count < currentChannel.Data.LastCall.CurrentReplyIndex + 1)
             {
-                _ = message.ModifyAsync(msg => { msg.Content = $"( 🕓 Wait... )"; });
+                _ = message.ModifyAsync(msg => { msg.Content = $"( 🕓 Wait... )"; msg.AllowedMentions = AllowedMentions.None; });
                 var historyId = currentChannel.Data.HistoryId;
                 var parentMsgId = currentChannel.Data.LastCall.OriginalResponse.LastUserMsgId;
                 var response = await CurrentIntegration.CallCharacterAsync(parentMsgId: parentMsgId, historyId: historyId);

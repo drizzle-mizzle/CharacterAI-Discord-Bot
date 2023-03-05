@@ -90,7 +90,6 @@ namespace CharacterAI_Discord_Bot.Service
             if (newHistoryId is null) return;
 
             var currentChannel = handler.Channels.Find(c => c.Id == context.Channel.Id);
-            
             var newChannel = new Channel(context.Channel.Id, context.User.Id, newHistoryId, handler.CurrentIntegration.CurrentCharacter.Id!);
 
             if (currentChannel is not null)
@@ -247,6 +246,8 @@ namespace CharacterAI_Discord_Bot.Service
 
         public static bool ValidateBotRole(SocketCommandContext context)
         {
+            if (context.Guild is null) throw new Exception("Not a guild channel.");
+
             var user = context.User as SocketGuildUser;
             if (user!.Id == context.Guild.OwnerId) return true;
 

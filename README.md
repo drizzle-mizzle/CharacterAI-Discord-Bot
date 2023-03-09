@@ -19,3 +19,11 @@ An unofficial Discord integration with [CharacterAI](https://beta.character.ai/)
 - [How to set up](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/wiki/How-to-set-up)
 - [Commands](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/wiki/Commands)
 - [Additional configuration](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/wiki/Additional-configuration)
+
+## 🩼Known issues
+> Some Windows users are facing the problem of being unable to access character.ai. <br>
+> If you encounter something similar to:<br>
+> `Request failed! (https://beta.character.ai/chat/character/info/)`<br>
+> `Response: Forbidden`
+> - First, double check that you use correct auth token.
+> - If token is correct, the only workaround right now is to use Linux OS for hosting.

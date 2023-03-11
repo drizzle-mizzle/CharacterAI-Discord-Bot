@@ -78,6 +78,8 @@ namespace CharacterAI_Discord_Bot.Handlers
                     return;
                 }
 
+                // If command was not found, perform character call
+
                 var cI = CurrentIntegration; // shortcut for readability
                 if (cI.CurrentCharacter.IsEmpty)
                 {

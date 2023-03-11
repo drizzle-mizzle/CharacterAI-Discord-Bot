@@ -29,7 +29,9 @@ If you encounter something similar to:<br>
 > `Response: Forbidden`
 
 First, make sure that you use correct cAI user token.<br>
-And, if it's correct, but you're still getting this error, sadly, **the only available workaround right now is to use Linux OS** for hosting.<br>
+If it's correct, but you're still getting this error:
+- Try to use some VPN. 
+- If there's still no luck, or if you're not comfortable with using VPN, sadly, **the only available workaround right now is to use Linux OS** for hosting.<br>
 The simplest way is to just install WSL2 with Ubuntu, which is pretty easy to do, and launch this bot from there:<br>
 [How to Install Ubuntu on WSL2 on Windows](https://ubuntu.com/tutorials/install-ubuntu-on-wsl2-on-windows-10#1-overview)
-(For ducklings: https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/issues/41)
+(Additional guide for ducklings: https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/issues/41)

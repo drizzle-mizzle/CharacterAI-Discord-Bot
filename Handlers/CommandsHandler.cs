@@ -47,22 +47,21 @@ namespace CharacterAI_Discord_Bot.Handlers
             var context = new SocketCommandContext(_client, message);
 
             int argPos = 0;
-            var RandomGen = new Random();
+            var randomNumber = new Random();
             string[] prefixes = BotConfig.BotPrefixes;
 
             bool isDM = context.Guild is null;
-            bool hasMention = message.HasMentionPrefix(_client.CurrentUser, ref argPos);
-            bool hasPrefix = !hasMention && prefixes.Any(p => message.HasStringPrefix(p, ref argPos));
-            bool hasReply = !hasPrefix && !hasMention && message.ReferencedMessage != null && message.ReferencedMessage.Author.Id == _client.CurrentUser.Id; // IT'S SO FUCKING BIG UUUGHH!
-            bool randomReply = ReplyChance >= RandomGen.Next(100) + 1;
-            bool userIsHunted = HuntedUsers.ContainsKey(authorId) && HuntedUsers[authorId] >= RandomGen.Next(100) + 1;
+            bool hasMention = isDM || message.HasMentionPrefix(_client.CurrentUser, ref argPos);
+            bool hasPrefix = hasMention || prefixes.Any(p => message.HasStringPrefix(p, ref argPos));
+            bool hasReply = hasPrefix || (message.ReferencedMessage != null && message.ReferencedMessage.Author.Id == _client.CurrentUser.Id); // IT'S SO FUCKING BIG UUUGHH!
+            bool randomReply = hasReply || (ReplyChance >= randomNumber.Next(100) + 1);
+            bool userIsHunted = randomReply || (HuntedUsers.ContainsKey(authorId) && HuntedUsers[authorId] >= randomNumber.Next(100) + 1);
 
             if (isDM || hasMention || hasPrefix || hasReply || userIsHunted || randomReply)
             {
-                // Update messages-per-minute counter and return if user has exceeded rate limit
-                // or if message is a DM and these are disabled
-                if ((isDM && !BotConfig.DMenabled) || UserIsBanned(context))
-                    return;
+                // Update messages-per-minute counter.
+                // If user has exceeded rate limit, or if message is a DM and these are disabled - return
+                if ((isDM && !BotConfig.DMenabled) || UserIsBanned(context)) return;
 
                 // Try to execute command
                 var cmdResponse = await _commands.ExecuteAsync(context, argPos, _services);

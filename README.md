@@ -1,5 +1,6 @@
 # CharacterAI Discord Bot
 An unofficial Discord integration with [CharacterAI](https://beta.character.ai/) service which you can use to add any character on your own Discord server.
+> 🔧⚡ Doesn't work in current moment, see https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/issues/43
 
 <div align="center">
     

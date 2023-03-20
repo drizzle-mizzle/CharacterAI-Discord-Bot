@@ -4,7 +4,9 @@ An unofficial Discord integration with [CharacterAI](https://beta.character.ai/)
 
 <div align="center">
     
-![Logo](https://user-images.githubusercontent.com/55811932/224168501-48e81f64-9b2f-442c-a8fe-6ecab8d7aab2.png)<br>
+<!-- ![Logo](https://user-images.githubusercontent.com/55811932/224168501-48e81f64-9b2f-442c-a8fe-6ecab8d7aab2.png)<br> -->
+![Logo](https://user-images.githubusercontent.com/55811932/226441262-8edbb834-33d5-4cd2-8fac-0bacfa6ff79b.png)
+
 <sup><b>If you found this project useful, the best way to thank me is to simply leave a star ⭐</b></sup>
 </div>
 

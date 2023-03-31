@@ -12,6 +12,7 @@
     <PackageReference Include="Discord.Net" Version="3.9.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    <PackageReference Include="PuppeteerSharp" Version="9.0.2" />
     <PackageReference Include="YamlDotNet" Version="13.0.0" />
   </ItemGroup>
 

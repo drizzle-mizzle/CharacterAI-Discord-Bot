@@ -24,9 +24,8 @@ namespace CharacterAI_Discord_Bot.Service
         internal static readonly string nopowerPath = _imgPath + _config.Nopower;
         internal static readonly string defaultAvatarPath = _imgPath + "defaultAvatar.png";
 
-        public static async Task AutoSetup(ServiceProvider services, DiscordSocketClient client)
+        public static async Task AutoSetup(CommandsHandler handler, DiscordSocketClient client)
         {
-            var handler = services.GetRequiredService<CommandsHandler>();
             var cI = handler.CurrentIntegration;
             var result = await cI.SetupAsync(_config.AutoCharId);
             if (!result.IsSuccessful) return;
@@ -126,17 +125,6 @@ namespace CharacterAI_Discord_Bot.Service
             return new { BlackList = blackList, Channels = channels };
         }
 
-        public static bool HelloLog(CharacterAI.Models.Character charInfo)
-        {
-            Log("\nCharacterAI - Connected\n\n", ConsoleColor.Green);
-            Log($" [{charInfo.Name}]\n\n", ConsoleColor.Cyan);
-            Log($"{charInfo.Greeting}\n");
-            if (!string.IsNullOrEmpty(charInfo.Description))
-                Log($"\"{charInfo.Description}\"\n");
-            Log("\nSetup complete\n", ConsoleColor.Yellow);
-
-            return Success(new string('<', 50) + "\n");
-        }
         public static Embed BuildCharactersList(LastSearchQuery args)
         {
             var list = new EmbedBuilder()

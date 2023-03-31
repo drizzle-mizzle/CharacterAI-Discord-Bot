@@ -34,9 +34,15 @@ namespace CharacterAI_Discord_Bot
 
         public Task OnClientReady()
         {
-            if (BotConfig.AutoSetupEnabled)
-                Task.Run(() => AutoSetup(_services, _client));
+            var handler = _services.GetRequiredService<CommandsHandler>();
 
+            _ = Task.Run(async () =>
+            {
+                await handler.CurrentIntegration.LaunchChromeAsync();
+                if (BotConfig.AutoSetupEnabled)
+                    _ = AutoSetup(handler, _client);
+            });
+            
             return Task.CompletedTask;
         }
 

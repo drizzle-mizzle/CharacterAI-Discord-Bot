@@ -1,11 +1,10 @@
 # CharacterAI Discord Bot
 An unofficial Discord integration with [CharacterAI](https://beta.character.ai/) service which you can use to add any character on your own Discord server.
-> 🔧⚡ Doesn't work in current moment, see https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/issues/43
 
 <div align="center">
     
-<!-- ![Logo](https://user-images.githubusercontent.com/55811932/224168501-48e81f64-9b2f-442c-a8fe-6ecab8d7aab2.png)<br> -->
-![Logo](https://user-images.githubusercontent.com/55811932/226441262-8edbb834-33d5-4cd2-8fac-0bacfa6ff79b.png)
+![Logo](https://user-images.githubusercontent.com/55811932/224168501-48e81f64-9b2f-442c-a8fe-6ecab8d7aab2.png)<br>
+<!-- ![Logo](https://user-images.githubusercontent.com/55811932/226441262-8edbb834-33d5-4cd2-8fac-0bacfa6ff79b.png) -->
 
 <sup><b>If you found this project useful, the best way to thank me is to simply leave a star ⭐</b></sup>
 </div>
@@ -25,7 +24,7 @@ An unofficial Discord integration with [CharacterAI](https://beta.character.ai/)
 - [Commands](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/wiki/Commands)
 - [Additional configuration](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/wiki/Additional-configuration)
 
-## 🩼Known issues
+<!-- ## 🩼Known issues
 Some **Windows users** are facing the problem of being unable to access character.ai: https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/issues/28 <br>
 If you encounter something similar to:<br>
 > `Request failed! (https://beta.character.ai/chat/character/info/)`<br>
@@ -38,3 +37,4 @@ If it's correct, but you're still getting this error:
 The simplest way is to just install WSL2 with Ubuntu, which is pretty easy to do, and launch this bot from there:<br>
 [How to Install Ubuntu on WSL2 on Windows](https://ubuntu.com/tutorials/install-ubuntu-on-wsl2-on-windows-10#1-overview)
 (Additional guide for ducklings: https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/issues/41)
+-->

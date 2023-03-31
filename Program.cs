@@ -17,6 +17,8 @@ namespace CharacterAI_Discord_Bot
 
         private async Task MainAsync()
         {
+            AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnProcessExit);
+
             _services = CreateServices();
             _client = _services.GetRequiredService<DiscordSocketClient>();
 
@@ -69,6 +71,20 @@ namespace CharacterAI_Discord_Bot
             Console.WriteLine(log.ToString());
 
             return Task.CompletedTask;
+        }
+
+        private void OnProcessExit(object? sender, EventArgs args)
+        {
+            Log("Shutting down...");
+            try
+            {
+                var path = _services.GetRequiredService<CommandsHandler>().CurrentIntegration.EXEC_PATH;
+                CharacterAI.Integration.KillChromes(path);
+            }
+            catch (Exception e)
+            {
+                Failure("Failed to kill Chrome processes.\n" + e.ToString());
+            }
         }
     }
 }

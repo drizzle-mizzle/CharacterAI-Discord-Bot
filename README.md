@@ -7,7 +7,7 @@ An unofficial Discord integration with a [CharacterAI](https://beta.character.ai
 <!-- ![Logo](https://user-images.githubusercontent.com/55811932/226441262-8edbb834-33d5-4cd2-8fac-0bacfa6ff79b.png) -->
 
 <sup><b>If you found this project useful, the best way to thank me is to simply leave a star ⭐<br>
-[Discord Server](https://discord.gg/tAZR2zVu) | Based on [CharacterAI.Net](https://github.com/drizzle-mizzle/CharacterAI.Net)</b></sup>
+[Discord Server](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/discussions/22#discussioncomment-5502307) | Based on [CharacterAI.Net](https://github.com/drizzle-mizzle/CharacterAI.Net)</b></sup>
 </div>
 
 ## 🪄Features

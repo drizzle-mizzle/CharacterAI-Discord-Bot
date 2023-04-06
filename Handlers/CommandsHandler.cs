@@ -55,60 +55,59 @@ namespace CharacterAI_Discord_Bot.Handlers
             bool hasPrefix = hasMention || prefixes.Any(p => message.HasStringPrefix(p, ref argPos));
             bool hasReply = hasPrefix || (message.ReferencedMessage != null && message.ReferencedMessage.Author.Id == _client.CurrentUser.Id); // IT'S SO FUCKING BIG UUUGHH!
             bool randomReply = hasReply || (ReplyChance >= randomNumber.Next(100) + 1);
-            bool userIsHunted = randomReply || (HuntedUsers.ContainsKey(authorId) && HuntedUsers[authorId] >= randomNumber.Next(100) + 1);
+            // Any condition above or if user is hunted
+            bool gottaReply = randomReply || (HuntedUsers.ContainsKey(authorId) && HuntedUsers[authorId] >= randomNumber.Next(100) + 1);
 
-            if (isDM || hasMention || hasPrefix || hasReply || userIsHunted || randomReply)
+            if (!gottaReply) return;
+            
+            // Update messages-per-minute counter.
+            // If user has exceeded rate limit, or if message is a DM and these are disabled - return
+            if ((isDM && !BotConfig.DMenabled) || UserIsBanned(context)) return;
+
+            // Try to execute command
+            var cmdResponse = await _commands.ExecuteAsync(context, argPos, _services);
+            // If command was found and executed, return
+            if (cmdResponse.IsSuccess) return;
+            // If command was found but failed to execute, return
+            if (cmdResponse.ErrorReason != "Unknown command.")
             {
-                // Update messages-per-minute counter.
-                // If user has exceeded rate limit, or if message is a DM and these are disabled - return
-                if ((isDM && !BotConfig.DMenabled) || UserIsBanned(context)) return;
+                string text = $"⚠ Failed to execute command: {cmdResponse.ErrorReason} ({cmdResponse.Error})";
+                if (isDM) text = "*Note: some commands are not intended to be called from DMs*\n" + text;
 
-                // Try to execute command
-                var cmdResponse = await _commands.ExecuteAsync(context, argPos, _services);
-                // If command was found and executed, return
-                if (cmdResponse.IsSuccess) return;
-                // If command was found but failed to execute, return
-                if (cmdResponse.ErrorReason != "Unknown command.")
-                {
-                    string text = $"⚠ Failed to execute command: {cmdResponse.ErrorReason} ({cmdResponse.Error})";
-                    if (isDM) text = "*Note: some commands are not intended to be called from DMs*\n" + text;
-
-                    await message.ReplyAsync(text).ConfigureAwait(false);
-                    return;
-                }
-
-                // If command was not found, perform character call
-
-                var cI = CurrentIntegration; // shortcut for readability
-                if (cI.CurrentCharacter.IsEmpty)
-                {
-                    await context.Message.ReplyAsync("⚠ Set a character first").ConfigureAwait(false);
-                    return;
-                }
-
-                var currentChannel = Channels.Find(c => c.Id == context.Channel.Id);
-                bool isPrivate = context.Channel.Name.StartsWith("private");
-
-                if (currentChannel is null)
-                {
-                    if (isPrivate) return;
-
-                    string? historyId = null;
-                    if (isDM) historyId = await cI.CreateNewChatAsync();
-                    historyId ??= cI.Chats[0];
-
-                    currentChannel = new Models.Channel(context.Channel.Id, context.User.Id, historyId, cI.CurrentCharacter.Id!);
-
-                    Channels.Add(currentChannel);
-                    SaveData(channels: Channels);
-                }
-
-                if (currentChannel.Data.SkipMessages > 0)
-                    currentChannel.Data.SkipMessages--;
-                else
-                    using (message.Channel.EnterTypingState())
-                        _ = TryToCallCharacterAsync(context, currentChannel, isDM || isPrivate);
+                await message.ReplyAsync(text).ConfigureAwait(false);
+                return;
             }
+
+            // If command was not found, perform character call
+            var cI = CurrentIntegration; // shortcut for readability
+            if (cI.CurrentCharacter.IsEmpty)
+            {
+                await context.Message.ReplyAsync("⚠ Set a character first").ConfigureAwait(false);
+                return;
+            }
+
+            var currentChannel = Channels.Find(c => c.Id == context.Channel.Id);
+            bool isPrivate = context.Channel.Name.StartsWith("private");
+
+            if (currentChannel is null)
+            {
+                if (isPrivate) return;
+
+                string? historyId = null;
+                if (isDM) historyId = await cI.CreateNewChatAsync();
+                historyId ??= cI.Chats[0];
+
+                currentChannel = new Models.Channel(context.Channel.Id, context.User.Id, historyId, cI.CurrentCharacter.Id!);
+
+                Channels.Add(currentChannel);
+                SaveData(channels: Channels);
+            }
+
+            if (currentChannel.Data.SkipMessages > 0)
+                currentChannel.Data.SkipMessages--;
+            else
+                using (message.Channel.EnterTypingState())
+                    _ = TryToCallCharacterAsync(context, currentChannel, isDM || isPrivate);
         }
 
         private async Task HandleReaction(Cacheable<IUserMessage, ulong> rawMessage, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)

@@ -3,6 +3,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using static CharacterAI_Discord_Bot.Service.CommandsService;
 using static CharacterAI_Discord_Bot.Service.CommonService;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace CharacterAI_Discord_Bot.Handlers
 {
@@ -117,22 +118,36 @@ namespace CharacterAI_Discord_Bot.Handlers
         [Command("audience toggle")]
         [Summary("Enable/disable audience mode")]
         [Alias("amode")]
-        public async Task AudienceToggle(int mode)
+        public async Task AudienceToggle(int? mode)
         {
-            if (Context.Guild is not null && !ValidateBotRole(Context))
-                await NoPermissionAlert(Context).ConfigureAwait(false);
-            else 
+            var currentChannel = _handler.Channels.Find(c => c.Id == Context.Channel.Id);
+            if (currentChannel is null || Context.Guild is null) return;
+
+            int currentMode = mode ?? currentChannel.Data.AudienceMode;
+            string msgMode = currentMode switch
             {
-                var currentChannel = _handler.Channels.Find(c => c.Id == Context.Channel.Id);
-                if (currentChannel is null) return;
+                3 => "quote and username",
+                2 => "quote only",
+                1 => "username only",
+                _ => "disabled",
+            };
 
-                currentChannel.Data.AudienceMode = mode;
-                string msgMode = mode == 3 ? "quote and username" : mode == 2 ? "quote only" : mode == 1 ? "username only" : "disabled";
-                string text = "⚠ Audience mode: " + msgMode + '!';
-
+            string text;
+            if (mode is null)
+            {
+                text = $"⚠ Current mode: {currentMode} - {msgMode}";
                 await Context.Message.ReplyAsync(text).ConfigureAwait(false);
+            }
+            else if (ValidateBotRole(Context))
+            {
+                text = "⚠ Audience mode: " + msgMode + '!';
+                await Context.Message.ReplyAsync(text).ConfigureAwait(false);
+
+                currentChannel.Data.AudienceMode = currentMode;
                 SaveData(channels: _handler.Channels);
             }
+            else
+                await NoPermissionAlert(Context).ConfigureAwait(false);
         }
 
         [Command("call user")]
@@ -255,7 +270,7 @@ namespace CharacterAI_Discord_Bot.Handlers
             if (!ValidateBotRole(Context))
                 await NoPermissionAlert(Context).ConfigureAwait(false);
             else
-                await UpdatePlayingStatus(Context.Client, status: status, type: type);
+                await SetPlayingStatusAsync(Context.Client, status: status, type: type);
         }
 
         [Command("status")]

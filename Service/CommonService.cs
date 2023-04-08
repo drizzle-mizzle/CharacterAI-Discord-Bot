@@ -3,12 +3,10 @@ using Discord.WebSocket;
 using Discord;
 using CharacterAI_Discord_Bot.Models;
 using CharacterAI_Discord_Bot.Handlers;
-using Microsoft.Extensions.DependencyInjection;
-using static CharacterAI_Discord_Bot.Service.CommandsService;
+using static CharacterAI_Discord_Bot.Service.CurrentClientService;
 using YamlDotNet.Serialization.NamingConventions;
 using YamlDotNet.Serialization;
-using System.Threading.Channels;
-using System;
+using Discord.Commands;
 
 namespace CharacterAI_Discord_Bot.Service
 {
@@ -45,7 +43,7 @@ namespace CharacterAI_Discord_Bot.Service
             SaveData(channels: handler.Channels);
 
             if (BotConfig.DescriptionInPlaying)
-                await UpdatePlayingStatus(client, type: 0, integration: cI).ConfigureAwait(false);
+                await SetPlayingStatusAsync(client, type: 0, integration: cI).ConfigureAwait(false);
             if (BotConfig.CharacterAvatarEnabled)
                 await SetBotAvatar(client.CurrentUser, cI.CurrentCharacter).ConfigureAwait(false);
             if (BotConfig.CharacterNameEnabled)
@@ -202,11 +200,19 @@ namespace CharacterAI_Discord_Bot.Service
             return text;
         }
 
-        public static string AddUsername(string text, SocketUserMessage message)
+        public static string AddUsername(string text, SocketCommandContext context)
         {
-            string author = message.Author.Username;
+            string name;
+            if (context.Guild is null)
+                name = context.User.Username;
+            else
+            {
+                var guildUser = context.User as SocketGuildUser;
+                name = guildUser?.Nickname ?? guildUser!.Username;
+            }
+
             if (!string.IsNullOrEmpty(text) && !string.IsNullOrWhiteSpace(text))
-                text = $"User [{author}] says:\n{text}";
+                text = $"User [{name}] says:\n{text}";
 
             return text;
         }

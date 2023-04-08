@@ -44,11 +44,10 @@ namespace CharacterAI_Discord_Bot.Handlers
             if (rawMsg is not SocketUserMessage message || authorId == _client.CurrentUser.Id)
                 return;
 
-            var context = new SocketCommandContext(_client, message);
-
             int argPos = 0;
             var randomNumber = new Random();
             string[] prefixes = BotConfig.BotPrefixes;
+            var context = new SocketCommandContext(_client, message);
 
             bool isDM = context.Guild is null;
             bool hasMention = isDM || message.HasMentionPrefix(_client.CurrentUser, ref argPos);
@@ -148,7 +147,7 @@ namespace CharacterAI_Discord_Bot.Handlers
             var refMessage = await context.Message.Channel.GetMessageAsync(context.Message.Reference!.MessageId.Value);
             bool notAuthor = component.User.Id != refMessage.Author.Id;
             bool noPages = LastSearch!.Response.IsEmpty;
-            if (notAuthor || UserIsBanned(context) || noPages) return;
+            if (notAuthor || UserIsBanned(context, checkOnly: true) || noPages) return;
 
             int tail = LastSearch!.Response!.Characters!.Count - (LastSearch.CurrentPage - 1) * 10;
             int maxRow = tail > 10 ? 10 : tail;
@@ -264,7 +263,7 @@ namespace CharacterAI_Discord_Bot.Handlers
             // Prepare call data
             int amode = currentChannel.Data.AudienceMode;
             if (amode == 1 || amode == 3)
-                text = AddUsername(text, context.Message);
+                text = AddUsername(text, context);
             if (amode == 2 || amode == 3)
                 text = AddQuote(text, context.Message);
 
@@ -294,13 +293,14 @@ namespace CharacterAI_Discord_Bot.Handlers
             _ = Task.Run(async () => currentChannel.Data.LastCharacterCallMsgId = await ReplyOnMessage(context.Message, reply, isPrivate));
         }
 
-        private bool UserIsBanned(SocketCommandContext context)
+        private bool UserIsBanned(SocketCommandContext context, bool checkOnly = false)
         {
             ulong currUserId = context.Message.Author.Id;
             if (context.Guild is not null && currUserId == context.Guild.OwnerId)
                 return false;
 
             if (BlackList.Contains(currUserId)) return true;
+            if (checkOnly) return false;
 
             int currMinute = context.Message.CreatedAt.Minute + context.Message.CreatedAt.Hour * 60;
 

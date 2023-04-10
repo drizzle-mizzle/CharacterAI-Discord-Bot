@@ -30,6 +30,7 @@ namespace CharacterAI_Discord_Bot.Models
         internal int AudienceMode { get; set; }
         internal ulong LastCharacterCallMsgId { get; set; } // discord message id
         internal int SkipMessages { get; set; }
+        internal bool SkipNextBotMessage { get; set; }
         internal LastCharacterCall? LastCall { get; set; }
 
         public CharacterDialogData(string historyId, string characterId)
@@ -38,6 +39,7 @@ namespace CharacterAI_Discord_Bot.Models
             CharacterId = characterId;
             AudienceMode = BotConfig.DefaultAudienceMode;
             SkipMessages = 0;
+            SkipNextBotMessage = false;
             LastCharacterCallMsgId = 0;
         }
     }

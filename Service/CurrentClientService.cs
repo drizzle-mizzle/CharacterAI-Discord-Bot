@@ -1,6 +1,7 @@
 ﻿using CharacterAI;
 using CharacterAI.Models;
 using CharacterAI_Discord_Bot.Handlers;
+using CharacterAI_Discord_Bot.Models;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -17,7 +18,20 @@ namespace CharacterAI_Discord_Bot.Service
         public static async Task SetCharacterAsync(string charId, CommandsHandler handler, SocketCommandContext context, bool reset = false)
         {
             var cI = handler.CurrentIntegration;
-            var result = await cI.SetupAsync(charId, startWithNewChat: reset);
+
+            SetupResult result;
+            while (true)
+            {
+                try
+                {
+                    result = await cI.SetupAsync(charId, startWithNewChat: reset);
+                    break;
+                }
+                catch (Exception e)
+                {
+                    Failure($"Setup Failed. Trying again...\nDetails:\n{e}");
+                }
+            }
 
             if (!result.IsSuccessful)
             {
@@ -69,8 +83,8 @@ namespace CharacterAI_Discord_Bot.Service
         public static async Task SetBotAvatar(SocketSelfUser bot, Character character)
         {
             Stream image;
-            byte[]? response = await TryDownloadImg(character.AvatarUrlFull!, 1);
-            response ??= await TryDownloadImg(character.AvatarUrlMini!, 1);
+            byte[]? response = await TryDownloadImgAsync(character.AvatarUrlFull!);
+            response ??= await TryDownloadImgAsync(character.AvatarUrlMini!);
 
             if (response is not null)
                 image = new MemoryStream(response);

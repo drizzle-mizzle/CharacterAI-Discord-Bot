@@ -40,9 +40,16 @@ namespace CharacterAI_Discord_Bot
 
             _ = Task.Run(async () =>
             {
-                await handler.CurrentIntegration.LaunchChromeAsync();
-                if (BotConfig.AutoSetupEnabled)
-                    _ = AutoSetup(handler, _client);
+                try
+                {
+                    await handler.CurrentIntegration.LaunchChromeAsync();
+                    if (BotConfig.AutoSetupEnabled)
+                        _ = AutoSetup(handler, _client);
+                }
+                catch (Exception e)
+                {
+                    Failure(e.ToString());
+                }
             });
             
             return Task.CompletedTask;

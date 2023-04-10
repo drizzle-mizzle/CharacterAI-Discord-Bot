@@ -81,7 +81,7 @@ namespace CharacterAI_Discord_Bot.Handlers
             var cI = CurrentIntegration; // shortcut for readability
             if (cI.CurrentCharacter.IsEmpty)
             {
-                await context.Message.ReplyAsync("⚠ Set a character first").ConfigureAwait(false);
+                await message.ReplyAsync("⚠ Set a character first").ConfigureAwait(false);
                 return;
             }
 
@@ -102,6 +102,12 @@ namespace CharacterAI_Discord_Bot.Handlers
                 SaveData(channels: Channels);
             }
 
+            if (message.Author.IsBot && currentChannel.Data.SkipNextBotMessage)
+            {
+                currentChannel.Data.SkipNextBotMessage = false;
+                return;
+            }
+
             if (currentChannel.Data.SkipMessages > 0)
                 currentChannel.Data.SkipMessages--;
             else
@@ -111,25 +117,31 @@ namespace CharacterAI_Discord_Bot.Handlers
 
         private async Task HandleReaction(Cacheable<IUserMessage, ulong> rawMessage, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
         {
+            var user = (SocketUser)reaction.User.Value;
+            if (user.IsBot) return;
+
             var message = await rawMessage.DownloadAsync();
             var currentChannel = Channels.Find(c => c.Id == message.Channel.Id);
             if (currentChannel is null) return;
 
-            if (currentChannel.Data.LastCall is null || rawMessage.Id != currentChannel.Data.LastCharacterCallMsgId)
+            if (reaction.Emote.Name == STOP_BTN.Name)
+            {
+                currentChannel.Data.SkipNextBotMessage = true;
                 return;
+            }
 
-            var user = reaction.User.Value as SocketUser;
-            if (user!.IsBot || user.Id != message.ReferencedMessage.Author.Id)
-                return;
+            bool userIsLastMessageAuthor = user.Id == message.ReferencedMessage.Author.Id;
+            bool msgIsSwipable = currentChannel.Data.LastCall is not null && rawMessage.Id == currentChannel.Data.LastCharacterCallMsgId;
+            if (!userIsLastMessageAuthor || !msgIsSwipable) return;
 
-            if (reaction.Emote.Name == new Emoji("\u2B05").Name && currentChannel.Data.LastCall!.CurrentReplyIndex > 0)
+            if (reaction.Emote.Name == ARROW_LEFT.Name && currentChannel.Data.LastCall!.CurrentReplyIndex > 0)
             {   // left arrow
                 currentChannel.Data.LastCall!.CurrentReplyIndex--;
                 _ = UpdateMessageAsync(message, currentChannel);
 
                 return;
             }
-            if (reaction.Emote.Name == new Emoji("\u27A1").Name)
+            if (reaction.Emote.Name == ARROW_RIGHT.Name)
             {   // right arrow
                 currentChannel.Data.LastCall!.CurrentReplyIndex++;
                 _ = UpdateMessageAsync(message, currentChannel);
@@ -232,7 +244,7 @@ namespace CharacterAI_Discord_Bot.Handlers
 
                 if (!response.IsSuccessful)
                 {
-                    _ = message.ModifyAsync(msg => { msg.Content = $"⚠ Somethinh went wrong!"; });
+                    _ = message.ModifyAsync(msg => { msg.Content = $"⚠ Something went wrong!"; });
                     return;
                 }
                 currentChannel.Data.LastCall.RepliesList.AddRange(response.Replies);
@@ -248,32 +260,40 @@ namespace CharacterAI_Discord_Bot.Handlers
                 .ConfigureAwait(false);
         }
 
-        private async Task TryToCallCharacterAsync(SocketCommandContext context, Models.Channel currentChannel, bool isPrivate)
+        private async Task TryToCallCharacterAsync(SocketCommandContext context, Models.Channel currentChannel, bool inDMorPrivate)
         {
             // Get last call and remove buttons from it
             if (currentChannel.Data.LastCharacterCallMsgId != 0)
             {
                 var lastMessage = await context.Message.Channel.GetMessageAsync(currentChannel.Data.LastCharacterCallMsgId);
-                _ = RemoveButtons(lastMessage);
+                _ = RemoveButtons(lastMessage, context.Client.CurrentUser);
             }
 
+            // Prepare text data
             string text = RemoveMention(context.Message.Content);
-            string? imgPath = null;
-
-            // Prepare call data
             int amode = currentChannel.Data.AudienceMode;
             if (amode == 1 || amode == 3)
                 text = AddUsername(text, context);
             if (amode == 2 || amode == 3)
                 text = AddQuote(text, context.Message);
 
-            if (context.Message.Attachments.Any())
-            {   // Downloads first image from attachments and uploads it to server
-                string url = context.Message.Attachments.First().Url;
-                if (await TryDownloadImg(url, 10) is byte[] @img && await CurrentIntegration.UploadImageAsync(@img) is string @path)
-                    imgPath = $"https://characterai.io/i/400/static/user/{@path}";
-            }
+            // Prepare image data
+            string? imgPath = null;
+            //var attachments = context.Message.Attachments;
+            //if (attachments.Any())
+            //{   // Downloads first image from attachments and uploads it to server
+            //    var file = attachments.First();
+            //    string url = file.Url;
+            //    string fileName = file.Filename; 
+            //    var image = await TryDownloadImgAsync(url);
 
+            //    bool isDownloaded = image is not null;
+            //    string? path = isDownloaded ? await CurrentIntegration.UploadImageAsync(image!, fileName) : null;
+
+            //    if (path is not null)
+            //        imgPath = $"https://characterai.io/i/400/static/user/{path}";
+            //}
+            
             string historyId = currentChannel.Data.HistoryId;
             ulong? primaryMsgId = currentChannel.Data.LastCall?.CurrentPrimaryMsgId;
 
@@ -281,16 +301,18 @@ namespace CharacterAI_Discord_Bot.Handlers
             var response = await CurrentIntegration.CallCharacterAsync(text, imgPath, historyId, primaryMsgId);
             currentChannel.Data.LastCall = new(response);
 
-            // Alert with error message if call fails
-            if (!response.IsSuccessful)
+            if (response.IsSuccessful)
             {
-                await context.Message.ReplyAsync(response.ErrorReason).ConfigureAwait(false);
-                return;
+                // Take first character answer by default and reply with it
+                var reply = currentChannel.Data.LastCall!.RepliesList.First();
+                _ = Task.Run(async () =>
+                {
+                    var msgId = await ReplyOnMessage(context.Message, reply, inDMorPrivate);
+                    currentChannel.Data.LastCharacterCallMsgId = msgId;
+                });
             }
-
-            // Take first character answer by default and reply with it
-            var reply = currentChannel.Data.LastCall!.RepliesList.First();
-            _ = Task.Run(async () => currentChannel.Data.LastCharacterCallMsgId = await ReplyOnMessage(context.Message, reply, isPrivate));
+            else // Alert with error message if call fails
+                await context.Message.ReplyAsync(response.ErrorReason).ConfigureAwait(false);
         }
 
         private bool UserIsBanned(SocketCommandContext context, bool checkOnly = false)

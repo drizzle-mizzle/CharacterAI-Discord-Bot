@@ -7,6 +7,7 @@ using static CharacterAI_Discord_Bot.Service.CurrentClientService;
 using YamlDotNet.Serialization.NamingConventions;
 using YamlDotNet.Serialization;
 using Discord.Commands;
+using CharacterAI.Models;
 
 namespace CharacterAI_Discord_Bot.Service
 {
@@ -25,7 +26,21 @@ namespace CharacterAI_Discord_Bot.Service
         public static async Task AutoSetup(CommandsHandler handler, DiscordSocketClient client)
         {
             var cI = handler.CurrentIntegration;
-            var result = await cI.SetupAsync(_config.AutoCharId);
+
+            SetupResult result;
+            while (true)
+            {
+                try
+                {
+                    result = await cI.SetupAsync(_config.AutoCharId);
+                    break;
+                }
+                catch (Exception e)
+                {
+                    Failure($"Setup Failed. Trying again...\nDetails:\n{e}");
+                }
+            }
+
             if (!result.IsSuccessful) return;
 
             var savedData = GetStoredData(_config.AutoCharId);
@@ -162,15 +177,13 @@ namespace CharacterAI_Discord_Bot.Service
             return text;
         }
 
-        public static async Task<byte[]?> TryDownloadImg(string url, int attempts)
+        public static async Task<byte[]?> TryDownloadImgAsync(string url)
         {
             if (string.IsNullOrEmpty(url)) return null;
 
-            using HttpClient client = new();
-            // Try n times and return null
-            for (int i = 0; i < attempts; i++)
+            for (int i = 0; i < 10; i++)
             {
-                try { return await client.GetByteArrayAsync(url).ConfigureAwait(false); }
+                try { return await _httpClient.GetByteArrayAsync(url).ConfigureAwait(false); }
                 catch { await Task.Delay(2500); }
             }
 

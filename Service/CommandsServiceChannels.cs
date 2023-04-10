@@ -9,7 +9,7 @@ using CharacterAI_Discord_Bot.Models;
 namespace CharacterAI_Discord_Bot.Service
 {
     /// <summary>
-    /// Separate partial class file for the static methods working with channels.
+    /// Separate partial class file for a static methods working with channels.
     /// </summary>
     public partial class CommandsService : CommonService
     {

@@ -1,9 +1,9 @@
 ﻿using Discord;
+using Discord.Webhook;
 using Discord.Commands;
 using Discord.WebSocket;
 using static CharacterAI_Discord_Bot.Service.CommandsService;
 using static CharacterAI_Discord_Bot.Service.CommonService;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace CharacterAI_Discord_Bot.Handlers
 {
@@ -163,7 +163,6 @@ namespace CharacterAI_Discord_Bot.Handlers
 
         [Command("skip")]
         [Summary("Make character ignore next few messages")]
-        [Alias("delay")]
         public async Task StopTalk(int amount = 3)
         {
             if (!ValidateBotRole(Context))
@@ -310,7 +309,7 @@ namespace CharacterAI_Discord_Bot.Handlers
                 "`clear` – delete all inactive private channels",
                 "`audience toggle <mode>` – enable/disable audience mode *(What is the audience mode - read below)*\n    Alias: `amode`\n    Mode: `0` – disabled, `1` – username only, `2` – quote only, `3` – quote and username",
                 "`call user <user> <any text>` – Make character call other user *(you can use it to make two bots talk to each other)*\n    Aliases: `call`, `cu`\n    Example: `@some_character call @another_character Do you love donuts?`\n    *(if no text argument provided, default `\"Hey!\"` will be used)*",
-                "`skip <amount>` – Make character ignore next few messages *(use it to stop bots' conversation)*\n    Alias: `delay`\n    *(if no amount argument provided, default `3` will be used)*\n    *(commands will not be ignored, amount can be reduced with another call)*",
+                "`skip <amount>` – Make character ignore next few messages *(use it to stop bots' conversation)*\n    *(if no amount argument provided, default `3` will be used)*\n    *(commands will not be ignored, amount can be reduced with another call)*",
                 "`reply chance <chance>` – Change the probability of random replies on new users' messages `in %` *(It's better to use it with audience mode enabled)*\n    Alias: `rc`\n    Example: `rc 50` => `Probability of random answers was changed from 0% to 50%`\n    *(default value = 0%)*\n    *(keep in mind that with this feature enabled, commands can be executed without bot prefix/mention)*",
                 "`hunt <@user_mention>` – Make character always reply on messages of a certain user",
                 "`unhunt <@user_mention>` – Stop hunting user",
@@ -323,7 +322,7 @@ namespace CharacterAI_Discord_Bot.Handlers
             if (Context.Guild is null)
                 await Context.Message.ReplyAsync($"{userCommands[0]}\n{userCommands[1]}\n{managerCommands[2]}\n{managerCommands[4]}");
             else if (!ValidateBotRole(Context))
-                await Context.Message.ReplyAsync(string.Join(", ", userCommands));
+                await Context.Message.ReplyAsync(string.Join("\n", userCommands));
             else
             {
                 var pages = Math.Ceiling((double)(managerCommands.Length / 5)) + 1;

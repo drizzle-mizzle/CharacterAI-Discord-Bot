@@ -232,7 +232,7 @@ namespace CharacterAI_Discord_Bot.Handlers
 
                 if (!response.IsSuccessful)
                 {
-                    _ = message.ModifyAsync(msg => { msg.Content = $"⚠ Somethinh went wrong!"; });
+                    _ = message.ModifyAsync(msg => { msg.Content = $"⚠ Something went wrong!"; });
                     return;
                 }
                 currentChannel.Data.LastCall.RepliesList.AddRange(response.Replies);

@@ -14,6 +14,10 @@
     "use_character_name": true,
     "description_in_playing_status": true,
     "allow_dm": true,
+    
+    "audience_mode_username_format": "User [${usrname}] says:\n"
+    "audience_mode_reply_format": "((In response to: \"${response}\"))"
+    "message_format": "${reply}\n${username}\n${message}"
 
     "rate_limit": 10,
     "replies_delay": 1,

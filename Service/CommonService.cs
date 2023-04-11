@@ -208,7 +208,7 @@ namespace CharacterAI_Discord_Bot.Service
         {
             var refMsg = message.ReferencedMessage;
             if (refMsg is not null && !string.IsNullOrEmpty(refMsg.Content))
-                text = $"((In response to: \"{RemoveMention(refMsg.Content)}\"))\n{text}";
+                text = $"{_config.AudienceModeReplyFormat.Replace(\"{response}\", RemoveMention(refMsg.Content))}{text}";
 
             return text;
         }
@@ -225,7 +225,7 @@ namespace CharacterAI_Discord_Bot.Service
             }
 
             if (!string.IsNullOrEmpty(text) && !string.IsNullOrWhiteSpace(text))
-                text = $"User [{name}] says:\n{text}";
+                text = $"{_config.AudienceModeNameFormat.Replace(\"{usrname}\", {name})}{text}";
 
             return text;
         }

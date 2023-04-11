@@ -47,7 +47,7 @@ namespace CharacterAI_Discord_Bot.Models
             Nopower = GetValue("default_no_permission_file");
             PrivateChatRoleRequired = bool.Parse(GetValue("private_chat_role_required"));
             AudienceModeNameFormat = GetValue("audience_mode_username_format");
-            AudienceModeRplyFormat = GetValue("audience_mode_reply_format");
+            AudienceModeReplyFormat = GetValue("audience_mode_reply_format");
             MessageFormat = GetValue("message_format"); // doesn't actually do much without audience mode but i'd imagine it'd be useful in audience mode
             RateLimit = int.Parse(GetValue("rate_limit"));
             RepliesDelay = int.Parse(GetValue("replies_delay"));

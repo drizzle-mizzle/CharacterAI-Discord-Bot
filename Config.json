@@ -16,7 +16,7 @@
     "allow_dm": true,
     
     "audience_mode_username_format": "User [{usrname}] says:\n"
-    "audience_mode_reply_format": "((In response to: \"{response}\"))"
+    "audience_mode_reply_format": "((In response to: \"{response}\"))\n"
     "message_format": "{reply}\n{username}\n{message}"
 
     "rate_limit": 10,

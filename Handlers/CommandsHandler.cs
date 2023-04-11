@@ -23,7 +23,9 @@ namespace CharacterAI_Discord_Bot.Handlers
         private readonly DiscordSocketClient _client;
         private readonly IServiceProvider _services;
         private readonly CommandService _commands;
-
+        internal static Config BotConfig { get => _config; }
+        private static readonly Config _config = GetConfig()!;
+        
         public CommandsHandler(IServiceProvider services)
         {
             CurrentIntegration = new(BotConfig.UserToken);
@@ -271,11 +273,14 @@ namespace CharacterAI_Discord_Bot.Handlers
 
             // Prepare text data
             string text = RemoveMention(context.Message.Content);
+            string dsReply = AddQuote("", context.Message)
+            string dsName = AddUsername("", context);
             int amode = currentChannel.Data.AudienceMode;
-            if (amode == 1 || amode == 3)
-                text = AddUsername(text, context);
-            if (amode == 2 || amode == 3)
-                text = AddQuote(text, context.Message);
+            text = $"{_config.MessageFormat.Replace(\"{reply}\", {dsReply}).Replace(\"{username}\", dsName).Replace(\"{message}\", {text})}"
+            //if (amode == 1 || amode == 3)
+            //    text = AddUsername(text, context);
+            //if (amode == 2 || amode == 3)
+            //    text = AddQuote(text, context.Message);
 
             // Prepare image data
             string? imgPath = null;

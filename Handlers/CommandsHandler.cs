@@ -1,4 +1,4 @@
-﻿using Discord;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
@@ -276,7 +276,9 @@ namespace CharacterAI_Discord_Bot.Handlers
             string dsReply = AddQuote("", context.Message)
             string dsName = AddUsername("", context);
             int amode = currentChannel.Data.AudienceMode;
-            text = $"{_config.MessageFormat.Replace(\"{reply}\", {dsReply}).Replace(\"{username}\", dsName).Replace(\"{message}\", {text})}"
+            string replyText = amode == 2 || amode == 3 ? _config.MessageFormat.Replace("{reply}", dsReply) : _config.MessageFormat.Replace("{reply}", "");
+            replyText = amode == 1 || amode == 3 ? replyText.Replace("{username}", dsName) : replyText.Replace("{username}", "");
+            string text = replyText.Replace("{message}", text);
             //if (amode == 1 || amode == 3)
             //    text = AddUsername(text, context);
             //if (amode == 2 || amode == 3)

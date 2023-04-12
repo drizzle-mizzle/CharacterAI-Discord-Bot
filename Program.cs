@@ -49,7 +49,7 @@ namespace CharacterAI_Discord_Bot
 
                 Log("\nEnter \"exit\" or \"stop\" to close application.\n" +
                         "Enter \"kill\" to close all Puppeteer Chrome proccesses (if you use same 'custom_chrome_directory' for several bots at once, it will close chrome for them too).\n" +
-                        "Enter \"launch\" to relaunch chrome process.");
+                        "Enter \"relaunch\" to relaunch chrome process.");
                 while (true)
                 {
                     Log("\n# ", ConsoleColor.Green);

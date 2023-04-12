@@ -13,8 +13,8 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
         public PerChannelCommands(CommandsHandler handler)
             => _handler = handler;
 
-        [Command("history")]
-        [Alias("history")]
+        [Command("set history")]
+        [Alias("sh", "history")]
         public async Task GetSetHistory(string? historyId = null)
         {
             if (!ValidateBotRole(Context))

@@ -44,7 +44,7 @@ namespace CharacterAI_Discord_Bot.Handlers
                 return;
 
             int argPos = 0;
-            var randomNumber = new Random();
+            var random = new Random();
             string[] prefixes = BotConfig.BotPrefixes;
             var context = new SocketCommandContext(_client, message);
 
@@ -71,9 +71,9 @@ namespace CharacterAI_Discord_Bot.Handlers
             bool hasMention = isDM || message.HasMentionPrefix(_client.CurrentUser, ref argPos);
             bool hasPrefix = hasMention || prefixes.Any(p => message.HasStringPrefix(p, ref argPos));
             bool hasReply = hasPrefix || (message.ReferencedMessage != null && message.ReferencedMessage.Author.Id == _client.CurrentUser.Id);
-            bool randomReply = hasReply || (currentChannel.Data.ReplyChance >= randomNumber.Next(101));
+            bool randomReply = hasReply || (currentChannel.Data.ReplyChance > (random.Next(99) + 0.001 + random.NextDouble())); // min: 0 + 0.001 + 0 = 0.001; max: 98 + 0.001 + 1 = 99.001
             // Any condition above or if user is hunted
-            bool gottaReply = randomReply || (HuntedUsers.ContainsKey(authorId) && HuntedUsers[authorId] >= randomNumber.Next(100) + 1);
+            bool gottaReply = randomReply || (HuntedUsers.ContainsKey(authorId) && HuntedUsers[authorId] >= random.Next(100) + 1);
 
             if (!gottaReply) return;
             
@@ -311,7 +311,7 @@ namespace CharacterAI_Discord_Bot.Handlers
                 var reply = currentChannel.Data.LastCall!.RepliesList.First();
                 _ = Task.Run(async () =>
                 {
-                    var msgId = await ReplyOnMessage(context.Message, reply, inDMorPrivate, currentChannel.Data.ReplyDelay);
+                    var msgId = await RespondOnMessage(context.Message, reply, inDMorPrivate, currentChannel.Data.ReplyDelay);
                     currentChannel.Data.LastCharacterCallMsgId = msgId;
                 });
             }

@@ -11,7 +11,7 @@ namespace CharacterAI_Discord_Bot.Service
         internal static Emoji ARROW_RIGHT = new("\u27A1");
         internal static Emoji STOP_BTN = new("\u26D4");
 
-        public static async Task<ulong> ReplyOnMessage(SocketUserMessage message, Reply reply, bool isPrivate, int delay)
+        public static async Task<ulong> RespondOnMessage(SocketUserMessage message, Reply reply, bool isPrivate, int delay)
         {
             string replyText = reply.Text!;
 

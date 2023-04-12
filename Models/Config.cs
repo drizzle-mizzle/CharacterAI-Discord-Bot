@@ -13,13 +13,13 @@ namespace CharacterAI_Discord_Bot.Models
         public string Category { get; }
         public bool CharacterAvatarEnabled { get; }
         public bool CharacterNameEnabled { get; }
+        public string CustomChromePath { get; }
         public int DefaultAudienceMode { get; }
         public bool DescriptionInPlaying { get; }
-        public string Nopower { get; }
         public bool DMenabled { get; }
+        public string Nopower { get; }
         public bool PrivateChatRoleRequired { get; }
         public int RateLimit { get; }
-        public int RepliesDelay { get; }
         public int RemoveDelay { get; }
         public bool SwipesEnabled { get; }
         public bool StopBtnEnabled { get; }
@@ -47,11 +47,11 @@ namespace CharacterAI_Discord_Bot.Models
             Nopower = GetValue("default_no_permission_file");
             PrivateChatRoleRequired = bool.Parse(GetValue("private_chat_role_required"));
             RateLimit = int.Parse(GetValue("rate_limit"));
-            RepliesDelay = int.Parse(GetValue("replies_delay"));
             RemoveDelay = int.Parse(GetValue("buttons_remove_delay"));
             SwipesEnabled = bool.Parse(GetValue("enable_swipe_buttons"));
             StopBtnEnabled = bool.Parse(GetValue("enable_stop_button"));
             UserToken = GetValue("char_ai_user_token");
+            CustomChromePath = GetValue("custom_chrome_directory");
             //SeparateHistoryOnlyInPrivates = bool.Parse(configParsed["separate_chat_history_only_for_privates"]!.Value<string>()!);
         }
 

@@ -65,7 +65,7 @@ namespace CharacterAI_Discord_Bot.Service
             return newChannel;
         }
 
-        private static Overwrite ViewChannelPermOverwrite(ISnowflakeEntity target, PermValue permValue)
+        public static Overwrite ViewChannelPermOverwrite(ISnowflakeEntity target, PermValue permValue)
         {
             PermissionTarget permTarget = target is SocketUser ? PermissionTarget.User : PermissionTarget.Role;
             var permission = new OverwritePermissions(viewChannel: permValue);

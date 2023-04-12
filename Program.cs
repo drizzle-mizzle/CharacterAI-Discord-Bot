@@ -17,7 +17,8 @@ namespace CharacterAI_Discord_Bot
 
         private async Task MainAsync()
         {
-            AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnProcessExit);
+            AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
+            AppDomain.CurrentDomain.UnhandledException += OnProcessExit;
 
             _services = CreateServices();
             _client = _services.GetRequiredService<DiscordSocketClient>();
@@ -42,7 +43,7 @@ namespace CharacterAI_Discord_Bot
             {
                 try
                 {
-                    await handler.CurrentIntegration.LaunchChromeAsync();
+                    await handler.CurrentIntegration.LaunchChromeAsync(BotConfig.CustomChromePath);
                     if (BotConfig.AutoSetupEnabled)
                         _ = AutoSetup(handler, _client);
                 }

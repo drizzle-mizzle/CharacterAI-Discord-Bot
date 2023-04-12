@@ -18,6 +18,9 @@ namespace CharacterAI_Discord_Bot.Models
         public string Nopower { get; }
         public bool DMenabled { get; }
         public bool PrivateChatRoleRequired { get; }
+        public string AudienceModeNameFormat { get; }
+        public string AudienceModeReplyFormat { get; }
+        public string MessageFormat { get; }
         public int RateLimit { get; }
         public int RepliesDelay { get; }
         public int RemoveDelay { get; }

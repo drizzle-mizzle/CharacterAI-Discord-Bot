@@ -25,6 +25,10 @@ An unofficial Discord integration with a [CharacterAI](https://beta.character.ai
 - [Commands](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/wiki/Commands)
 - [Additional configuration](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/wiki/Additional-configuration)
 
+## 👉👈 Support this project
+If you feel very-very grateful, you can express this gratitude here:<br>
+**https://boosty.to/drizzle-mizzle**
+
 <!-- ## 🩼Known issues
 Some **Windows users** are facing the problem of being unable to access character.ai: https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/issues/28 <br>
 If you encounter something similar to:<br>

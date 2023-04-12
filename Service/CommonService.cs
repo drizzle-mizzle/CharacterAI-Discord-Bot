@@ -208,7 +208,7 @@ namespace CharacterAI_Discord_Bot.Service
         {
             var refMsg = message.ReferencedMessage;
             if (refMsg is not null && !string.IsNullOrEmpty(refMsg.Content))
-                text = $"{_config.AudienceModeReplyFormat.Replace(\"{response}\", RemoveMention(refMsg.Content))}{text}";
+                text = text.Replace("{response}", RemoveMention(refMsg.Content));
 
             return text;
         }
@@ -225,11 +225,11 @@ namespace CharacterAI_Discord_Bot.Service
             }
 
             if (!string.IsNullOrEmpty(text) && !string.IsNullOrWhiteSpace(text))
-                text = $"{_config.AudienceModeNameFormat.Replace(\"{usrname}\", {name})}{text}";
+                text = text.Replace("{usrname}", name);
 
             return text;
         }
-
+        
         // Log and return true
         public static bool Success(string logText = "")
         {

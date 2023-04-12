@@ -26,5 +26,7 @@
     "buttons_remove_delay": 120,
 
     "auto_setup": false,
-    "auto_char_id": "_CHARACTER_ID_"
+    "auto_char_id": "_CHARACTER_ID_",
+
+    "custom_chrome_directory": ""
 }

@@ -11,7 +11,7 @@ namespace CharacterAI_Discord_Bot.Service
         internal static Emoji ARROW_RIGHT = new("\u27A1");
         internal static Emoji STOP_BTN = new("\u26D4");
 
-        public static async Task<ulong> ReplyOnMessage(SocketUserMessage message, Reply reply, bool isPrivate)
+        public static async Task<ulong> RespondOnMessage(SocketUserMessage message, Reply reply, bool isPrivate, int delay)
         {
             string replyText = reply.Text!;
 
@@ -24,17 +24,17 @@ namespace CharacterAI_Discord_Bot.Service
 
             var mentions = isPrivate ? AllowedMentions.None : AllowedMentions.All;
 
-            await Task.Delay(BotConfig.RepliesDelay * 1000);
+            await Task.Delay(delay * 1000);
             var botReply = await message.ReplyAsync(replyText, embed: embed, allowedMentions: mentions).ConfigureAwait(false);
 
-            bool replyToBot = message.ReferencedMessage is not null && message.ReferencedMessage.Author.IsBot;
-            if (!replyToBot && BotConfig.SwipesEnabled)
+            bool isReplyToBot = botReply.ReferencedMessage is IUserMessage um && um.Author.IsBot;
+            if (!isReplyToBot && BotConfig.SwipesEnabled)
             {
                 await AddArrowButtons(botReply).ConfigureAwait(false);
                 if (BotConfig.RemoveDelay != 0)
                     _ = RemoveButtons(botReply, botReply.Author, delay: BotConfig.RemoveDelay);
             }
-            if (replyToBot && BotConfig.StopBtnEnabled)
+            if (isReplyToBot && BotConfig.StopBtnEnabled)
                 await AddStopButton(botReply);
 
             return botReply!.Id;

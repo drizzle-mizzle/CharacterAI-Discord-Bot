@@ -3,11 +3,11 @@ using Discord.WebSocket;
 using Discord;
 using CharacterAI_Discord_Bot.Models;
 using CharacterAI_Discord_Bot.Handlers;
-using static CharacterAI_Discord_Bot.Service.CurrentClientService;
 using YamlDotNet.Serialization.NamingConventions;
 using YamlDotNet.Serialization;
 using Discord.Commands;
 using CharacterAI.Models;
+using static CharacterAI_Discord_Bot.Service.CurrentClientService;
 
 namespace CharacterAI_Discord_Bot.Service
 {
@@ -22,6 +22,8 @@ namespace CharacterAI_Discord_Bot.Service
 
         internal static readonly string nopowerPath = _imgPath + _config.Nopower;
         internal static readonly string defaultAvatarPath = _imgPath + "defaultAvatar.png";
+        internal static readonly string WARN_SIGN = "\u26A0";
+        internal static readonly string WARN_SIGN_DISCORD = ":warning:";
 
         public static async Task AutoSetup(CommandsHandler handler, DiscordSocketClient client)
         {
@@ -80,15 +82,18 @@ namespace CharacterAI_Discord_Bot.Service
             if (channels is null) return;
 
             string channelsYAML = "";
-            foreach (var instance in channels)
+            foreach (var c in channels)
             {
                 var line = serializer.Serialize(new
                 {
-                    instance.Id,
-                    instance.AuthorId,
-                    instance.Data.HistoryId,
-                    instance.Data.CharacterId,
-                    instance.GuestsList
+                    c.Id,
+                    c.AuthorId,
+                    c.Data.HistoryId,
+                    c.Data.CharacterId,
+                    c.Data.AudienceMode,
+                    c.Data.ReplyChance,
+                    c.Data.ReplyDelay,
+                    c.GuestsList
                 });
                 channelsYAML += line += "-------------------\n";
             }
@@ -129,6 +134,9 @@ namespace CharacterAI_Discord_Bot.Service
                 ulong channelId = channelTemp.Id;
                 ulong authorId = channelTemp.AuthorId;
                 string historyId = channelTemp.HistoryId!;
+                int amode = channelTemp.AudienceMode;
+                float replyChance = channelTemp.ReplyChance;
+                int replyDelay = channelTemp.ReplyDelay;
                 var channel = new Models.Channel(channelId, authorId, historyId, characterId);
                 channel.GuestsList = channelTemp.GuestsList!;
 
@@ -166,11 +174,12 @@ namespace CharacterAI_Discord_Bot.Service
         public static string RemoveMention(string text)
         {
             text = text.Trim();
-            // Remove first mention
+            // Remove first @mention
             if (text.StartsWith("<"))
                 text = new Regex("\\<(.*?)\\>").Replace(text, "", 1);
             // Remove prefix
-            foreach (string prefix in _config.BotPrefixes)
+            var prefixes = _config.BotPrefixes.OrderBy(p => p.Length).Reverse().ToArray(); // ex: "~ai" first, only then "~"
+            foreach (string prefix in prefixes)
                 if (text.StartsWith(prefix))
                     text = text.Replace(prefix, "");
 
@@ -195,6 +204,8 @@ namespace CharacterAI_Discord_Bot.Service
         //  takes eternity for it to upload one on server, but image url is provided in advance)
         public static async Task<bool> TryGetImage(string url)
         {
+            if (string.IsNullOrWhiteSpace(url)) return false;
+
             for (int i = 0; i < 10; i++)
                 if ((await _httpClient.GetAsync(url).ConfigureAwait(false)).IsSuccessStatusCode)
                     return true;
@@ -310,6 +321,9 @@ namespace CharacterAI_Discord_Bot.Service
         public ulong AuthorId { get; set; }
         public string? HistoryId { get; set; }
         public string? CharacterId { get; set; }
+        public int AudienceMode { get; set; }
+        public float ReplyChance { get; set; }
+        public int ReplyDelay { get; set; }
         public List<ulong>? GuestsList { get; set; }
     };
 

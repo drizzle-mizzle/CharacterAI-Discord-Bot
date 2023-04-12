@@ -35,7 +35,7 @@ namespace CharacterAI_Discord_Bot.Service
 
             if (!result.IsSuccessful)
             {
-                await context.Message.ReplyAsync("⚠️ Failed to set a character!").ConfigureAwait(false);
+                await context.Message.ReplyAsync($"{WARN_SIGN_DISCORD}️ Failed to set a character!").ConfigureAwait(false);
                 return;
             }
 

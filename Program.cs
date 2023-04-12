@@ -17,8 +17,6 @@ namespace CharacterAI_Discord_Bot
 
         private async Task MainAsync()
         {
-            AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnProcessExit);
-
             _services = CreateServices();
             _client = _services.GetRequiredService<DiscordSocketClient>();
 
@@ -26,7 +24,7 @@ namespace CharacterAI_Discord_Bot
 
             _client.Log += Log;
             _client.Ready += OnClientReady;
-
+            
             await _client.LoginAsync(TokenType.Bot, BotConfig.BotToken);
             await _client.StartAsync();
             await _services.GetRequiredService<CommandsHandler>().InitializeAsync();
@@ -36,23 +34,40 @@ namespace CharacterAI_Discord_Bot
 
         public Task OnClientReady()
         {
-            var handler = _services.GetRequiredService<CommandsHandler>();
-
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await handler.CurrentIntegration.LaunchChromeAsync();
-                    if (BotConfig.AutoSetupEnabled)
-                        _ = AutoSetup(handler, _client);
-                }
-                catch (Exception e)
-                {
-                    Failure(e.ToString());
-                }
-            });
+            _ = Task.Run(async () => await LaunchChromeAndSetup(setup: BotConfig.AutoSetupEnabled));
             
             return Task.CompletedTask;
+        }
+
+        private async Task LaunchChromeAndSetup(bool setup)
+        {
+            try
+            {
+                var handler = _services.GetRequiredService<CommandsHandler>();
+                await handler.CurrentIntegration.LaunchChromeAsync(BotConfig.CustomChromePath);
+                if (setup) await AutoSetup(handler, _client);
+
+                Log("\nEnter \"exit\" or \"stop\" to close application.\n" +
+                        "Enter \"kill\" to close all Puppeteer Chrome proccesses (if you use same 'custom_chrome_directory' for several bots at once, it will close chrome for them too).\n" +
+                        "Enter \"relaunch\" to relaunch chrome process.");
+                while (true)
+                {
+                    Log("\n# ", ConsoleColor.Green);
+                    string? input = Console.ReadLine()?.Trim().Trim('\"');
+                    if (input is null) continue;
+
+                    switch (input)
+                    {
+                        case "exit" or "stop": Environment.Exit(0); break;
+                        case "kill": KillChromes(); break;
+                        case "relaunch": KillChromes(); await LaunchChromeAndSetup(false); break;
+                    };
+                }
+            }
+            catch (Exception e)
+            {
+                Failure(e.ToString());
+            }
         }
 
         private static ServiceProvider CreateServices()
@@ -80,13 +95,13 @@ namespace CharacterAI_Discord_Bot
             return Task.CompletedTask;
         }
 
-        private void OnProcessExit(object? sender, EventArgs args)
+        private void KillChromes()
         {
-            Log("Shutting down...");
             try
             {
                 var path = _services.GetRequiredService<CommandsHandler>().CurrentIntegration.EXEC_PATH;
                 CharacterAI.Integration.KillChromes(path);
+                Success("OK");
             }
             catch (Exception e)
             {

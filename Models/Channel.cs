@@ -25,12 +25,14 @@ namespace CharacterAI_Discord_Bot.Models
 
     internal class CharacterDialogData : CommonService
     {
-        internal string HistoryId { get; }
+        internal string HistoryId { get; set; }
         internal string CharacterId { get; }
         internal int AudienceMode { get; set; }
-        internal ulong LastCharacterCallMsgId { get; set; } // discord message id
+        internal float ReplyChance { get; set; }
+        internal int ReplyDelay { get; set; }
         internal int SkipMessages { get; set; }
         internal bool SkipNextBotMessage { get; set; }
+        internal ulong LastCharacterCallMsgId { get; set; } // discord message id
         internal LastCharacterCall? LastCall { get; set; }
 
         public CharacterDialogData(string historyId, string characterId)
@@ -38,6 +40,8 @@ namespace CharacterAI_Discord_Bot.Models
             HistoryId = historyId;
             CharacterId = characterId;
             AudienceMode = BotConfig.DefaultAudienceMode;
+            ReplyChance = 0;
+            ReplyDelay = 0;
             SkipMessages = 0;
             SkipNextBotMessage = false;
             LastCharacterCallMsgId = 0;

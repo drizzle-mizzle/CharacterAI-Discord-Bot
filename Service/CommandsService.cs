@@ -30,7 +30,7 @@ namespace CharacterAI_Discord_Bot.Service
 
             if (response.IsEmpty)
             {
-                await context.Message.ReplyAsync("⚠️ No characters were found").ConfigureAwait(false);
+                await context.Message.ReplyAsync($"{WARN_SIGN_DISCORD} No characters were found").ConfigureAwait(false);
                 return;
             }
 

@@ -13,7 +13,6 @@ namespace CharacterAI_Discord_Bot.Handlers
     public class CommandsHandler : HandlerService
     {
         internal Integration CurrentIntegration { get; }
-        internal int ReplyChance { get; set; } // 0
         internal List<ulong> BlackList { get; set; } = new();
         internal List<Models.Channel> Channels { get; set; } = new();
         internal LastSearchQuery? LastSearch { get; set; }
@@ -46,17 +45,36 @@ namespace CharacterAI_Discord_Bot.Handlers
                 return;
 
             int argPos = 0;
-            var randomNumber = new Random();
+            var random = new Random();
             string[] prefixes = BotConfig.BotPrefixes;
             var context = new SocketCommandContext(_client, message);
 
+            bool isPrivate = context.Channel.Name.StartsWith("private");
             bool isDM = context.Guild is null;
+
+            var cI = CurrentIntegration;
+            var currentChannel = Channels.Find(c => c.Id == context.Channel.Id);
+
+            if (currentChannel is null)
+            {
+                if (isPrivate) return; // don't handle deactivated "private" chats
+
+                string? historyId = null;
+                if (isDM) historyId = await cI.CreateNewChatAsync();
+                historyId ??= cI.Chats[0];
+
+                currentChannel = new Models.Channel(context.Channel.Id, context.User.Id, historyId, cI.CurrentCharacter.Id!);
+
+                Channels.Add(currentChannel);
+                SaveData(channels: Channels);
+            }
+
             bool hasMention = isDM || message.HasMentionPrefix(_client.CurrentUser, ref argPos);
             bool hasPrefix = hasMention || prefixes.Any(p => message.HasStringPrefix(p, ref argPos));
-            bool hasReply = hasPrefix || (message.ReferencedMessage != null && message.ReferencedMessage.Author.Id == _client.CurrentUser.Id); // IT'S SO FUCKING BIG UUUGHH!
-            bool randomReply = hasReply || (ReplyChance >= randomNumber.Next(100) + 1);
+            bool hasReply = hasPrefix || (message.ReferencedMessage != null && message.ReferencedMessage.Author.Id == _client.CurrentUser.Id);
+            bool randomReply = hasReply || (currentChannel.Data.ReplyChance > (random.Next(99) + 0.001 + random.NextDouble())); // min: 0 + 0.001 + 0 = 0.001; max: 98 + 0.001 + 1 = 99.001
             // Any condition above or if user is hunted
-            bool gottaReply = randomReply || (HuntedUsers.ContainsKey(authorId) && HuntedUsers[authorId] >= randomNumber.Next(100) + 1);
+            bool gottaReply = randomReply || (HuntedUsers.ContainsKey(authorId) && HuntedUsers[authorId] >= random.Next(100) + 1);
 
             if (!gottaReply) return;
             
@@ -71,7 +89,7 @@ namespace CharacterAI_Discord_Bot.Handlers
             // If command was found but failed to execute, return
             if (cmdResponse.ErrorReason != "Unknown command.")
             {
-                string text = $"⚠ Failed to execute command: {cmdResponse.ErrorReason} ({cmdResponse.Error})";
+                string text = $"{WARN_SIGN_DISCORD} Failed to execute command: {cmdResponse.ErrorReason} ({cmdResponse.Error})";
                 if (isDM) text = "*Note: some commands are not intended to be called from DMs*\n" + text;
 
                 await message.ReplyAsync(text).ConfigureAwait(false);
@@ -79,28 +97,10 @@ namespace CharacterAI_Discord_Bot.Handlers
             }
 
             // If command was not found, perform character call
-            var cI = CurrentIntegration; // shortcut for readability
             if (cI.CurrentCharacter.IsEmpty)
             {
-                await message.ReplyAsync("⚠ Set a character first").ConfigureAwait(false);
+                await message.ReplyAsync($"{WARN_SIGN_DISCORD} Set a character first").ConfigureAwait(false);
                 return;
-            }
-
-            var currentChannel = Channels.Find(c => c.Id == context.Channel.Id);
-            bool isPrivate = context.Channel.Name.StartsWith("private");
-
-            if (currentChannel is null)
-            {
-                if (isPrivate) return;
-
-                string? historyId = null;
-                if (isDM) historyId = await cI.CreateNewChatAsync();
-                historyId ??= cI.Chats[0];
-
-                currentChannel = new Models.Channel(context.Channel.Id, context.User.Id, historyId, cI.CurrentCharacter.Id!);
-
-                Channels.Add(currentChannel);
-                SaveData(channels: Channels);
             }
 
             if (message.Author.IsBot && currentChannel.Data.SkipNextBotMessage)
@@ -205,21 +205,25 @@ namespace CharacterAI_Discord_Bot.Handlers
                         if (character.IsEmpty) return;
 
                         _ = CommandsService.SetCharacterAsync(character.Id!, this, refContext);
+
+                        var imageUrl = TryGetImage(character.AvatarUrlFull!).Result ?
+                            character.AvatarUrlFull : TryGetImage(character.AvatarUrlMini!).Result ?
+                            character.AvatarUrlMini : null;
+
+                        var embed = new EmbedBuilder()
+                        {
+                            ImageUrl = imageUrl,
+                            Title = $"✅ Selected - {character.Name}",
+                            Footer = new EmbedFooterBuilder().WithText($"Created by {character.Author}"),
+                            Description = $"{character.Description}\n\n" +
+                                          $"*Original link: [Chat with {character.Name}](https://beta.character.ai/chat?char={character.Id})*\n" +
+                                          $"*Can generate images: {(character.ImageGenEnabled is true ? "Yes" : "No")}*\n" +
+                                          $"*Interactions: {character.Interactions}*"
+                        };
+
                         await component.UpdateAsync(c =>
                         {
-                            var imageUrl = TryGetImage(character.AvatarUrlFull!).Result ?
-                                            character.AvatarUrlFull : TryGetImage(character.AvatarUrlMini!).Result ?
-                                                character.AvatarUrlMini : null;
-
-                            string desc = $"{character.Description}\n\n" +
-                                          $"*Original link: [Chat with {character.Name}](https://beta.character.ai/chat?char={character.Id})*";
-                            c.Embed = new EmbedBuilder()
-                            {
-                                Title = $"✅ Selected - {character.Name}",
-                                Description = desc,
-                                ImageUrl = imageUrl,
-                                Footer = new EmbedFooterBuilder().WithText($"Created by {character.Author}")
-                            }.Build();
+                            c.Embed = embed.Build();
                             c.Components = null;
                         }).ConfigureAwait(false);
                     }
@@ -245,7 +249,7 @@ namespace CharacterAI_Discord_Bot.Handlers
 
                 if (!response.IsSuccessful)
                 {
-                    _ = message.ModifyAsync(msg => { msg.Content = $"⚠ Something went wrong!"; });
+                    _ = message.ModifyAsync(msg => { msg.Content = $"{WARN_SIGN_DISCORD} Something went wrong!"; });
                     return;
                 }
                 currentChannel.Data.LastCall.RepliesList.AddRange(response.Replies);
@@ -312,7 +316,7 @@ namespace CharacterAI_Discord_Bot.Handlers
                 var reply = currentChannel.Data.LastCall!.RepliesList.First();
                 _ = Task.Run(async () =>
                 {
-                    var msgId = await ReplyOnMessage(context.Message, reply, inDMorPrivate);
+                    var msgId = await RespondOnMessage(context.Message, reply, inDMorPrivate, currentChannel.Data.ReplyDelay);
                     currentChannel.Data.LastCharacterCallMsgId = msgId;
                 });
             }
@@ -346,7 +350,7 @@ namespace CharacterAI_Discord_Bot.Handlers
             _userMsgCount[currUserId][1]++;
 
             if (_userMsgCount[currUserId][1] == BotConfig.RateLimit - 1)
-                context.Message.ReplyAsync($"⚠ Warning! If you proceed to call {context.Client.CurrentUser.Mention} " +
+                context.Message.ReplyAsync($"{WARN_SIGN_DISCORD} Warning! If you proceed to call {context.Client.CurrentUser.Mention} " +
                                             "so fast, you'll be blocked from using it.");
             else if (_userMsgCount[currUserId][1] > BotConfig.RateLimit)
             {

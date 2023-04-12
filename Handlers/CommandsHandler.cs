@@ -117,20 +117,23 @@ namespace CharacterAI_Discord_Bot.Handlers
 
         private async Task HandleReaction(Cacheable<IUserMessage, ulong> rawMessage, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
         {
-            var user = (SocketUser)reaction.User.Value;
-            if (user.IsBot) return;
+            var user = reaction?.User.Value;
+            if (user is null) return;
+
+            var socketUser = (SocketUser)user;
+            if (socketUser.IsBot) return;
 
             var message = await rawMessage.DownloadAsync();
             var currentChannel = Channels.Find(c => c.Id == message.Channel.Id);
             if (currentChannel is null) return;
 
-            if (reaction.Emote.Name == STOP_BTN.Name)
+            if (reaction!.Emote.Name == STOP_BTN.Name)
             {
                 currentChannel.Data.SkipNextBotMessage = true;
                 return;
             }
 
-            bool userIsLastMessageAuthor = user.Id == message.ReferencedMessage.Author.Id;
+            bool userIsLastMessageAuthor = message.ReferencedMessage is IUserMessage um && socketUser.Id == um.Author.Id;
             bool msgIsSwipable = currentChannel.Data.LastCall is not null && rawMessage.Id == currentChannel.Data.LastCharacterCallMsgId;
             if (!userIsLastMessageAuthor || !msgIsSwipable) return;
 

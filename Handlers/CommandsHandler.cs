@@ -273,16 +273,15 @@ namespace CharacterAI_Discord_Bot.Handlers
 
             // Prepare text data
             string text = RemoveMention(context.Message.Content);
-            string dsReply = AddQuote("", context.Message)
-            string dsName = AddUsername("", context);
             int amode = currentChannel.Data.AudienceMode;
-            string replyText = amode == 2 || amode == 3 ? _config.MessageFormat.Replace("{reply}", dsReply) : _config.MessageFormat.Replace("{reply}", "");
-            replyText = amode == 1 || amode == 3 ? replyText.Replace("{username}", dsName) : replyText.Replace("{username}", "");
-            string text = replyText.Replace("{message}", text);
-            //if (amode == 1 || amode == 3)
-            //    text = AddUsername(text, context);
-            //if (amode == 2 || amode == 3)
-            //    text = AddQuote(text, context.Message);
+            
+            string unformattedText = amode == 2 ? _config.MessageFormat.Replace("{reply}", _config.AudienceModeReplyFormat).Replace("{message}", text) : _config.MessageFormat.Replace("{message}", text);
+            unformattedText = amode == 1 ? unformattedText.Replace("{username}", _config.AudienceModeNameFormat).Replace("{message}", text) : unformattedText.Replace("{message}", text);
+            unformattedText = amode == 3 ? unformattedText.Replace("{username}", _config.AudienceModeNameFormat).Replace("{reply}", _config.AudienceModeReplyFormat).Replace("{message}", text) : _config.MessageFormat.Replace("{reply}", "").Replace("{username}", "").Replace("{message}", text);
+            if (amode == 1 || amode == 3)
+                unformattedText = AddUsername(unformattedText, context);
+            if (amode == 2 || amode == 3)
+                unformattedText = AddQuote(unformattedText, context.Message);
 
             // Prepare image data
             string? imgPath = null;

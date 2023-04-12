@@ -25,10 +25,6 @@ An unofficial Discord integration with a [CharacterAI](https://beta.character.ai
 - [Commands](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/wiki/Commands)
 - [Additional configuration](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/wiki/Additional-configuration)
 
-## 👉👈 Support this project
-If you feel very-very grateful, you can express this gratitude here:<br>
-**https://boosty.to/drizzle-mizzle**
-
 ## 🩼Known issues
 If you face problems with `set` and `find` command:
 ```bash
@@ -50,3 +46,7 @@ The simplest way is to just install WSL2 with Ubuntu, which is pretty easy to do
 [How to Install Ubuntu on WSL2 on Windows](https://ubuntu.com/tutorials/install-ubuntu-on-wsl2-on-windows-10#1-overview)
 (Additional guide for ducklings: https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/issues/41)
 -->
+
+## 👉👈 Support this project
+If you feel very-very grateful, you can express this gratitude here:<br>
+**https://boosty.to/drizzle-mizzle**

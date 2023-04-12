@@ -23,7 +23,6 @@ namespace CharacterAI_Discord_Bot.Handlers
         private readonly DiscordSocketClient _client;
         private readonly IServiceProvider _services;
         private readonly CommandService _commands;
-        internal static Config BotConfig { get => _config; }
         private static readonly Config _config = GetConfig()!;
         
         public CommandsHandler(IServiceProvider services)

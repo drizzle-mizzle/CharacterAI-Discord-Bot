@@ -14,7 +14,7 @@ An unofficial Discord integration with a [CharacterAI](https://beta.character.ai
 - Talk with any character on your own server and change them on the fly.
 - Embedded character search.
 - Automatically sets the name and profile picture of a character.
-- Supports answers swiping and image sending.
+- Supports answers swiping [s]and image sending[/s]broken.
 - Supports multiple parallel chats with the same character.
 - Random replies, audience mode and some other stuff.
 
@@ -32,7 +32,7 @@ System.ArgumentOutOfRangeException: Index was out of range. Must be non-negative
    at System.Collections.Generic.List1.get_Item(Int32 index)
    at CharacterAI_Discord_Bot.Handlers.CommandsHandler.HandleMessage(SocketMessage rawMsg)
 ```
-Just use `auto_setup` in Config. It will be fixed soon.
+Just use `auto_setup` in Config for now. It will be fixed in nearest update.
 <!-- Some **Windows users** are facing the problem of being unable to access character.ai: https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/issues/28 <br>
 If you encounter something similar to:<br>
 > `Request failed! (https://beta.character.ai/chat/character/info/)`<br>

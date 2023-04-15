@@ -278,8 +278,8 @@ namespace CharacterAI_Discord_Bot.Handlers
             string text = RemoveMention(context.Message.Content);
             int amode = currentChannel.Data.AudienceMode;
             
-            string unformattedText = amode == 2 ? _config.MessageFormat.Replace("{reply}", _config.AudienceModeReplyFormat).Replace("{message}", text) : _config.MessageFormat;
-            unformattedText = amode == 1 ? unformattedText.Replace("{username}", _config.AudienceModeNameFormat).Replace("{message}", text) : unformattedText;
+            string unformattedText = amode == 2 ? _config.MessageFormat.Replace("{reply}", _config.AudienceModeReplyFormat) : _config.MessageFormat;
+            unformattedText = amode == 1 ? unformattedText.Replace("{username}", _config.AudienceModeNameFormat) : unformattedText;
             unformattedText = amode == 3 ? unformattedText.Replace("{username}", _config.AudienceModeNameFormat).Replace("{reply}", _config.AudienceModeReplyFormat) : _config.MessageFormat.Replace("{reply}", "").Replace("{username}", "");
             if (amode == 1 || amode == 3)
                 unformattedText = AddUsername(unformattedText, context);

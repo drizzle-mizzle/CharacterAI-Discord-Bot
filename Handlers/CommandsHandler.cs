@@ -6,7 +6,6 @@ using System.Reflection;
 using CharacterAI_Discord_Bot.Service;
 using CharacterAI_Discord_Bot.Models;
 using CharacterAI;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace CharacterAI_Discord_Bot.Handlers
 {
@@ -22,7 +21,6 @@ namespace CharacterAI_Discord_Bot.Handlers
         private readonly DiscordSocketClient _client;
         private readonly IServiceProvider _services;
         private readonly CommandService _commands;
-        private static readonly Config _config = GetConfig()!;
         
         public CommandsHandler(IServiceProvider services)
         {
@@ -290,18 +288,13 @@ namespace CharacterAI_Discord_Bot.Handlers
 
             // Prepare text data
             string text = RemoveMention(context.Message.Content);
-            
+
             int amode = currentChannel.Data.AudienceMode;
-            
-            string unformattedText = amode == 2 ? _config.MessageFormat.Replace("{reply}", _config.AudienceModeReplyFormat) : _config.MessageFormat;
-            unformattedText = amode == 1 ? unformattedText.Replace("{username}", _config.AudienceModeNameFormat) : unformattedText;
-            unformattedText = amode == 3 ? unformattedText.Replace("{username}", _config.AudienceModeNameFormat).Replace("{reply}", _config.AudienceModeReplyFormat) : _config.MessageFormat.Replace("{reply}", "").Replace("{username}", "");
             if (amode == 1 || amode == 3)
-                unformattedText = AddUsername(unformattedText, context);
+                text = AddUsername(text, context);
             if (amode == 2 || amode == 3)
-                unformattedText = AddQuote(unformattedText, context.Message);
-            text = unformattedText.Replace("{message}", text)
-            
+                text = AddQuote(text, context.Message);
+
             // Prepare image data
             string? imgPath = null;
             //var attachments = context.Message.Attachments;

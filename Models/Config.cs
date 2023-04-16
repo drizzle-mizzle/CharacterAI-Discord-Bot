@@ -5,6 +5,8 @@ namespace CharacterAI_Discord_Bot.Models
 {
     internal class Config
     {
+        public string AudienceModeNameFormat { get; }
+        public string AudienceModeQuoteFormat { get; }
         public bool AutoSetupEnabled { get; }
         public string AutoCharId { get; }
         public string BotToken { get; }
@@ -21,8 +23,6 @@ namespace CharacterAI_Discord_Bot.Models
         public bool DMenabled { get; }
         public string Nopower { get; }
         public bool PrivateChatRoleRequired { get; }
-        public string AudienceModeNameFormat { get; }
-        public string AudienceModeReplyFormat { get; }
         public string MessageFormat { get; }
         public int RateLimit { get; }
         public int RemoveDelay { get; }
@@ -53,7 +53,7 @@ namespace CharacterAI_Discord_Bot.Models
             Nopower = GetValue("default_no_permission_file");
             PrivateChatRoleRequired = bool.Parse(GetValue("private_chat_role_required"));
             AudienceModeNameFormat = GetValue("audience_mode_username_format");
-            AudienceModeReplyFormat = GetValue("audience_mode_reply_format");
+            AudienceModeQuoteFormat = GetValue("audience_mode_quote_format");
             MessageFormat = GetValue("message_format"); // doesn't actually do much without audience mode but i'd imagine it'd be useful in audience mode
             RateLimit = int.Parse(GetValue("rate_limit"));
             RemoveDelay = int.Parse(GetValue("buttons_remove_delay"));

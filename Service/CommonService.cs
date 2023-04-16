@@ -173,6 +173,9 @@ namespace CharacterAI_Discord_Bot.Service
             return list.Build();
         }
 
+        /// <summary>
+        /// Remove prefix and/or @mention_prefix
+        /// </summary>
         public static string RemoveMention(string text)
         {
             text = text.Trim();
@@ -217,15 +220,6 @@ namespace CharacterAI_Discord_Bot.Service
             return false;
         }
 
-        public static string AddQuote(string text, SocketUserMessage message)
-        {
-            var refMsg = message.ReferencedMessage;
-            if (refMsg is not null && !string.IsNullOrEmpty(refMsg.Content))
-                text = text.Replace("{response}", RemoveMention(refMsg.Content));
-
-            return text;
-        }
-
         public static string AddUsername(string text, SocketCommandContext context)
         {
             string name;
@@ -237,12 +231,26 @@ namespace CharacterAI_Discord_Bot.Service
                 name = guildUser?.Nickname ?? guildUser!.Username;
             }
 
-            if (!string.IsNullOrEmpty(text) && !string.IsNullOrWhiteSpace(text))
-                text = text.Replace("{usrname}", name);
+            string username = BotConfig.AudienceModeNameFormat.Replace("{username}", name);
+            if (!string.IsNullOrWhiteSpace(text))
+                text = username + text;
 
             return text;
         }
-        
+
+        public static string AddQuote(string text, SocketUserMessage message)
+        {
+            var refMsg = message.ReferencedMessage;
+            bool hasRefMessage = refMsg is not null && !string.IsNullOrEmpty(refMsg.Content);
+            if (hasRefMessage)
+            {
+                string quote = BotConfig.AudienceModeQuoteFormat.Replace("{quote}", refMsg!.Content);
+                text = quote + text;
+            }
+
+            return text;
+        }
+
         // Log and return true
         public static bool Success(string logText = "")
         {

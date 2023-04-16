@@ -7,6 +7,8 @@
     "discord_private_category_name": "CAI PRIVATE CHANNELS",
 
     "default_audience_mode": 0,
+    "audience_mode_quote_format": "((In response to: [{quote}]))\n",
+    "audience_mode_username_format": "User [{username}] says: ",
     "default_no_permission_file": "nopower.gif",
 
     "private_chat_role_required": false,

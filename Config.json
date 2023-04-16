@@ -7,6 +7,8 @@
     "discord_private_category_name": "CAI PRIVATE CHANNELS",
 
     "default_audience_mode": 0,
+    "audience_mode_quote_format": "((In response to: [{quote}]))\n",
+    "audience_mode_username_format": "User [{username}] says: ",
     "default_no_permission_file": "nopower.gif",
 
     "private_chat_role_required": false,
@@ -14,9 +16,6 @@
     "use_character_name": true,
     "description_in_playing_status": true,
     "allow_dm": true,
-    
-    "audience_mode_quote_format": "((In response to: [{quote}]))\n",
-    "audience_mode_username_format": "User [{username}] says: ",
 
     "rate_limit": 10,
     "replies_delay": 1,

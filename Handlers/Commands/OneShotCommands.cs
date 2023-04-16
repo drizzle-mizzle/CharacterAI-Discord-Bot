@@ -1,10 +1,7 @@
-﻿using CharacterAI_Discord_Bot.Models;
-using Discord;
+﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using System.Reflection.Metadata;
 using static CharacterAI_Discord_Bot.Service.CommandsService;
-using static CharacterAI_Discord_Bot.Service.CommonService;
 
 namespace CharacterAI_Discord_Bot.Handlers.Commands
 {

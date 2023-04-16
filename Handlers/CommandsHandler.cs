@@ -1,4 +1,4 @@
-﻿using Discord;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
@@ -6,7 +6,6 @@ using System.Reflection;
 using CharacterAI_Discord_Bot.Service;
 using CharacterAI_Discord_Bot.Models;
 using CharacterAI;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace CharacterAI_Discord_Bot.Handlers
 {
@@ -22,7 +21,7 @@ namespace CharacterAI_Discord_Bot.Handlers
         private readonly DiscordSocketClient _client;
         private readonly IServiceProvider _services;
         private readonly CommandService _commands;
-
+        
         public CommandsHandler(IServiceProvider services)
         {
             CurrentIntegration = new(BotConfig.UserToken);
@@ -289,7 +288,7 @@ namespace CharacterAI_Discord_Bot.Handlers
 
             // Prepare text data
             string text = RemoveMention(context.Message.Content);
-            
+
             int amode = currentChannel.Data.AudienceMode;
             if (amode == 1 || amode == 3)
                 text = AddUsername(text, context);

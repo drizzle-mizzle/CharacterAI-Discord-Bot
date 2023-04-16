@@ -5,6 +5,8 @@ namespace CharacterAI_Discord_Bot.Models
 {
     internal class Config
     {
+        public string AudienceModeNameFormat { get; }
+        public string AudienceModeQuoteFormat { get; }
         public bool AutoSetupEnabled { get; }
         public string AutoCharId { get; }
         public string BotToken { get; }
@@ -49,6 +51,8 @@ namespace CharacterAI_Discord_Bot.Models
             DMenabled = bool.Parse(GetValue("allow_dm"));
             Nopower = GetValue("default_no_permission_file");
             PrivateChatRoleRequired = bool.Parse(GetValue("private_chat_role_required"));
+            AudienceModeNameFormat = GetValue("audience_mode_username_format");
+            AudienceModeQuoteFormat = GetValue("audience_mode_quote_format");
             RateLimit = int.Parse(GetValue("rate_limit"));
             RemoveDelay = int.Parse(GetValue("buttons_remove_delay"));
             SwipesEnabled = bool.Parse(GetValue("enable_swipe_buttons"));

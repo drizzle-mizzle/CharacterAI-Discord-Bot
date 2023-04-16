@@ -1,5 +1,4 @@
-﻿using CharacterAI_Discord_Bot.Models;
-using Discord;
+﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using static CharacterAI_Discord_Bot.Service.CommandsService;

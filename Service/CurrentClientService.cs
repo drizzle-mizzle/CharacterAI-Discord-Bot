@@ -1,15 +1,9 @@
 ﻿using CharacterAI;
 using CharacterAI.Models;
 using CharacterAI_Discord_Bot.Handlers;
-using CharacterAI_Discord_Bot.Models;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CharacterAI_Discord_Bot.Service
 {

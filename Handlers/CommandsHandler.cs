@@ -6,7 +6,7 @@ using System.Reflection;
 using CharacterAI_Discord_Bot.Service;
 using CharacterAI_Discord_Bot.Models;
 using CharacterAI;
-using System.Threading.Channels;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace CharacterAI_Discord_Bot.Handlers
 {
@@ -35,6 +35,11 @@ namespace CharacterAI_Discord_Bot.Handlers
             _client.ReactionAdded += HandleReaction;
             _client.ReactionRemoved += HandleReaction;
             _client.ButtonExecuted += HandleButton;
+            _client.JoinedGuild += (s) => Task.Run(() =>
+            {
+                if (CurrentIntegration.CurrentCharacter.Name is string name)
+                    _ = CurrentClientService.SetBotNickname(name, _client);
+            });
         }
 
         private async Task HandleMessage(SocketMessage rawMsg)
@@ -54,29 +59,34 @@ namespace CharacterAI_Discord_Bot.Handlers
             var cI = CurrentIntegration;
             var currentChannel = Channels.Find(c => c.Id == context.Channel.Id);
 
-            if (currentChannel is null)
-            {
-                if (isPrivate) return; // don't handle deactivated "private" chats
-
-                string? historyId = null;
-                if (isDM) historyId = await cI.CreateNewChatAsync();
-                historyId ??= cI.Chats[0];
-
-                currentChannel = new Models.Channel(context.Channel.Id, context.User.Id, historyId, cI.CurrentCharacter.Id!);
-
-                Channels.Add(currentChannel);
-                SaveData(channels: Channels);
-            }
-
             bool hasMention = isDM || message.HasMentionPrefix(_client.CurrentUser, ref argPos);
             bool hasPrefix = hasMention || prefixes.Any(p => message.HasStringPrefix(p, ref argPos));
             bool hasReply = hasPrefix || (message.ReferencedMessage != null && message.ReferencedMessage.Author.Id == _client.CurrentUser.Id);
-            bool randomReply = hasReply || (currentChannel.Data.ReplyChance > (random.Next(99) + 0.001 + random.NextDouble())); // min: 0 + 0.001 + 0 = 0.001; max: 98 + 0.001 + 1 = 99.001
+            bool randomReply = hasReply || (currentChannel is Channel cc && cc.Data.ReplyChance > (random.Next(99) + 0.001 + random.NextDouble())); // min: 0 + 0.001 + 0 = 0.001; max: 98 + 0.001 + 1 = 99.001
             // Any condition above or if user is hunted
             bool gottaReply = randomReply || (HuntedUsers.ContainsKey(authorId) && HuntedUsers[authorId] >= random.Next(100) + 1);
 
             if (!gottaReply) return;
-            
+
+            if (currentChannel is null)
+            {
+                if (isPrivate) return; // don't handle deactivated "private" chats
+
+                var data = new CharacterDialogData(null, null);
+                currentChannel = new Channel(context.Channel.Id, context.User.Id, data);
+                Channels.Add(currentChannel);
+
+                if (!cI.CurrentCharacter.IsEmpty)
+                {
+                    var historyId = await cI.CreateNewChatAsync() ?? cI.Chats[0];
+
+                    currentChannel.Data.CharacterId = cI.CurrentCharacter.Id;
+                    currentChannel.Data.HistoryId = historyId;
+                }
+
+                SaveData(channels: Channels);
+            }
+
             // Update messages-per-minute counter.
             // If user has exceeded rate limit, or if message is a DM and these are disabled - return
             if ((isDM && !BotConfig.DMenabled) || UserIsBanned(context)) return;
@@ -140,14 +150,14 @@ namespace CharacterAI_Discord_Bot.Handlers
             if (reaction.Emote.Name == ARROW_LEFT.Name && currentChannel.Data.LastCall!.CurrentReplyIndex > 0)
             {   // left arrow
                 currentChannel.Data.LastCall!.CurrentReplyIndex--;
-                _ = UpdateMessageAsync(message, currentChannel);
+                _ = SwipeMessageAsync(message, currentChannel);
 
                 return;
             }
             if (reaction.Emote.Name == ARROW_RIGHT.Name)
             {   // right arrow
                 currentChannel.Data.LastCall!.CurrentReplyIndex++;
-                _ = UpdateMessageAsync(message, currentChannel);
+                _ = SwipeMessageAsync(message, currentChannel);
 
                 return;
             }
@@ -203,10 +213,11 @@ namespace CharacterAI_Discord_Bot.Handlers
                     using (refContext.Message.Channel.EnterTypingState())
                     {
                         int index = (LastSearch.CurrentPage - 1) * 10 + LastSearch.CurrentRow - 1;
-                        var character = LastSearch.Response!.Characters![index];
+                        var characterId = LastSearch.Response!.Characters![index].Id;
+                        var character = await CurrentIntegration.GetInfoAsync(characterId);
                         if (character.IsEmpty) return;
 
-                        _ = CommandsService.SetCharacterAsync(character.Id!, this, refContext);
+                        _ = CommandsService.SetCharacterAsync(characterId!, this, refContext);
 
                         var imageUrl = TryGetImage(character.AvatarUrlFull!).Result ?
                             character.AvatarUrlFull : TryGetImage(character.AvatarUrlMini!).Result ?
@@ -240,7 +251,7 @@ namespace CharacterAI_Discord_Bot.Handlers
         }
 
         // Swipes
-        private async Task UpdateMessageAsync(IUserMessage message, Models.Channel currentChannel)
+        private async Task SwipeMessageAsync(IUserMessage message, Models.Channel currentChannel)
         {
             if (currentChannel.Data.LastCall!.RepliesList.Count < currentChannel.Data.LastCall.CurrentReplyIndex + 1)
             {
@@ -251,7 +262,7 @@ namespace CharacterAI_Discord_Bot.Handlers
 
                 if (!response.IsSuccessful)
                 {
-                    _ = message.ModifyAsync(msg => { msg.Content = $"{WARN_SIGN_DISCORD} Something went wrong!"; });
+                    _ = message.ModifyAsync(msg => { msg.Content = response.ErrorReason!.Replace(WARN_SIGN_UNICODE, WARN_SIGN_DISCORD); });
                     return;
                 }
                 currentChannel.Data.LastCall.RepliesList.AddRange(response.Replies);
@@ -273,11 +284,12 @@ namespace CharacterAI_Discord_Bot.Handlers
             if (currentChannel.Data.LastCharacterCallMsgId != 0)
             {
                 var lastMessage = await context.Message.Channel.GetMessageAsync(currentChannel.Data.LastCharacterCallMsgId);
-                _ = RemoveButtons(lastMessage, context.Client.CurrentUser);
+                _ = RemoveButtonsAsync(lastMessage, context.Client.CurrentUser);
             }
 
             // Prepare text data
             string text = RemoveMention(context.Message.Content);
+            
             int amode = currentChannel.Data.AudienceMode;
             if (amode == 1 || amode == 3)
                 text = AddUsername(text, context);
@@ -301,10 +313,10 @@ namespace CharacterAI_Discord_Bot.Handlers
             //        imgPath = $"https://characterai.io/i/400/static/user/{path}";
             //}
             
-            string historyId = currentChannel.Data.HistoryId;
+            string historyId = currentChannel.Data.HistoryId!;
             ulong? primaryMsgId = currentChannel.Data.LastCall?.CurrentPrimaryMsgId;
 
-            // Send message to the character
+            // Send message to a character
             var response = await CurrentIntegration.CallCharacterAsync(text, imgPath, historyId, primaryMsgId);
             currentChannel.Data.LastCall = new(response);
 
@@ -319,7 +331,7 @@ namespace CharacterAI_Discord_Bot.Handlers
                 });
             }
             else // Alert with error message if call fails
-                await context.Message.ReplyAsync(response.ErrorReason).ConfigureAwait(false);
+                await context.Message.ReplyAsync(response.ErrorReason!.Replace(WARN_SIGN_UNICODE, WARN_SIGN_DISCORD)).ConfigureAwait(false);
         }
 
         private bool UserIsBanned(SocketCommandContext context, bool checkOnly = false)

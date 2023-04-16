@@ -9,6 +9,7 @@ namespace CharacterAI_Discord_Bot.Service
     {
         internal static Emoji ARROW_LEFT = new("\u2B05");
         internal static Emoji ARROW_RIGHT = new("\u27A1");
+        //internal static Emoji REPEAT_BTN = new("\uD83D\uDD04");
         internal static Emoji STOP_BTN = new("\u26D4");
 
         public static async Task<ulong> RespondOnMessage(SocketUserMessage message, Reply reply, bool isPrivate, int delay)
@@ -30,17 +31,17 @@ namespace CharacterAI_Discord_Bot.Service
             bool isReplyToBot = botReply.ReferencedMessage is IUserMessage um && um.Author.IsBot;
             if (!isReplyToBot && BotConfig.SwipesEnabled)
             {
-                await AddArrowButtons(botReply).ConfigureAwait(false);
+                await AddArrowButtonsAsync(botReply).ConfigureAwait(false);
                 if (BotConfig.RemoveDelay != 0)
-                    _ = RemoveButtons(botReply, botReply.Author, delay: BotConfig.RemoveDelay);
+                    _ = RemoveButtonsAsync(botReply, botReply.Author, delay: BotConfig.RemoveDelay);
             }
             if (isReplyToBot && BotConfig.StopBtnEnabled)
-                await AddStopButton(botReply);
+                await AddStopButtonAsync(botReply);
 
             return botReply!.Id;
         }
 
-        public static async Task AddArrowButtons(IUserMessage? message)
+        public static async Task AddArrowButtonsAsync(IUserMessage? message)
         {
             if (message is null) return;
 
@@ -48,14 +49,21 @@ namespace CharacterAI_Discord_Bot.Service
             await message.AddReactionsAsync(btns).ConfigureAwait(false);
         }
 
-        public static async Task AddStopButton(IUserMessage? message)
+        public static async Task AddStopButtonAsync(IUserMessage? message)
         {
             if (message is null) return;
 
             await message.AddReactionAsync(STOP_BTN).ConfigureAwait(false);
         }
 
-        public static async Task RemoveButtons(IMessage lastMessage, IUser user, int delay = 0)
+        //public static async Task AddRepeatButtonAsync(IUserMessage? message)
+        //{
+        //    if (message is null) return;
+
+        //    await message.AddReactionAsync(REPEAT_BTN).ConfigureAwait(false);
+        //}
+
+        public static async Task RemoveButtonsAsync(IMessage lastMessage, IUser user, int delay = 0)
         {
             if (delay > 0)
                 await Task.Delay(delay * 1000);

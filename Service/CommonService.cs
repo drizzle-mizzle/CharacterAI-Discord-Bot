@@ -22,7 +22,7 @@ namespace CharacterAI_Discord_Bot.Service
 
         internal static readonly string nopowerPath = _imgPath + _config.Nopower;
         internal static readonly string defaultAvatarPath = _imgPath + "defaultAvatar.png";
-        internal static readonly string WARN_SIGN = "\u26A0";
+        internal static readonly string WARN_SIGN_UNICODE = "⚠";
         internal static readonly string WARN_SIGN_DISCORD = ":warning:";
 
         public static async Task AutoSetup(CommandsHandler handler, DiscordSocketClient client)
@@ -126,20 +126,22 @@ namespace CharacterAI_Discord_Bot.Service
                 if (line.Length < 5) continue;
 
                 var channelTemp = deserializer.Deserialize<ChannelTemp>(line);
-                string characterId = channelTemp.CharacterId!;
+                string? characterId = channelTemp.CharacterId;
 
                 if (characterId != currectCharId)
                     return new { BlackList = blackList, Channels = channels };
 
                 ulong channelId = channelTemp.Id;
                 ulong authorId = channelTemp.AuthorId;
-                string historyId = channelTemp.HistoryId!;
-                int amode = channelTemp.AudienceMode;
-                float replyChance = channelTemp.ReplyChance;
-                int replyDelay = channelTemp.ReplyDelay;
-                var channel = new Models.Channel(channelId, authorId, historyId, characterId);
-                channel.GuestsList = channelTemp.GuestsList!;
+                string? historyId = channelTemp.HistoryId!;
 
+                var data = new CharacterDialogData(characterId, historyId)
+                {
+                    AudienceMode = channelTemp.AudienceMode,
+                    ReplyChance = channelTemp.ReplyChance,
+                    ReplyDelay = channelTemp.ReplyDelay
+                };
+                var channel = new Channel(channelId, authorId, data) { GuestsList = channelTemp.GuestsList! };
                 channels.Add(channel);
             }
 
@@ -295,6 +297,10 @@ namespace CharacterAI_Discord_Bot.Service
             }
         }
 
+        public static void CommandsLog()
+            => Log("\nEnter \"kill\" to close all Puppeteer Chrome proccesses (if you use same 'custom_chrome_directory' for several bots at once, it will close chrome for them too).\n" +
+                     "Enter \"relaunch\" to relaunch chrome process.\n" +
+                     "Enter \"exit\" or \"stop\" to close the application (chrome processes will not be terminated).");
 
         // probably not useless
         //public static async Task CreateRole(DiscordSocketClient client)
@@ -314,6 +320,7 @@ namespace CharacterAI_Discord_Bot.Service
         //    Success("OK\n");
         //}
     }
+
 
     internal class ChannelTemp
     {

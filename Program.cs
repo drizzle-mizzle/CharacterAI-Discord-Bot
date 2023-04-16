@@ -24,7 +24,7 @@ namespace CharacterAI_Discord_Bot
 
             _client.Log += Log;
             _client.Ready += OnClientReady;
-            
+
             await _client.LoginAsync(TokenType.Bot, BotConfig.BotToken);
             await _client.StartAsync();
             await _services.GetRequiredService<CommandsHandler>().InitializeAsync();
@@ -47,9 +47,7 @@ namespace CharacterAI_Discord_Bot
                 await handler.CurrentIntegration.LaunchChromeAsync(BotConfig.CustomChromePath);
                 if (setup) await AutoSetup(handler, _client);
 
-                Log("\nEnter \"exit\" or \"stop\" to close application.\n" +
-                        "Enter \"kill\" to close all Puppeteer Chrome proccesses (if you use same 'custom_chrome_directory' for several bots at once, it will close chrome for them too).\n" +
-                        "Enter \"relaunch\" to relaunch chrome process.");
+                CommandsLog();
                 while (true)
                 {
                     Log("\n# ", ConsoleColor.Green);

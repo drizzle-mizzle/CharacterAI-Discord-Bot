@@ -55,21 +55,27 @@ namespace CharacterAI_Discord_Bot.Service
         // [Command("reset character")]
         public static async Task ResetCharacterAsync(CommandsHandler handler, SocketCommandContext context)
         {
-            var newHistoryId = await handler.CurrentIntegration.CreateNewChatAsync();
+            var cI = handler.CurrentIntegration;
+            var newHistoryId = await cI.CreateNewChatAsync();
             if (newHistoryId is null) return;
 
             var currentChannel = handler.Channels.Find(c => c.Id == context.Channel.Id);
-            var newChannel = new Channel(context.Channel.Id, context.User.Id, newHistoryId, handler.CurrentIntegration.CurrentCharacter.Id!);
+
+            var data = new CharacterDialogData(cI.CurrentCharacter.Id!, newHistoryId);
+            var newChannel = new Channel(context.Channel.Id, context.User.Id, data);
 
             if (currentChannel is not null)
             {
-                newChannel.GuestsList = currentChannel.GuestsList;
                 newChannel.Data.AudienceMode = currentChannel.Data.AudienceMode;
+                newChannel.Data.ReplyChance = currentChannel.Data.ReplyChance;
+                newChannel.Data.ReplyDelay = currentChannel.Data.ReplyDelay;
+                newChannel.Data.SkipMessages = currentChannel.Data.SkipMessages;
+                newChannel.GuestsList = currentChannel.GuestsList;
+
                 handler.Channels.Remove(currentChannel);
             }
 
             handler.Channels.Add(newChannel);
-
             SaveData(handler.Channels);
 
             await context.Message.ReplyAsync(handler.CurrentIntegration.CurrentCharacter.Greeting!);
@@ -101,7 +107,8 @@ namespace CharacterAI_Discord_Bot.Service
                 DeactivateOldUserChannel(handler, context.User.Id);
 
             // Update channels list
-            var newChannelItem = new Channel(newChannel.Id, context.User.Id, newChatHistoryId, cI.CurrentCharacter.Id!);
+            var data = new CharacterDialogData(cI.CurrentCharacter.Id!, newChatHistoryId) { AudienceMode = 0 };
+            var newChannelItem = new Channel(newChannel.Id, context.User.Id, data);
             handler.Channels.Add(newChannelItem);
 
             SaveData(channels: handler.Channels);

@@ -68,21 +68,26 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
                 "`activity <text> <type>` – change bot activity status\n    Type: `0` – Playing, `1` – Streaming, `2` – Listening, `3` – Watching, `4` – Custom (not working), `5` – Competing\n    *(default `type` value = 0)*\n    *(provide `0` for `text` to clear activity)*",
                 "`status <type>` – change bot presence status\n    Type: `0` – Offline, `1` – Online, `2` – Idle, `3` – AFK, `4` – DND, `5` – Invisible"
             };
-            if (Context.Guild is null)
+            if (Context.Guild is null) // DM commands
                 await Context.Message.ReplyAsync($"{userCommands[0]}\n{userCommands[1]}\n{managerCommands[2]}\n{managerCommands[4]}");
             else if (!ValidateBotRole(Context))
                 await Context.Message.ReplyAsync(string.Join("\n", userCommands));
             else
             {
-                var pages = Math.Ceiling((double)(managerCommands.Length / 5)) + 1;
+                float commandsCount = managerCommands.Length + userCommands.Length;
+                var pages = Math.Ceiling((double)(commandsCount / 5.0));
+
                 string text;
 
                 if (page == 1)
                     text = $"**Page 1/{pages}:**\n" + string.Join("\n", userCommands);
                 else // 2: 0..4, 3: 5..9, 4: 10..14
                 {
-                    int pos = page * 5 - 10;
-                    text = $"**Page {page}/{pages}:**\n" + string.Join("\n", managerCommands[pos..(pos + 5)]);
+                    int posA = page * 5 - 10;
+                    int posOverflow = posA + 4 - managerCommands.Length;
+                    int posB = posOverflow > 0 ? posA + posOverflow : posA + 5;
+
+                    text = $"**Page {page}/{pages}:**\n" + string.Join("\n", managerCommands[posA..posB]);
                 }
                 await Context.Message.ReplyAsync(text);
             }

@@ -14,7 +14,9 @@ namespace CharacterAI_Discord_Bot.Models
         public bool CharacterAvatarEnabled { get; }
         public bool CharacterNameEnabled { get; }
         public string CustomChromePath { get; }
+        public string CustomChromeExecPath { get; }
         public int DefaultAudienceMode { get; }
+        public int DefaultRepliesDealy { get; }
         public bool DescriptionInPlaying { get; }
         public bool DMenabled { get; }
         public string Nopower { get; }
@@ -42,6 +44,7 @@ namespace CharacterAI_Discord_Bot.Models
             CharacterAvatarEnabled = bool.Parse(GetValue("use_character_avatar"));
             CharacterNameEnabled = bool.Parse(GetValue("use_character_name"));
             DefaultAudienceMode = int.Parse(GetValue("default_audience_mode"));
+            DefaultRepliesDealy = int.Parse(GetValue("replies_delay"));
             DescriptionInPlaying = bool.Parse(GetValue("description_in_playing_status"));
             DMenabled = bool.Parse(GetValue("allow_dm"));
             Nopower = GetValue("default_no_permission_file");
@@ -52,11 +55,12 @@ namespace CharacterAI_Discord_Bot.Models
             StopBtnEnabled = bool.Parse(GetValue("enable_stop_button"));
             UserToken = GetValue("char_ai_user_token");
             CustomChromePath = GetValue("custom_chrome_directory");
+            CustomChromeExecPath = GetValue("custom_chrome_executable_full_path");
+            
             //SeparateHistoryOnlyInPrivates = bool.Parse(configParsed["separate_chat_history_only_for_privates"]!.Value<string>()!);
         }
 
         private string GetValue(string key)
             => _configParsed[key]!.Value<string>()!;
-
     }
 }

@@ -14,7 +14,7 @@ An unofficial Discord integration with a [CharacterAI](https://beta.character.ai
 - Talk with any character on your own server and change them on the fly.
 - Embedded character search.
 - Automatically sets the name and profile picture of a character.
-- Supports answers swiping and image sending.
+- Supports answers swiping <s>and image sending</s>broken.
 - Supports multiple parallel chats with the same character.
 - Random replies, audience mode and some other stuff.
 
@@ -25,8 +25,15 @@ An unofficial Discord integration with a [CharacterAI](https://beta.character.ai
 - [Commands](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/wiki/Commands)
 - [Additional configuration](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/wiki/Additional-configuration)
 
-<!-- ## 🩼Known issues
-Some **Windows users** are facing the problem of being unable to access character.ai: https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/issues/28 <br>
+## 🩼Known issues
+If you face problems with `set` and `find` command:
+```bash
+System.ArgumentOutOfRangeException: Index was out of range. Must be non-negative and less than the size of the collection. (Parameter 'index')
+   at System.Collections.Generic.List1.get_Item(Int32 index)
+   at CharacterAI_Discord_Bot.Handlers.CommandsHandler.HandleMessage(SocketMessage rawMsg)
+```
+Just use `auto_setup` in Config for now. It will be fixed in nearest update.
+<!-- Some **Windows users** are facing the problem of being unable to access character.ai: https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/issues/28 <br>
 If you encounter something similar to:<br>
 > `Request failed! (https://beta.character.ai/chat/character/info/)`<br>
 > `Response: Forbidden`
@@ -39,3 +46,7 @@ The simplest way is to just install WSL2 with Ubuntu, which is pretty easy to do
 [How to Install Ubuntu on WSL2 on Windows](https://ubuntu.com/tutorials/install-ubuntu-on-wsl2-on-windows-10#1-overview)
 (Additional guide for ducklings: https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/issues/41)
 -->
+
+## 👉👈 Support this project
+If you feel very-very grateful, you can express this gratitude here:<br>
+**https://boosty.to/drizzle-mizzle**

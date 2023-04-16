@@ -29,7 +29,9 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
                 else
                 {
                     text = $"{WARN_SIGN_DISCORD} **history_id** for this channel was changed from `{cc.Data.HistoryId}` to `{historyId}`";
+
                     cc.Data.HistoryId = historyId;
+                    SaveData(channels: _handler.Channels);
                 }
 
                 await Context.Message.ReplyAsync(text).ConfigureAwait(false);
@@ -62,9 +64,10 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
                 if (CurrentChannel is not Channel cc) return;
 
                 string text = $"{WARN_SIGN_DISCORD} Probability of random replies in current channel was changed from {cc.Data.ReplyChance}% to {chance}%";
-                cc.Data.ReplyChance = chance;
-
                 await Context.Message.ReplyAsync(text).ConfigureAwait(false);
+
+                cc.Data.ReplyChance = chance;
+                SaveData(channels: _handler.Channels);
             }
         }
 
@@ -80,9 +83,10 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
                 if (CurrentChannel is not Channel cc) return;
 
                 string text = $"{WARN_SIGN_DISCORD} Replies delay for current channel was changed from {cc.Data.ReplyDelay}s to {delay}s";
-                cc.Data.ReplyDelay = delay;
-
                 await Context.Message.ReplyAsync(text).ConfigureAwait(false);
+
+                cc.Data.ReplyDelay = delay;
+                SaveData(channels: _handler.Channels);
             }
         }
 

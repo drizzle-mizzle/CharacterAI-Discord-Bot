@@ -14,37 +14,31 @@ namespace CharacterAI_Discord_Bot.Models
         internal ulong AuthorId { get; set; }
         internal List<ulong> GuestsList { get; set; }
         internal CharacterDialogData Data { get; set; }
-        internal Channel(ulong channelId, ulong authorId, string historyId, string characterId)
+        internal Channel(ulong channelId, ulong authorId, CharacterDialogData data)
         {
             Id = channelId;
             AuthorId = authorId;
             GuestsList = new();
-            Data = new(historyId, characterId);
+            Data = data;
         }
     }
 
     internal class CharacterDialogData : CommonService
     {
-        internal string HistoryId { get; set; }
-        internal string CharacterId { get; }
-        internal int AudienceMode { get; set; }
-        internal float ReplyChance { get; set; }
-        internal int ReplyDelay { get; set; }
-        internal int SkipMessages { get; set; }
-        internal bool SkipNextBotMessage { get; set; }
-        internal ulong LastCharacterCallMsgId { get; set; } // discord message id
+        internal string? HistoryId { get; set; }
+        internal string? CharacterId { get; set; }
+        internal int AudienceMode { get; set; } = BotConfig.DefaultAudienceMode;
+        internal float ReplyChance { get; set; } = 0;
+        internal int ReplyDelay { get; set; } = BotConfig.DefaultRepliesDealy;
+        internal int SkipMessages { get; set; } = 0;
+        internal bool SkipNextBotMessage { get; set; } = false;
+        internal ulong LastCharacterCallMsgId { get; set; } = 0;// discord message id
         internal LastCharacterCall? LastCall { get; set; }
 
-        public CharacterDialogData(string historyId, string characterId)
+        public CharacterDialogData(string? characterId, string? historyId)
         {
             HistoryId = historyId;
             CharacterId = characterId;
-            AudienceMode = BotConfig.DefaultAudienceMode;
-            ReplyChance = 0;
-            ReplyDelay = 0;
-            SkipMessages = 0;
-            SkipNextBotMessage = false;
-            LastCharacterCallMsgId = 0;
         }
     }
 }

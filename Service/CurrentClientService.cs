@@ -74,10 +74,13 @@ namespace CharacterAI_Discord_Bot.Service
 
         public static async Task SetBotNickname(string name, DiscordSocketClient client)
         {
-            var guildID = client.Guilds.First().Id;
-            var botAsGuildUser = client.GetGuild(guildID).GetUser(client.CurrentUser.Id);
+            var guildsList = client.Guilds;
 
-            await botAsGuildUser.ModifyAsync(u => { u.Nickname = name; }).ConfigureAwait(false);
+            foreach (var guild in guildsList)
+            {
+                var botAsGuildUser = client.GetGuild(guild.Id).GetUser(client.CurrentUser.Id);
+                await botAsGuildUser.ModifyAsync(u => { u.Nickname = name; }).ConfigureAwait(false);
+            }
         }
 
         public static async Task SetBotAvatar(SocketSelfUser bot, Character character)

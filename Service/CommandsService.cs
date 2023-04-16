@@ -5,8 +5,6 @@ using CharacterAI_Discord_Bot.Handlers;
 using CharacterAI_Discord_Bot.Models;
 using CharacterAI;
 
-using static CharacterAI_Discord_Bot.Service.CurrentClientService;
-
 namespace CharacterAI_Discord_Bot.Service
 {
     /// <summary>

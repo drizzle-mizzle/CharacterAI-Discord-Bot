@@ -44,7 +44,7 @@ namespace CharacterAI_Discord_Bot
             try
             {
                 var handler = _services.GetRequiredService<CommandsHandler>();
-                await handler.CurrentIntegration.LaunchChromeAsync(BotConfig.CustomChromePath);
+                await handler.CurrentIntegration.LaunchChromeAsync(BotConfig.CustomChromePath, BotConfig.CustomChromeExecPath);
                 if (setup) await AutoSetup(handler, _client);
 
                 CommandsLog();

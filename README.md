@@ -25,24 +25,6 @@ An unofficial Discord integration with a [CharacterAI](https://beta.character.ai
 - [Commands](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/wiki/Commands)
 - [Additional configuration](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/wiki/Additional-configuration)
 
-## 🩼Known issues
-If you face problems with `set` and `find` command:
-```bash
-System.ArgumentOutOfRangeException: Index was out of range. Must be non-negative and less than the size of the collection. (Parameter 'index')
-   at System.Collections.Generic.List1.get_Item(Int32 index)
-   at CharacterAI_Discord_Bot.Handlers.CommandsHandler.HandleMessage(SocketMessage rawMsg)
-```
-Just use `auto_setup` in Config for now. It will be fixed in nearest update.
-<!-- Some **Windows users** are facing the problem of being unable to access character.ai: https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/issues/28 <br>
-If you encounter something similar to:<br>
-> `Request failed! (https://beta.character.ai/chat/character/info/)`<br>
-> `Response: Forbidden`
-
-First, make sure that you use correct cAI user token.<br>
-If it's correct, but you're still getting this error:
-- Try to use some VPN. 
-- If there's still no luck, or if you're not comfortable with using VPN, sadly, **the only available workaround right now is to use Linux OS** for hosting.<br>
-The simplest way is to just install WSL2 with Ubuntu, which is pretty easy to do, and launch this bot from there:<br>
-[How to Install Ubuntu on WSL2 on Windows](https://ubuntu.com/tutorials/install-ubuntu-on-wsl2-on-windows-10#1-overview)
-(Additional guide for ducklings: https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/issues/41)
+<!-- ## 🩼Known issues
 -->
+

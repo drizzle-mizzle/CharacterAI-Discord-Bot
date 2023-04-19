@@ -26,6 +26,6 @@
     "auto_setup": false,
     "auto_char_id": "_CHARACTER_ID_",
 
-    "custom_chrome_directory": "",
-    "custom_chrome_executable_full_path": ""
+    "custom_chrome_directory": null,
+    "custom_chrome_executable_full_path": null
 }

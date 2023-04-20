@@ -13,9 +13,8 @@ namespace CharacterAI_Discord_Bot.Handlers
     {
         internal Integration CurrentIntegration { get; }
         internal List<ulong> BlackList { get; set; } = new();
-        internal List<Models.Channel> Channels { get; set; } = new();
+        internal List<Models.DiscordChannel> Channels { get; set; } = new();
         internal LastSearchQuery? LastSearch { get; set; }
-        internal Dictionary<ulong, int> HuntedUsers { get; set; } = new(); // user id : reply chance
 
         private readonly Dictionary<ulong, int[]> _userMsgCount = new();
         private readonly DiscordSocketClient _client;
@@ -37,7 +36,7 @@ namespace CharacterAI_Discord_Bot.Handlers
             _client.JoinedGuild += (s) => Task.Run(() =>
             {
                 if (CurrentIntegration.CurrentCharacter.Name is string name)
-                    _ = CurrentClientService.SetBotNickname(name, _client);
+                    _ = CurrentClientService.SetBotNicknameAndRole(name, _client);
             });
         }
 
@@ -61,9 +60,11 @@ namespace CharacterAI_Discord_Bot.Handlers
             bool hasMention = isDM || message.HasMentionPrefix(_client.CurrentUser, ref argPos);
             bool hasPrefix = hasMention || prefixes.Any(p => message.HasStringPrefix(p, ref argPos));
             bool hasReply = hasPrefix || (message.ReferencedMessage != null && message.ReferencedMessage.Author.Id == _client.CurrentUser.Id);
-            bool randomReply = hasReply || (currentChannel is Channel cc && cc.Data.ReplyChance > (random.Next(99) + 0.001 + random.NextDouble())); // min: 0 + 0.001 + 0 = 0.001; max: 98 + 0.001 + 1 = 99.001
+
+            bool cnn = currentChannel is not null;
+            bool randomReply = hasReply || (cnn && currentChannel!.Data.ReplyChance > (random.Next(99) + 0.001 + random.NextDouble())); // min: 0 + 0.001 + 0 = 0.001; max: 98 + 0.001 + 1 = 99.001
             // Any condition above or if user is hunted
-            bool gottaReply = randomReply || (HuntedUsers.ContainsKey(authorId) && HuntedUsers[authorId] >= random.Next(100) + 1);
+            bool gottaReply = randomReply || (cnn && currentChannel!.Data.HuntedUsers.ContainsKey(authorId) && currentChannel.Data.HuntedUsers[authorId] >= random.Next(100) + 1);
 
             if (!gottaReply) return;
 
@@ -72,7 +73,7 @@ namespace CharacterAI_Discord_Bot.Handlers
                 if (isPrivate) return; // don't handle deactivated "private" chats
 
                 var data = new CharacterDialogData(null, null);
-                currentChannel = new Channel(context.Channel.Id, context.User.Id, data);
+                currentChannel = new DiscordChannel(context.Channel.Id, context.User.Id, data);
                 Channels.Add(currentChannel);
 
                 if (!cI.CurrentCharacter.IsEmpty)
@@ -120,8 +121,7 @@ namespace CharacterAI_Discord_Bot.Handlers
             if (currentChannel.Data.SkipMessages > 0)
                 currentChannel.Data.SkipMessages--;
             else
-                using (message.Channel.EnterTypingState())
-                    _ = TryToCallCharacterAsync(context, currentChannel, isDM || isPrivate);
+                _ = TryToCallCharacterAsync(context, currentChannel, isDM || isPrivate);
         }
 
         private async Task HandleReaction(Cacheable<IUserMessage, ulong> rawMessage, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
@@ -250,7 +250,7 @@ namespace CharacterAI_Discord_Bot.Handlers
         }
 
         // Swipes
-        private async Task SwipeMessageAsync(IUserMessage message, Models.Channel currentChannel)
+        private async Task SwipeMessageAsync(IUserMessage message, Models.DiscordChannel currentChannel)
         {
             if (currentChannel.Data.LastCall!.RepliesList.Count < currentChannel.Data.LastCall.CurrentReplyIndex + 1)
             {
@@ -273,11 +273,15 @@ namespace CharacterAI_Discord_Bot.Handlers
             if (newReply.HasImage && await TryGetImage(newReply.ImageRelPath!))
                 embed = new EmbedBuilder().WithImageUrl(newReply.ImageRelPath).Build();
 
-            _ = message.ModifyAsync(msg => { msg.Content = $"{newReply.Text}"; msg.Embed = embed; })
+            string replyText = newReply.Text!;
+            if (replyText.Length > 2000)
+                replyText = replyText[0..1996] + "...";
+
+            _ = message.ModifyAsync(msg => { msg.Content = $"{replyText}"; msg.Embed = embed; })
                 .ConfigureAwait(false);
         }
 
-        private async Task TryToCallCharacterAsync(SocketCommandContext context, Models.Channel currentChannel, bool inDMorPrivate)
+        private async Task TryToCallCharacterAsync(SocketCommandContext context, Models.DiscordChannel currentChannel, bool inDMorPrivate)
         {
             // Get last call and remove buttons from it
             if (currentChannel.Data.LastCharacterCallMsgId != 0)
@@ -290,7 +294,7 @@ namespace CharacterAI_Discord_Bot.Handlers
             string text = RemoveMention(context.Message.Content);
 
             int amode = currentChannel.Data.AudienceMode;
-            if (amode == 1 || amode == 3)
+            if (amode == 1 || amode == 3 || inDMorPrivate)
                 text = AddUsername(text, context);
             if (amode == 2 || amode == 3)
                 text = AddQuote(text, context.Message);
@@ -316,6 +320,7 @@ namespace CharacterAI_Discord_Bot.Handlers
             ulong? primaryMsgId = currentChannel.Data.LastCall?.CurrentPrimaryMsgId;
 
             // Send message to a character
+            await Task.Delay(currentChannel.Data.ReplyDelay * 1000); // wait
             var response = await CurrentIntegration.CallCharacterAsync(text, imgPath, historyId, primaryMsgId);
             currentChannel.Data.LastCall = new(response);
 
@@ -325,7 +330,7 @@ namespace CharacterAI_Discord_Bot.Handlers
                 var reply = currentChannel.Data.LastCall!.RepliesList.First();
                 _ = Task.Run(async () =>
                 {
-                    var msgId = await RespondOnMessage(context.Message, reply, inDMorPrivate, currentChannel.Data.ReplyDelay);
+                    var msgId = await RespondOnMessage(context.Message, reply, inDMorPrivate);
                     currentChannel.Data.LastCharacterCallMsgId = msgId;
                 });
             }
@@ -336,7 +341,7 @@ namespace CharacterAI_Discord_Bot.Handlers
         private bool UserIsBanned(SocketCommandContext context, bool checkOnly = false)
         {
             ulong currUserId = context.Message.Author.Id;
-            if (context.Guild is not null && currUserId == context.Guild.OwnerId)
+            if (context.Guild is not null && !BotConfig.PublicMode && currUserId == context.Guild.OwnerId)
                 return false;
 
             if (BlackList.Contains(currUserId)) return true;

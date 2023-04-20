@@ -64,16 +64,24 @@ namespace CharacterAI_Discord_Bot.Service
             if (BotConfig.CharacterAvatarEnabled)
                 await SetBotAvatar(client.CurrentUser, cI.CurrentCharacter).ConfigureAwait(false);
             if (BotConfig.CharacterNameEnabled)
-                await SetBotNickname(cI.CurrentCharacter.Name!, client).ConfigureAwait(false);
+                await SetBotNicknameAndRole(cI.CurrentCharacter.Name!, client).ConfigureAwait(false);
         }
 
-        internal static void SaveData(List<Models.Channel>? channels = null, List<ulong>? blackList = null)
+        internal static async Task CreateBotRoleAsync(SocketGuild guild)
+        {
+            var role = guild.Roles.FirstOrDefault(r => r.Name == BotConfig.BotRole);
+            if (role is not null) return;
+
+            await guild.CreateRoleAsync(BotConfig.BotRole, color: new Color(19, 142, 236));
+        }
+
+        internal static void SaveData(List<Models.DiscordChannel>? channels = null, List<ulong>? blackList = null)
         {
             var serializer = new SerializerBuilder()
                 .WithNamingConvention(PascalCaseNamingConvention.Instance)
                 .Build();
 
-            if (blackList is not null && blackList.Any())
+            if (blackList is not null)
             {
                 string blackListYAML = string.Join(", ", blackList);
                 File.WriteAllText(_storagePath + "blacklist.yaml", blackListYAML);
@@ -119,7 +127,7 @@ namespace CharacterAI_Discord_Bot.Service
                 foreach (var id in blackListYAML.Split(", "))
                     blackList.Add(ulong.Parse(id));
 
-            var channels = new List<Models.Channel>();
+            var channels = new List<Models.DiscordChannel>();
             
             foreach (string line in channelsYAML.Split("-------------------"))
             {
@@ -141,7 +149,7 @@ namespace CharacterAI_Discord_Bot.Service
                     ReplyChance = channelTemp.ReplyChance,
                     ReplyDelay = channelTemp.ReplyDelay
                 };
-                var channel = new Channel(channelId, authorId, data) { GuestsList = channelTemp.GuestsList! };
+                var channel = new DiscordChannel(channelId, authorId, data) { GuestsList = channelTemp.GuestsList! };
                 channels.Add(channel);
             }
 
@@ -173,24 +181,6 @@ namespace CharacterAI_Discord_Bot.Service
             return list.Build();
         }
 
-        /// <summary>
-        /// Remove prefix and/or @mention_prefix
-        /// </summary>
-        public static string RemoveMention(string text)
-        {
-            text = text.Trim();
-            // Remove first @mention
-            if (text.StartsWith("<"))
-                text = new Regex("\\<(.*?)\\>").Replace(text, "", 1);
-            // Remove prefix
-            var prefixes = _config.BotPrefixes.OrderBy(p => p.Length).Reverse().ToArray(); // ex: "~ai" first, only then "~"
-            foreach (string prefix in prefixes)
-                if (text.StartsWith(prefix))
-                    text = text.Replace(prefix, "");
-
-            return text;
-        }
-
         public static async Task<byte[]?> TryDownloadImgAsync(string url)
         {
             if (string.IsNullOrEmpty(url)) return null;
@@ -218,37 +208,6 @@ namespace CharacterAI_Discord_Bot.Service
                     await Task.Delay(3000);
 
             return false;
-        }
-
-        public static string AddUsername(string text, SocketCommandContext context)
-        {
-            string name;
-            if (context.Guild is null)
-                name = context.User.Username;
-            else
-            {
-                var guildUser = context.User as SocketGuildUser;
-                name = guildUser?.Nickname ?? guildUser!.Username;
-            }
-
-            string username = BotConfig.AudienceModeNameFormat.Replace("{username}", name);
-            if (!string.IsNullOrWhiteSpace(text))
-                text = username + text;
-
-            return text;
-        }
-
-        public static string AddQuote(string text, SocketUserMessage message)
-        {
-            var refMsg = message.ReferencedMessage;
-            bool hasRefMessage = refMsg is not null && !string.IsNullOrEmpty(refMsg.Content);
-            if (hasRefMessage)
-            {
-                string quote = BotConfig.AudienceModeQuoteFormat.Replace("{quote}", refMsg!.Content);
-                text = quote + text;
-            }
-
-            return text;
         }
 
         // Log and return true
@@ -307,7 +266,7 @@ namespace CharacterAI_Discord_Bot.Service
 
         public static void CommandsLog()
             => Log("\nEnter \"kill\" to close all Puppeteer Chrome proccesses (if you use same 'custom_chrome_directory' for several bots at once, it will close chrome for them too).\n" +
-                     "Enter \"relaunch\" to relaunch chrome process.\n" +
+                     "Enter \"launch\" to launch Puppeteer Chrome process again.\n" +
                      "Enter \"exit\" or \"stop\" to close the application (chrome processes will not be terminated).");
 
         // probably not useless

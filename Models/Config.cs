@@ -15,14 +15,16 @@ namespace CharacterAI_Discord_Bot.Models
         public string Category { get; }
         public bool CharacterAvatarEnabled { get; }
         public bool CharacterNameEnabled { get; }
-        public string CustomChromePath { get; }
-        public string CustomChromeExecPath { get; }
+        public string? CustomChromePath { get; }
+        public string? CustomChromeExecPath { get; }
         public int DefaultAudienceMode { get; }
         public int DefaultRepliesDealy { get; }
         public bool DescriptionInPlaying { get; }
         public bool DMenabled { get; }
+        public ulong? HosterDiscordId { get; set; }
         public string Nopower { get; }
         public bool PrivateChatRoleRequired { get; }
+        public bool PublicMode { get; }
         public int RateLimit { get; }
         public int RemoveDelay { get; }
         public bool SwipesEnabled { get; }
@@ -49,6 +51,7 @@ namespace CharacterAI_Discord_Bot.Models
             DefaultRepliesDealy = int.Parse(GetValue("replies_delay"));
             DescriptionInPlaying = bool.Parse(GetValue("description_in_playing_status"));
             DMenabled = bool.Parse(GetValue("allow_dm"));
+            HosterDiscordId = GetValue("hoster_discord_id") is string hdi ? ulong.Parse(hdi) : null;
             Nopower = GetValue("default_no_permission_file");
             PrivateChatRoleRequired = bool.Parse(GetValue("private_chat_role_required"));
             AudienceModeNameFormat = GetValue("audience_mode_username_format");
@@ -60,11 +63,12 @@ namespace CharacterAI_Discord_Bot.Models
             UserToken = GetValue("char_ai_user_token");
             CustomChromePath = GetValue("custom_chrome_directory");
             CustomChromeExecPath = GetValue("custom_chrome_executable_full_path");
-            
+            PublicMode = bool.Parse(GetValue("public_mode"));
+
             //SeparateHistoryOnlyInPrivates = bool.Parse(configParsed["separate_chat_history_only_for_privates"]!.Value<string>()!);
         }
 
         private string GetValue(string key)
-            => _configParsed[key]!.Value<string>()!;
+            => _configParsed[key]!.Value<string?>()!;
     }
 }

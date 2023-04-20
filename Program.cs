@@ -24,12 +24,18 @@ namespace CharacterAI_Discord_Bot
 
             _client.Log += Log;
             _client.Ready += OnClientReady;
+            _client.JoinedGuild += OnGuildJoin;
 
             await _client.LoginAsync(TokenType.Bot, BotConfig.BotToken);
             await _client.StartAsync();
             await _services.GetRequiredService<CommandsHandler>().InitializeAsync();
 
             await Task.Delay(-1);
+        }
+
+        private async Task OnGuildJoin(SocketGuild guild)
+        {
+            await CreateBotRoleAsync(guild);
         }
 
         public Task OnClientReady()
@@ -51,14 +57,16 @@ namespace CharacterAI_Discord_Bot
                 while (true)
                 {
                     Log("\n# ", ConsoleColor.Green);
-                    string? input = Console.ReadLine()?.Trim().Trim('\"');
+                    string? input = Console.ReadLine();
+                    input = input?.Trim().Trim('\"');
+
                     if (input is null) continue;
 
                     switch (input)
                     {
                         case "exit" or "stop": Environment.Exit(0); break;
                         case "kill": KillChromes(); break;
-                        case "relaunch": KillChromes(); await LaunchChromeAndSetup(false); break;
+                        case "launch": await LaunchChromeAndSetup(false); break;
                     };
                 }
             }

@@ -53,7 +53,7 @@ namespace CharacterAI_Discord_Bot.Service
             string reply = cI.CurrentCharacter.Greeting!;
 
             if (BotConfig.CharacterAvatarEnabled)
-                try { await SetBotNickname(cI.CurrentCharacter.Name!, context.Client).ConfigureAwait(false); }
+                try { await SetBotNicknameAndRole(cI.CurrentCharacter.Name!, context.Client).ConfigureAwait(false); }
                 catch { reply += "\n⚠️ Failed to set bot name! Probably, missing permissions?"; }
             if (BotConfig.CharacterNameEnabled)
                 try { await SetBotAvatar(context.Client.CurrentUser, cI.CurrentCharacter!).ConfigureAwait(false); }
@@ -66,14 +66,16 @@ namespace CharacterAI_Discord_Bot.Service
                 .ConfigureAwait(false);
         }
 
-        public static async Task SetBotNickname(string name, DiscordSocketClient client)
+        public static async Task SetBotNicknameAndRole(string name, DiscordSocketClient client)
         {
             var guildsList = client.Guilds;
 
             foreach (var guild in guildsList)
-            {
-                var botAsGuildUser = client.GetGuild(guild.Id).GetUser(client.CurrentUser.Id);
+            {   
+                var botAsGuildUser = guild.GetUser(client.CurrentUser.Id);
                 await botAsGuildUser.ModifyAsync(u => { u.Nickname = name; }).ConfigureAwait(false);
+                
+                await CreateBotRoleAsync(guild);
             }
         }
 

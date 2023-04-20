@@ -16,7 +16,7 @@ namespace CharacterAI_Discord_Bot.Service
         internal static void DeactivateOldUserChannel(CommandsHandler handler, ulong userId)
         {
             var userChannels = handler.Channels.Where(c => c.AuthorId == userId);
-            var newChannelsList = new List<Channel>();
+            var newChannelsList = new List<DiscordChannel>();
             newChannelsList.AddRange(handler.Channels); // add all channels
 
             foreach (var userChannel in userChannels)
@@ -39,8 +39,12 @@ namespace CharacterAI_Discord_Bot.Service
 
             // Create category if it does not exist.
             var newCategory = await context.Guild.CreateCategoryChannelAsync(categoryName, c =>
-            {   // Hide it for everyone
-                c.PermissionOverwrites = new List<Overwrite>() { ViewChannelPermOverwrite(context.Guild.EveryoneRole, PermValue.Allow) };
+            {   // Hide it for everyone except bot
+                c.PermissionOverwrites = new List<Overwrite>()
+                {
+                    ViewChannelPermOverwrite(context.Client.CurrentUser, PermValue.Allow),
+                    ViewChannelPermOverwrite(context.Guild.EveryoneRole, PermValue.Deny)
+                };
             });
 
             return newCategory.Id;
@@ -49,18 +53,19 @@ namespace CharacterAI_Discord_Bot.Service
         internal static async Task<RestTextChannel> CreateChannelAsync(SocketCommandContext context, ulong categoryId, Integration cI)
         {
             string channelName = $"private chat with {cI.CurrentCharacter.Name}";
-            var overwritesList = new List<Overwrite>
-            {
-                ViewChannelPermOverwrite(context.Guild.EveryoneRole, PermValue.Deny),
-                ViewChannelPermOverwrite(context.Message.Author, PermValue.Allow),
-                ViewChannelPermOverwrite(context.Client.CurrentUser, PermValue.Allow)
-            };
+            var category = context.Guild.GetCategoryChannel(categoryId);
 
-            var newChannel = await context.Guild.CreateTextChannelAsync(channelName, c =>
+            var catPerms = new List<Overwrite>() { ViewChannelPermOverwrite(context.Message.Author, PermValue.Allow) };
+            await category.ModifyAsync(c => c.PermissionOverwrites = catPerms);
+
+            var channelPerms = new List<Overwrite>()
             {
-                c.CategoryId = categoryId;
-                c.PermissionOverwrites = overwritesList;
-            });
+                ViewChannelPermOverwrite(context.Message.Author, PermValue.Allow),
+                ViewChannelPermOverwrite(context.Client.CurrentUser, PermValue.Allow),
+                ViewChannelPermOverwrite(context.Guild.EveryoneRole, PermValue.Deny)
+            };
+            var newChannel = await context.Guild.CreateTextChannelAsync(channelName, c
+                => { c.CategoryId = categoryId; c.PermissionOverwrites = channelPerms; });
 
             return newChannel;
         }

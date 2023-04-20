@@ -9,7 +9,7 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
     public class PrivateChannelCommands : ModuleBase<SocketCommandContext>
     {
         private readonly CommandsHandler _handler;
-        private Models.Channel? GetCurrentChannel(ulong channelId)
+        private Models.DiscordChannel? GetCurrentChannel(ulong channelId)
             => _handler.Channels.Find(c => c.Id == channelId && c.AuthorId == Context.User.Id);
 
         public PrivateChannelCommands(CommandsHandler handler)
@@ -19,7 +19,7 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
         [Alias("pc")]
         public async Task CreatePrivateChat()
         {
-            if (BotConfig.PrivateChatRoleRequired && !ValidateBotRole(Context))
+            if (BotConfig.PrivateChatRoleRequired && !ValidateUserAccess(Context))
                 await NoPermissionAlert(Context).ConfigureAwait(false);
             else if (_handler.CurrentIntegration.CurrentCharacter.IsEmpty)
                 await Context.Message.ReplyAsync($"{WARN_SIGN_DISCORD} Set a character first").ConfigureAwait(false);
@@ -68,7 +68,7 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
         [Command("clear")]
         public async Task ClearPrivates()
         {
-            if (!ValidateBotRole(Context))
+            if (!ValidateUserAccess(Context))
             {
                 await NoPermissionAlert(Context).ConfigureAwait(false);
                 return;

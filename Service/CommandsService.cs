@@ -60,7 +60,7 @@ namespace CharacterAI_Discord_Bot.Service
             var currentChannel = handler.Channels.Find(c => c.Id == context.Channel.Id);
 
             var data = new CharacterDialogData(cI.CurrentCharacter.Id!, newHistoryId);
-            var newChannel = new Channel(context.Channel.Id, context.User.Id, data);
+            var newChannel = new DiscordChannel(context.Channel.Id, context.User.Id, data);
 
             if (currentChannel is not null)
             {
@@ -106,7 +106,7 @@ namespace CharacterAI_Discord_Bot.Service
 
             // Update channels list
             var data = new CharacterDialogData(cI.CurrentCharacter.Id!, newChatHistoryId) { AudienceMode = 0 };
-            var newChannelItem = new Channel(newChannel.Id, context.User.Id, data);
+            var newChannelItem = new DiscordChannel(newChannel.Id, context.User.Id, data);
             handler.Channels.Add(newChannelItem);
 
             SaveData(channels: handler.Channels);
@@ -122,7 +122,7 @@ namespace CharacterAI_Discord_Bot.Service
             return Task.CompletedTask;
         }
 
-        public static bool ValidateBotRole(SocketCommandContext context)
+        public static bool ValidateUserAccess(SocketCommandContext context)
         {
             if (context.Guild is null) throw new Exception("Not a guild channel.");
 
@@ -133,6 +133,14 @@ namespace CharacterAI_Discord_Bot.Service
             var requiredRole = roles.FirstOrDefault(role => role.Name == BotConfig.BotRole);
 
             return user.Roles.Contains(requiredRole);
+        }
+
+        public static bool ValidatePublic(SocketCommandContext context)
+        {
+            if (!BotConfig.PublicMode) return true;
+            if (BotConfig.HosterDiscordId is null) return false;
+
+            return context.Message.Author.Id == BotConfig.HosterDiscordId;
         }
     }
 }

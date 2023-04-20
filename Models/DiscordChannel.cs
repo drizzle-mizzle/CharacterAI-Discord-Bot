@@ -2,13 +2,13 @@
 
 namespace CharacterAI_Discord_Bot.Models
 {
-    internal class Channel
+    internal class DiscordChannel
     {
         internal ulong Id { get; set; }
         internal ulong AuthorId { get; set; }
         internal List<ulong> GuestsList { get; set; }
         internal CharacterDialogData Data { get; set; }
-        internal Channel(ulong channelId, ulong authorId, CharacterDialogData data)
+        internal DiscordChannel(ulong channelId, ulong authorId, CharacterDialogData data)
         {
             Id = channelId;
             AuthorId = authorId;
@@ -27,6 +27,7 @@ namespace CharacterAI_Discord_Bot.Models
         internal int SkipMessages { get; set; } = 0;
         internal bool SkipNextBotMessage { get; set; } = false;
         internal ulong LastCharacterCallMsgId { get; set; } = 0;// discord message id
+        internal Dictionary<ulong, int> HuntedUsers { get; set; } = new(); // user id : reply chance
         internal LastCharacterCall? LastCall { get; set; }
 
         public CharacterDialogData(string? characterId, string? historyId)

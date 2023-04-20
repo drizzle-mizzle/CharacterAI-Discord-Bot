@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+    <StartupObject>CharacterAI_Discord_Bot.Program</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>

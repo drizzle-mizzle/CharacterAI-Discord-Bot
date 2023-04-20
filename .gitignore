@@ -133,3 +133,5 @@ $RECYCLE.BIN/
 _NCrunch*
 .vs
 __Config.json
+.vscode/launch.json
+.vscode/tasks.json

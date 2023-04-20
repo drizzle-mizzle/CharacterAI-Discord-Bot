@@ -27,5 +27,7 @@
     "auto_char_id": "_CHARACTER_ID_",
 
     "custom_chrome_directory": null,
-    "custom_chrome_executable_full_path": null
+    "custom_chrome_executable_full_path": null,
+    "public_mode": false,
+    "hoster_discord_id": null
 }

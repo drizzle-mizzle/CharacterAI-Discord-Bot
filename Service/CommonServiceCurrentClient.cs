@@ -7,9 +7,12 @@ using Discord.WebSocket;
 
 namespace CharacterAI_Discord_Bot.Service
 {
-    public class CurrentClientService : CommonService
+    /// <summary>
+    /// Just a set of methods that change bot basic definitions
+    /// </summary>
+    public partial class CommonService
     {
-        public static async Task SetCharacterAsync(string charId, CommandsHandler handler, SocketCommandContext context, bool reset = false)
+        public async Task SetCharacterAsync(string charId, CommandsHandler handler, SocketCommandContext context, bool reset = false)
         {
             var cI = handler.CurrentIntegration;
 
@@ -56,7 +59,7 @@ namespace CharacterAI_Discord_Bot.Service
                 try { await SetBotNicknameAndRole(cI.CurrentCharacter.Name!, context.Client).ConfigureAwait(false); }
                 catch { reply += "\n⚠️ Failed to set bot name! Probably, missing permissions?"; }
             if (BotConfig.CharacterNameEnabled)
-                try { await SetBotAvatar(context.Client.CurrentUser, cI.CurrentCharacter!).ConfigureAwait(false); }
+                try { await SetBotAvatar(context.Client.CurrentUser, cI.CurrentCharacter!, @HttpClient).ConfigureAwait(false); }
                 catch { reply += "\n⚠️ Failed to set bot avatar!"; }
             if (BotConfig.DescriptionInPlaying)
                 _ = SetPlayingStatusAsync(context.Client, integration: cI).ConfigureAwait(false);
@@ -66,24 +69,27 @@ namespace CharacterAI_Discord_Bot.Service
                 .ConfigureAwait(false);
         }
 
-        public static async Task SetBotNicknameAndRole(string name, DiscordSocketClient client)
+        public async Task SetBotNicknameAndRole(string name, DiscordSocketClient client)
         {
             var guildsList = client.Guilds;
 
             foreach (var guild in guildsList)
-            {   
-                var botAsGuildUser = guild.GetUser(client.CurrentUser.Id);
-                await botAsGuildUser.ModifyAsync(u => { u.Nickname = name; }).ConfigureAwait(false);
-                
-                await CreateBotRoleAsync(guild);
+            {
+                try
+                {
+                    var botAsGuildUser = guild.GetUser(client.CurrentUser.Id);
+                    await botAsGuildUser.ModifyAsync(u => { u.Nickname = name; }).ConfigureAwait(false);
+
+                    await CreateBotRoleAsync(guild);
+                } catch { };
             }
         }
 
-        public static async Task SetBotAvatar(SocketSelfUser bot, Character character)
+        public async Task SetBotAvatar(SocketSelfUser bot, Character character, HttpClient httpClient)
         {
             Stream image;
-            byte[]? response = await TryDownloadImgAsync(character.AvatarUrlFull!);
-            response ??= await TryDownloadImgAsync(character.AvatarUrlMini!);
+            byte[]? response = await TryDownloadImgAsync(character.AvatarUrlFull!, httpClient);
+            response ??= await TryDownloadImgAsync(character.AvatarUrlMini!, httpClient);
 
             if (response is not null)
                 image = new MemoryStream(response);
@@ -100,7 +106,7 @@ namespace CharacterAI_Discord_Bot.Service
             await bot.ModifyAsync(u => { u.Avatar = new Discord.Image(image); }).ConfigureAwait(false);
         }
 
-        public static async Task SetPlayingStatusAsync(DiscordSocketClient client, int type = 0, string? status = null, Integration? integration = null)
+        public async Task SetPlayingStatusAsync(DiscordSocketClient client, int type = 0, string? status = null, Integration? integration = null)
         {
             if (integration is not null)
                 status = integration.CurrentCharacter.IsEmpty ? "No character selected" : integration.CurrentCharacter.Title;

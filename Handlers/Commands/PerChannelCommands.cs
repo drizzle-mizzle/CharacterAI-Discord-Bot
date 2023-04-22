@@ -4,7 +4,6 @@ using Discord.Commands;
 using Discord.WebSocket;
 using static CharacterAI_Discord_Bot.Service.CommandsService;
 using static CharacterAI_Discord_Bot.Service.CommonService;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace CharacterAI_Discord_Bot.Handlers.Commands
 {
@@ -36,6 +35,8 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
                 if (CurrentChannel is not DiscordChannel cc) return;
 
                 string text = $"{WARN_SIGN_DISCORD} **history_id** for this channel was changed from `{cc.Data.HistoryId}` to `{historyId}`";
+                if (historyId.Length != 43)
+                    text += $"\nEntered history_id has a length that is different from expected ({historyId.Length}/43). Make sure it's correct.";
 
                 cc.Data.HistoryId = historyId;
                 SaveData(channels: _handler.Channels);
@@ -77,7 +78,7 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
             else if (_handler.CurrentIntegration.CurrentCharacter.IsEmpty)
                 await Context.Message.ReplyAsync($"{WARN_SIGN_DISCORD} Set a character first").ConfigureAwait(false);
             else
-                using (Context.Message.Channel.EnterTypingState())
+                using (Context.Channel.EnterTypingState())
                     _ = ResetCharacterAsync(_handler, Context);
         }
 

@@ -22,6 +22,9 @@ namespace CharacterAI_Discord_Bot
 
             if (BotConfig is null) return;
 
+            // So it would simply not show that annoying error in console.
+            // Presence Intent itself is actually needed for commands that take user as an argument.
+            _client.PresenceUpdated += (a, b, c) => Task.CompletedTask;
             _client.Log += Log;
             _client.Ready += OnClientReady;
             _client.JoinedGuild += OnGuildJoin;
@@ -36,6 +39,7 @@ namespace CharacterAI_Discord_Bot
         private async Task OnGuildJoin(SocketGuild guild)
         {
             await CreateBotRoleAsync(guild);
+            Success($"Joined guild: {guild.Name} | Owner: {guild.Owner.Username} | Members: {guild.MemberCount}");
         }
 
         public Task OnClientReady()
@@ -96,6 +100,8 @@ namespace CharacterAI_Discord_Bot
 
         private Task Log(LogMessage log)
         {
+            if (log.Exception is NullReferenceException) return Task.CompletedTask;
+
             Console.WriteLine(log.ToString());
 
             return Task.CompletedTask;

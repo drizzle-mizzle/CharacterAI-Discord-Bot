@@ -4,14 +4,13 @@ using Discord.Commands;
 using Discord.WebSocket;
 using static CharacterAI_Discord_Bot.Service.CommandsService;
 using static CharacterAI_Discord_Bot.Service.CommonService;
-using CharacterAI_Discord_Bot.Models;
 
 namespace CharacterAI_Discord_Bot.Handlers.Commands
 {
     public class GlobalCommands : ModuleBase<SocketCommandContext>
     {
         private readonly CommandsHandler _handler;
-        private DiscordChannel? CurrentChannel => _handler.Channels.Find(c => c.Id == Context.Channel.Id);
+
         public GlobalCommands(CommandsHandler handler)
             => _handler = handler;
 
@@ -22,7 +21,7 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
             if (!ValidatePublic(Context) || !ValidateUserAccess(Context))
                 await NoPermissionAlert(Context).ConfigureAwait(false);
             else
-                using (Context.Message.Channel.EnterTypingState())
+                using (Context.Channel.EnterTypingState())
                     _ = FindCharacterAsync(query, _handler, Context);
         }
 
@@ -33,8 +32,8 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
             if (!ValidatePublic(Context) || !ValidateUserAccess(Context))
                 await NoPermissionAlert(Context).ConfigureAwait(false);
             else
-                using (Context.Message.Channel.EnterTypingState())
-                    _ = SetCharacterAsync(charID, _handler, Context);
+                using (Context.Channel.EnterTypingState())
+                    _ = _handler.SetCharacterAsync(charID, _handler, Context);
         }
 
         [Command("ignore")]
@@ -73,7 +72,7 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
             if (!ValidatePublic(Context) || !ValidateUserAccess(Context))
                 await NoPermissionAlert(Context).ConfigureAwait(false);
             else
-                await SetPlayingStatusAsync(Context.Client, status: status, type: type);
+                await _handler.SetPlayingStatusAsync(Context.Client, status: status, type: type);
         }
 
         [Command("status")]

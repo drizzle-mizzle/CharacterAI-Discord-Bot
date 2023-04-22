@@ -4,18 +4,11 @@ using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using CharacterAI_Discord_Bot.Service;
-using CharacterAI_Discord_Bot.Models;
-using CharacterAI;
 
 namespace CharacterAI_Discord_Bot.Handlers
 {
     public class CommandsHandler : HandlerService
     {
-        internal Integration CurrentIntegration { get; }
-        internal List<ulong> BlackList { get; set; } = new();
-        internal List<Models.DiscordChannel> Channels { get; set; } = new();
-        internal LastSearchQuery? LastSearch { get; set; }
-
         private readonly Dictionary<ulong, int[]> _userMsgCount = new();
         private readonly DiscordSocketClient _client;
         private readonly IServiceProvider _services;
@@ -23,7 +16,7 @@ namespace CharacterAI_Discord_Bot.Handlers
         
         public CommandsHandler(IServiceProvider services)
         {
-            CurrentIntegration = new(BotConfig.UserToken);
+            CreateIntegration(BotConfig.UserToken);
 
             _services = services;
             _commands = services.GetRequiredService<CommandService>();
@@ -36,9 +29,12 @@ namespace CharacterAI_Discord_Bot.Handlers
             _client.JoinedGuild += (s) => Task.Run(() =>
             {
                 if (CurrentIntegration.CurrentCharacter.Name is string name)
-                    _ = CurrentClientService.SetBotNicknameAndRole(name, _client);
+                    _ = SetBotNicknameAndRole(name, _client);
             });
         }
+
+        private void CreateIntegration(string token)
+            => CurrentIntegration = new(token);
 
         private async Task HandleMessage(SocketMessage rawMsg)
         {
@@ -51,77 +47,69 @@ namespace CharacterAI_Discord_Bot.Handlers
             string[] prefixes = BotConfig.BotPrefixes;
             var context = new SocketCommandContext(_client, message);
 
-            bool isPrivate = context.Channel.Name.StartsWith("private");
-            bool isDM = context.Guild is null;
-
             var cI = CurrentIntegration;
             var currentChannel = Channels.Find(c => c.Id == context.Channel.Id);
-
-            bool hasMention = isDM || message.HasMentionPrefix(_client.CurrentUser, ref argPos);
-            bool hasPrefix = hasMention || prefixes.Any(p => message.HasStringPrefix(p, ref argPos));
-            bool hasReply = hasPrefix || (message.ReferencedMessage != null && message.ReferencedMessage.Author.Id == _client.CurrentUser.Id);
-
             bool cnn = currentChannel is not null;
-            bool randomReply = hasReply || (cnn && currentChannel!.Data.ReplyChance > (random.Next(99) + 0.001 + random.NextDouble())); // min: 0 + 0.001 + 0 = 0.001; max: 98 + 0.001 + 1 = 99.001
-            // Any condition above or if user is hunted
-            bool gottaReply = randomReply || (cnn && currentChannel!.Data.HuntedUsers.ContainsKey(authorId) && currentChannel.Data.HuntedUsers[authorId] >= random.Next(100) + 1);
 
-            if (!gottaReply) return;
+            bool isPrivate = context.Channel.Name.StartsWith("private");
+            bool isDM = context.Guild is null;
+            bool hasMention = message.HasMentionPrefix(_client.CurrentUser, ref argPos);
+            bool hasPrefix = hasMention || prefixes.Any(p => message.HasStringPrefix(p, ref argPos));
+            bool hasReply = hasPrefix || message.ReferencedMessage is IUserMessage refm && refm.Author.Id == _client.CurrentUser.Id;
+            bool randomReply = cnn && currentChannel!.Data.ReplyChance > (random.Next(99) + 0.001 + random.NextDouble()); // min: 0 + 0.001 + 0 = 0.001; max: 98 + 0.001 + 1 = 99.001
+            bool userIsHunted = cnn && currentChannel!.Data.HuntedUsers.ContainsKey(authorId) && currentChannel.Data.HuntedUsers[authorId] >= random.Next(100) + 1;
 
-            if (currentChannel is null)
-            {
-                if (isPrivate) return; // don't handle deactivated "private" chats
+            bool gottaExecute = hasMention || hasPrefix;
+            bool gottaReply = isDM || hasReply || randomReply || userIsHunted;
+            if (!(gottaExecute || gottaReply)) return;
 
-                var data = new CharacterDialogData(null, null);
-                currentChannel = new DiscordChannel(context.Channel.Id, context.User.Id, data);
-                Channels.Add(currentChannel);
-
-                if (!cI.CurrentCharacter.IsEmpty)
-                {
-                    var historyId = await cI.CreateNewChatAsync() ?? cI.Chats[0];
-
-                    currentChannel.Data.CharacterId = cI.CurrentCharacter.Id;
-                    currentChannel.Data.HistoryId = historyId;
-                }
-
-                SaveData(channels: Channels);
-            }
+            // Don't handle deactivated "private" chats
+            if (currentChannel is null && isPrivate) return;
+            
+            // If new channel, add it to the local channels database
+            currentChannel ??= await StartTrackingChannelAsync(context);                
 
             // Update messages-per-minute counter.
             // If user has exceeded rate limit, or if message is a DM and these are disabled - return
             if ((isDM && !BotConfig.DMenabled) || UserIsBanned(context)) return;
 
-            // Try to execute command
-            var cmdResponse = await _commands.ExecuteAsync(context, argPos, _services);
-            // If command was found and executed, return
-            if (cmdResponse.IsSuccess) return;
-            // If command was found but failed to execute, return
-            if (cmdResponse.ErrorReason != "Unknown command.")
-            {
-                string text = $"{WARN_SIGN_DISCORD} Failed to execute command: {cmdResponse.ErrorReason} ({cmdResponse.Error})";
-                if (isDM) text = "*Note: some commands are not intended to be called from DMs*\n" + text;
+            if (gottaExecute)
+            {   // Try to execute command
+                var cmdResponse = await _commands.ExecuteAsync(context, argPos, _services);
+                // If command was found and executed, return
+                if (cmdResponse.IsSuccess) return;
+                // If command was found but failed to execute, return
+                if (cmdResponse.ErrorReason != "Unknown command.")
+                {
+                    string text = $"{WARN_SIGN_DISCORD} Failed to execute command: {cmdResponse.ErrorReason} ({cmdResponse.Error})";
+                    if (isDM) text = "*Note: some commands are not intended to be called from DMs*\n" + text;
 
-                await message.ReplyAsync(text).ConfigureAwait(false);
-                return;
+                    await message.ReplyAsync(text).ConfigureAwait(false);
+                    return;
+                } // If command was not found, proceed with character call
             }
 
-            // If command was not found, perform character call
             if (cI.CurrentCharacter.IsEmpty)
             {
                 await message.ReplyAsync($"{WARN_SIGN_DISCORD} Set a character first").ConfigureAwait(false);
                 return;
             }
-
+            // "Stop button"
             if (message.Author.IsBot && currentChannel.Data.SkipNextBotMessage)
             {
                 currentChannel.Data.SkipNextBotMessage = false;
                 return;
             }
-
+            // "skip message" command
             if (currentChannel.Data.SkipMessages > 0)
                 currentChannel.Data.SkipMessages--;
             else
+            {
+                var typing = context.Channel.EnterTypingState();
                 _ = TryToCallCharacterAsync(context, currentChannel, isDM || isPrivate);
+                await Task.Delay(2500);
+                typing.Dispose();
+            }       
         }
 
         private async Task HandleReaction(Cacheable<IUserMessage, ulong> rawMessage, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
@@ -207,78 +195,87 @@ namespace CharacterAI_Discord_Bot.Handlers
                         LastSearch.CurrentPage++;
                     break;
                 case "select":
+                    int index = (LastSearch.CurrentPage - 1) * 10 + LastSearch.CurrentRow - 1;
+                    var characterId = LastSearch.Response!.Characters![index].Id;
+                    var character = await CurrentIntegration.GetInfoAsync(characterId);
+                    if (character.IsEmpty) return;
+
                     var refContext = new SocketCommandContext(_client, (SocketUserMessage)refMessage);
 
-                    using (refContext.Message.Channel.EnterTypingState())
+                    using (context.Channel.EnterTypingState())
+                        _ = SetCharacterAsync(characterId!, this, refContext);
+
+                    var imageUrl = TryGetImageAsync(character.AvatarUrlFull!, @HttpClient).Result ?
+                        character.AvatarUrlFull : TryGetImageAsync(character.AvatarUrlMini!, @HttpClient).Result ?
+                        character.AvatarUrlMini : null;
+
+                    var embed = new EmbedBuilder()
                     {
-                        int index = (LastSearch.CurrentPage - 1) * 10 + LastSearch.CurrentRow - 1;
-                        var characterId = LastSearch.Response!.Characters![index].Id;
-                        var character = await CurrentIntegration.GetInfoAsync(characterId);
-                        if (character.IsEmpty) return;
+                        ImageUrl = imageUrl,
+                        Title = $"✅ Selected - {character.Name}",
+                        Footer = new EmbedFooterBuilder().WithText($"Created by {character.Author}"),
+                        Description = $"{character.Description}\n\n" +
+                                        $"*Original link: [Chat with {character.Name}](https://beta.character.ai/chat?char={character.Id})*\n" +
+                                        $"*Can generate images: {(character.ImageGenEnabled is true ? "Yes" : "No")}*\n" +
+                                        $"*Interactions: {character.Interactions}*"
+                    };
 
-                        _ = CommandsService.SetCharacterAsync(characterId!, this, refContext);
+                    await component.UpdateAsync(c =>
+                    {
+                        c.Embed = embed.Build();
+                        c.Components = null;
+                    }).ConfigureAwait(false);
 
-                        var imageUrl = TryGetImage(character.AvatarUrlFull!).Result ?
-                            character.AvatarUrlFull : TryGetImage(character.AvatarUrlMini!).Result ?
-                            character.AvatarUrlMini : null;
-
-                        var embed = new EmbedBuilder()
-                        {
-                            ImageUrl = imageUrl,
-                            Title = $"✅ Selected - {character.Name}",
-                            Footer = new EmbedFooterBuilder().WithText($"Created by {character.Author}"),
-                            Description = $"{character.Description}\n\n" +
-                                          $"*Original link: [Chat with {character.Name}](https://beta.character.ai/chat?char={character.Id})*\n" +
-                                          $"*Can generate images: {(character.ImageGenEnabled is true ? "Yes" : "No")}*\n" +
-                                          $"*Interactions: {character.Interactions}*"
-                        };
-
-                        await component.UpdateAsync(c =>
-                        {
-                            c.Embed = embed.Build();
-                            c.Components = null;
-                        }).ConfigureAwait(false);
-                    }
                     return;
                 default:
                     return;
             }
 
-            // Only if left/right/up/down is selected
-            await component.UpdateAsync(c => c.Embed = BuildCharactersList(LastSearch))
-                           .ConfigureAwait(false);
+            // Only if left/right/up/down is selected, either this line will never be reached
+            await component.UpdateAsync(c => c.Embed = BuildCharactersList(LastSearch)).ConfigureAwait(false);
         }
 
         // Swipes
         private async Task SwipeMessageAsync(IUserMessage message, Models.DiscordChannel currentChannel)
         {
-            if (currentChannel.Data.LastCall!.RepliesList.Count < currentChannel.Data.LastCall.CurrentReplyIndex + 1)
+            var lastCall = currentChannel.Data.LastCall!;
+
+            // Drop delay
+            if (RemoveEmojiRequestQueue.ContainsKey(message.Id))
+                RemoveEmojiRequestQueue[message.Id] = BotConfig.RemoveDelay;
+
+            // Check if fetching a new message, or just swiping among already available ones
+            if (lastCall.RepliesList.Count < lastCall.CurrentReplyIndex + 1)
             {
-                _ = message.ModifyAsync(msg => { msg.Content = $"( 🕓 Wait... )"; msg.AllowedMentions = AllowedMentions.None; });
+                _ = message.ModifyAsync(msg => { msg.Content = $"( 🕓 Wait... )"; msg.AllowedMentions = AllowedMentions.None; }).ConfigureAwait(false);
+
+                // Get new character response
                 var historyId = currentChannel.Data.HistoryId;
-                var parentMsgId = currentChannel.Data.LastCall.OriginalResponse.LastUserMsgId;
+                var parentMsgId = lastCall.OriginalResponse.LastUserMsgId;
                 var response = await CurrentIntegration.CallCharacterAsync(parentMsgId: parentMsgId, historyId: historyId);
 
                 if (!response.IsSuccessful)
                 {
-                    _ = message.ModifyAsync(msg => { msg.Content = response.ErrorReason!.Replace(WARN_SIGN_UNICODE, WARN_SIGN_DISCORD); });
+                    await message.ModifyAsync(msg => { msg.Content = response.ErrorReason!.Replace(WARN_SIGN_UNICODE, WARN_SIGN_DISCORD); }).ConfigureAwait(false); ;
                     return;
                 }
-                currentChannel.Data.LastCall.RepliesList.AddRange(response.Replies);
+                lastCall.RepliesList.AddRange(response.Replies);
             }
-            var newReply = currentChannel.Data.LastCall.RepliesList[currentChannel.Data.LastCall.CurrentReplyIndex];
-            currentChannel.Data.LastCall.CurrentPrimaryMsgId = newReply.Id;
+            var newReply = lastCall.RepliesList[lastCall.CurrentReplyIndex];
+            lastCall.CurrentPrimaryMsgId = newReply.Id;
 
+            // Add image to the message
             Embed? embed = null;
-            if (newReply.HasImage && await TryGetImage(newReply.ImageRelPath!))
+            if (newReply.HasImage && await TryGetImageAsync(newReply.ImageRelPath!, @HttpClient))
                 embed = new EmbedBuilder().WithImageUrl(newReply.ImageRelPath).Build();
 
+            // Add text to the message
             string replyText = newReply.Text!;
             if (replyText.Length > 2000)
-                replyText = replyText[0..1996] + "...";
+                replyText = replyText[0..1994] + "[...]";
 
-            _ = message.ModifyAsync(msg => { msg.Content = $"{replyText}"; msg.Embed = embed; })
-                .ConfigureAwait(false);
+            // Send (update) message
+            await message.ModifyAsync(msg => { msg.Content = $"{replyText}"; msg.Embed = embed; }).ConfigureAwait(false);
         }
 
         private async Task TryToCallCharacterAsync(SocketCommandContext context, Models.DiscordChannel currentChannel, bool inDMorPrivate)
@@ -287,7 +284,7 @@ namespace CharacterAI_Discord_Bot.Handlers
             if (currentChannel.Data.LastCharacterCallMsgId != 0)
             {
                 var lastMessage = await context.Message.Channel.GetMessageAsync(currentChannel.Data.LastCharacterCallMsgId);
-                _ = RemoveButtonsAsync(lastMessage, context.Client.CurrentUser);
+                _ = RemoveButtonsAsync(lastMessage).ConfigureAwait(false);
             }
 
             // Prepare text data

@@ -1,31 +1,28 @@
-﻿using System.Text.RegularExpressions;
-using Discord.WebSocket;
+﻿using Discord.WebSocket;
 using Discord;
 using CharacterAI_Discord_Bot.Models;
 using CharacterAI_Discord_Bot.Handlers;
 using YamlDotNet.Serialization.NamingConventions;
 using YamlDotNet.Serialization;
-using Discord.Commands;
 using CharacterAI.Models;
-using static CharacterAI_Discord_Bot.Service.CurrentClientService;
 
 namespace CharacterAI_Discord_Bot.Service
 {
     public partial class CommonService
     {
         internal static Config BotConfig { get => _config; }
+        internal HttpClient @HttpClient { get; } = new();
         private static readonly Config _config = GetConfig()!;
 
         private static readonly string _imgPath = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "img" + Path.DirectorySeparatorChar;
         private static readonly string _storagePath = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "storage" + Path.DirectorySeparatorChar;
-        private static readonly HttpClient _httpClient = new();
 
         internal static readonly string nopowerPath = _imgPath + _config.Nopower;
         internal static readonly string defaultAvatarPath = _imgPath + "defaultAvatar.png";
         internal static readonly string WARN_SIGN_UNICODE = "⚠";
         internal static readonly string WARN_SIGN_DISCORD = ":warning:";
 
-        public static async Task AutoSetup(CommandsHandler handler, DiscordSocketClient client)
+        public async Task AutoSetup(CommandsHandler handler, DiscordSocketClient client)
         {
             var cI = handler.CurrentIntegration;
 
@@ -55,14 +52,10 @@ namespace CharacterAI_Discord_Bot.Service
             Log("Restored channels: ");
             Success(handler.Channels.Count.ToString());
 
-            // GetYAML will return empty channels list if character was changed
-            // This call will delete all records with previous character
-            SaveData(channels: handler.Channels);
-
             if (BotConfig.DescriptionInPlaying)
                 await SetPlayingStatusAsync(client, type: 0, integration: cI).ConfigureAwait(false);
             if (BotConfig.CharacterAvatarEnabled)
-                await SetBotAvatar(client.CurrentUser, cI.CurrentCharacter).ConfigureAwait(false);
+                await SetBotAvatar(client.CurrentUser, cI.CurrentCharacter, @HttpClient).ConfigureAwait(false);
             if (BotConfig.CharacterNameEnabled)
                 await SetBotNicknameAndRole(cI.CurrentCharacter.Name!, client).ConfigureAwait(false);
         }
@@ -71,11 +64,12 @@ namespace CharacterAI_Discord_Bot.Service
         {
             var role = guild.Roles.FirstOrDefault(r => r.Name == BotConfig.BotRole);
             if (role is not null) return;
+            if (guild.CurrentUser.GuildPermissions.ManageRoles is false) return;
 
             await guild.CreateRoleAsync(BotConfig.BotRole, color: new Color(19, 142, 236));
         }
 
-        internal static void SaveData(List<Models.DiscordChannel>? channels = null, List<ulong>? blackList = null)
+        internal static void SaveData(List<DiscordChannel>? channels = null, List<ulong>? blackList = null)
         {
             var serializer = new SerializerBuilder()
                 .WithNamingConvention(PascalCaseNamingConvention.Instance)
@@ -127,7 +121,7 @@ namespace CharacterAI_Discord_Bot.Service
                 foreach (var id in blackListYAML.Split(", "))
                     blackList.Add(ulong.Parse(id));
 
-            var channels = new List<Models.DiscordChannel>();
+            var channels = new List<DiscordChannel>();
             
             foreach (string line in channelsYAML.Split("-------------------"))
             {
@@ -141,7 +135,7 @@ namespace CharacterAI_Discord_Bot.Service
 
                 ulong channelId = channelTemp.Id;
                 ulong authorId = channelTemp.AuthorId;
-                string? historyId = channelTemp.HistoryId!;
+                string? historyId = channelTemp.HistoryId;
 
                 var data = new CharacterDialogData(characterId, historyId)
                 {
@@ -149,7 +143,7 @@ namespace CharacterAI_Discord_Bot.Service
                     ReplyChance = channelTemp.ReplyChance,
                     ReplyDelay = channelTemp.ReplyDelay
                 };
-                var channel = new DiscordChannel(channelId, authorId, data) { GuestsList = channelTemp.GuestsList! };
+                var channel = new DiscordChannel(channelId, authorId, data) { GuestsList = channelTemp.GuestsList ?? new() };
                 channels.Add(channel);
             }
 
@@ -181,13 +175,13 @@ namespace CharacterAI_Discord_Bot.Service
             return list.Build();
         }
 
-        public static async Task<byte[]?> TryDownloadImgAsync(string url)
+        public static async Task<byte[]?> TryDownloadImgAsync(string url, HttpClient httpClient)
         {
             if (string.IsNullOrEmpty(url)) return null;
 
             for (int i = 0; i < 10; i++)
             {
-                try { return await _httpClient.GetByteArrayAsync(url).ConfigureAwait(false); }
+                try { return await httpClient.GetByteArrayAsync(url).ConfigureAwait(false); }
                 catch { await Task.Delay(2500); }
             }
 
@@ -197,12 +191,12 @@ namespace CharacterAI_Discord_Bot.Service
         // Simply checks if image is avalable.
         // (cAI is used to have broken undownloadable images or sometimes it's just
         //  takes eternity for it to upload one on server, but image url is provided in advance)
-        public static async Task<bool> TryGetImage(string url)
+        public async Task<bool> TryGetImageAsync(string url, HttpClient httpClient)
         {
             if (string.IsNullOrWhiteSpace(url)) return false;
 
             for (int i = 0; i < 10; i++)
-                if ((await _httpClient.GetAsync(url).ConfigureAwait(false)).IsSuccessStatusCode)
+                if ((await httpClient.GetAsync(url).ConfigureAwait(false)).IsSuccessStatusCode)
                     return true;
                 else
                     await Task.Delay(3000);

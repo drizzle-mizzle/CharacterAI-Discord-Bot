@@ -51,7 +51,7 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
             var managerCommands = new string[]
             {
                 "`set history <id>` - Set history id for a current channel\n    Alias: `sh`",
-                "`continue history <#channel>` - Copy history id from another channel\n    Alias: `ch`",
+                "`continue history <#channel>` - Copy history id from another channel\n    Aliases: `continue`, `ch`",
                 "`find character <query>` – Find and set character by it's name\n    Alias: `find`",
                 "`set character <id>` – Set character by id\n    Aliases: `set`, `sc`",
                 "`reset character` – Start new chat with a character *(for current text channel only, other channels won't be affected)*\n    Alias: `reset`",
@@ -113,6 +113,27 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
                 }
                 await Context.Message.ReplyAsync(text);
             }
+        }
+
+        [Command("servers-list")]
+        public async Task Servers()
+        {
+            if (Context.Message.Author.Id != BotConfig.HosterDiscordId) return;
+
+            var guilds = Context.Client.Guilds;
+            string servers = "```\n";
+            int count = 0;
+
+            foreach (var guild in guilds)
+            {
+                servers += $"[{guild.Name}]\n" +
+                           $"{(guild.Description is string desc ? $"Description: \"{desc}\"\n" : "")}" +
+                           $"Owner: {guild.Owner.DisplayName}{(guild.Owner.Nickname is string nick ? $" / {nick}" : "")}\n" +
+                           $"Members: {guild.MemberCount}\n\n";
+                count++;
+            }
+            servers = $"Servers: {count}\n\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\n" + servers + "\n```";
+            await Context.Channel.SendMessageAsync(servers);
         }
 
         [Command("ping")]

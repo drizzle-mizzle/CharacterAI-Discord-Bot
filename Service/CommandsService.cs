@@ -3,7 +3,6 @@ using Discord.Commands;
 using Discord.WebSocket;
 using CharacterAI_Discord_Bot.Handlers;
 using CharacterAI_Discord_Bot.Models;
-using CharacterAI;
 
 namespace CharacterAI_Discord_Bot.Service
 {
@@ -12,14 +11,6 @@ namespace CharacterAI_Discord_Bot.Service
     /// </summary>
     public partial class CommandsService : CommonService
     {
-        // [Command("activity")]
-        public static async Task SetPlayingStatusAsync(DiscordSocketClient client, int type = 0, string? status = null, Integration? integration = null)
-            => await CurrentClientService.SetPlayingStatusAsync(client, type, status, integration);
-
-        // [Command("set character")]
-        public static async Task SetCharacterAsync(string charId, CommandsHandler handler, SocketCommandContext context, bool reset = false)
-            => await CurrentClientService.SetCharacterAsync(charId, handler, context, reset);
-
         // [Command("find character")]
         public static async Task FindCharacterAsync(string query, CommandsHandler handler, SocketCommandContext context)
         {

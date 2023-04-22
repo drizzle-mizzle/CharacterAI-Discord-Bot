@@ -19,7 +19,9 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
         [Alias("pc")]
         public async Task CreatePrivateChat()
         {
-            if (BotConfig.PrivateChatRoleRequired && !ValidateUserAccess(Context))
+            if (Context.Guild.CurrentUser.GuildPermissions.ManageChannels is false)
+                await Context.Message.ReplyAsync($"{WARN_SIGN_DISCORD} `ManageChannels` permission was not provided.");
+            else if (BotConfig.PrivateChatRoleRequired && !ValidateUserAccess(Context))
                 await NoPermissionAlert(Context).ConfigureAwait(false);
             else if (_handler.CurrentIntegration.CurrentCharacter.IsEmpty)
                 await Context.Message.ReplyAsync($"{WARN_SIGN_DISCORD} Set a character first").ConfigureAwait(false);
@@ -79,6 +81,7 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
 
             foreach (var channel in category.Channels.Cast<SocketTextChannel>())
             {
+                if (!channel.Name.Contains("private-chat-with")) continue;
                 if (_handler.Channels.Find(c => c.Id == channel.Id) is null)
                     _ = channel.DeleteAsync();
             }

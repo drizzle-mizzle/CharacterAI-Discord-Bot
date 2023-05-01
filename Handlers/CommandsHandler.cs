@@ -22,14 +22,10 @@ namespace CharacterAI_Discord_Bot.Handlers
             _commands = services.GetRequiredService<CommandService>();
             _client = services.GetRequiredService<DiscordSocketClient>();
 
-            _client.MessageReceived += (message)
-                => _ = HandleMessageAsync(message);
-            _client.ButtonExecuted += (component)
-                => _ = HandleButtonAsync(component);
-            _client.ReactionAdded += (messache, channel, reaction)
-                => _ = HandleReactionAsync(messache, channel, reaction);
-            _client.ReactionRemoved += (messache, channel, reaction)
-                => _ = HandleReactionAsync(messache, channel, reaction);
+            _client.MessageReceived += HandleMessage;
+            _client.ButtonExecuted += HandleButtonAsync;
+            _client.ReactionAdded += HandleReactionAsync;
+            _client.ReactionRemoved += HandleReactionAsync;
 
             _client.JoinedGuild += (s) => Task.Run(() =>
             {
@@ -43,6 +39,12 @@ namespace CharacterAI_Discord_Bot.Handlers
 
         private void CreateIntegration(string token)
             => CurrentIntegration = new(token);
+
+        private Task HandleMessage(SocketMessage rawMsg)
+        {
+            _ = Task.Run(async () => await HandleMessageAsync(rawMsg));
+            return Task.CompletedTask;
+        }
 
         private async Task HandleMessageAsync(SocketMessage rawMsg)
         {

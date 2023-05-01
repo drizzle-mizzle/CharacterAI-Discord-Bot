@@ -71,7 +71,12 @@ namespace CharacterAI_Discord_Bot.Service
         {
             var cI = CurrentIntegration;
             var data = new ChannelData(null, null);
-            var currentChannel = new DiscordChannel(context.Channel.Id, context.User.Id, data);
+            var currentChannel = new DiscordChannel(context.Channel.Id, context.User.Id, data)
+            {
+                ChannelName = context.Channel.Name,
+                GuildId = context.Guild.Id,
+                GuildName = context.Guild.Name
+            };
             Channels.Add(currentChannel);
 
             if (!cI.CurrentCharacter.IsEmpty)

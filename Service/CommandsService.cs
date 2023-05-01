@@ -63,7 +63,12 @@ namespace CharacterAI_Discord_Bot.Service
                 handler.Channels.Remove(currentChannel);
             }
 
-            var newChannel = new DiscordChannel(context.Channel.Id, context.User.Id, data);
+            var newChannel = new DiscordChannel(context.Channel.Id, context.User.Id, data)
+            {
+                ChannelName = context.Channel.Name,
+                GuildId = context.Guild.Id,
+                GuildName = context.Guild.Name
+            };
 
             handler.Channels.Add(newChannel);
             SaveData(handler.Channels);
@@ -98,7 +103,13 @@ namespace CharacterAI_Discord_Bot.Service
 
             // Update channels list
             var data = new ChannelData(cI.CurrentCharacter.Id!, newChatHistoryId) { AudienceMode = 0 };
-            var newChannelItem = new DiscordChannel(newChannel.Id, context.User.Id, data);
+            var newChannelItem = new DiscordChannel(newChannel.Id, context.User.Id, data)
+            {
+                ChannelName = context.Channel.Name,
+                GuildId = context.Guild.Id,
+                GuildName = context.Guild.Name
+            };
+
             handler.Channels.Add(newChannelItem);
 
             SaveData(channels: handler.Channels);

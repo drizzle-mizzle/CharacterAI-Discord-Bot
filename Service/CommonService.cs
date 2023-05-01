@@ -102,9 +102,9 @@ namespace CharacterAI_Discord_Bot.Service
         internal static dynamic GetStoredData(string currectCharId)
         {
             if (!File.Exists(_storagePath + "blacklist.yaml"))
-                File.Create(_storagePath + "blacklist.yaml");
+                File.Create(_storagePath + "blacklist.yaml").Close();
             if (!File.Exists(_storagePath + "channels.yaml"))
-                File.Create(_storagePath + "channels.yaml");
+                File.Create(_storagePath + "channels.yaml").Close();
 
             var deserializer = new DeserializerBuilder()
                 .WithNamingConvention(PascalCaseNamingConvention.Instance)

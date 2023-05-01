@@ -4,20 +4,21 @@ namespace CharacterAI_Discord_Bot.Models
 {
     internal class DiscordChannel
     {
-        internal ulong Id { get; set; }
-        internal ulong AuthorId { get; set; }
-        internal List<ulong> GuestsList { get; set; }
-        internal CharacterDialogData Data { get; set; }
-        internal DiscordChannel(ulong channelId, ulong authorId, CharacterDialogData data)
+        internal ulong ChannelId { get; set; }
+        internal string ChannelName { get; set; } = "";
+        internal ulong ChannelAuthorId { get; set; }
+        internal ulong GuildId { get; set; } = 0;
+        internal string GuildName { get; set; } = "";
+        internal ChannelData Data { get; set; }
+        internal DiscordChannel(ulong channelId, ulong authorId, ChannelData data)
         {
-            Id = channelId;
-            AuthorId = authorId;
-            GuestsList = new();
+            ChannelId = channelId;
+            ChannelAuthorId = authorId;
             Data = data;
         }
     }
 
-    internal class CharacterDialogData : CommonService
+    internal class ChannelData : CommonService
     {
         internal string? HistoryId { get; set; }
         internal string? CharacterId { get; set; }
@@ -26,11 +27,13 @@ namespace CharacterAI_Discord_Bot.Models
         internal int ReplyDelay { get; set; } = BotConfig.DefaultRepliesDealy;
         internal int SkipMessages { get; set; } = 0;
         internal bool SkipNextBotMessage { get; set; } = false;
+        internal string TranslateLanguage { get; set; } = BotConfig.DefaultTranslateLanguage;
         internal ulong LastCharacterCallMsgId { get; set; } = 0;// discord message id
         internal Dictionary<ulong, int> HuntedUsers { get; set; } = new(); // user id : reply chance
+        internal List<ulong> GuestsList { get; set; } = new();
         internal LastCharacterCall? LastCall { get; set; }
 
-        public CharacterDialogData(string? characterId, string? historyId)
+        public ChannelData(string? characterId, string? historyId)
         {
             HistoryId = historyId;
             CharacterId = characterId;

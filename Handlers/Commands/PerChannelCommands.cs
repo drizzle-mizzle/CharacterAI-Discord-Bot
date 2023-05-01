@@ -2,6 +2,7 @@
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using System.Threading.Channels;
 using static CharacterAI_Discord_Bot.Service.CommandsService;
 using static CharacterAI_Discord_Bot.Service.CommonService;
 
@@ -10,7 +11,7 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
     public class PerChannelCommands : ModuleBase<SocketCommandContext>
     {
         private readonly CommandsHandler _handler;
-        private DiscordChannel? CurrentChannel => _handler.Channels.Find(c => c.Id == Context.Channel.Id);
+        private DiscordChannel? CurrentChannel => _handler.Channels.Find(c => c.ChannelId == Context.Channel.Id);
         public PerChannelCommands(CommandsHandler handler)
             => _handler = handler;
 
@@ -28,7 +29,7 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
         [Alias("sh")]
         public async Task SetHistory(string historyId)
         {
-            if (!ValidateUserAccess(Context))
+            if (Context.Guild is not null && !ValidateUserAccess(Context))
                 await NoPermissionAlert(Context).ConfigureAwait(false);
             else
             {
@@ -54,17 +55,16 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
             else
             {
                 if (CurrentChannel is not DiscordChannel cc) return;
-                if (_handler.Channels.Find(c => c.Id == channel.Id) is not DiscordChannel copyChannel) return;
+                if (_handler.Channels.Find(c => c.ChannelId == channel.Id) is not DiscordChannel copyChannel) return;
 
                 string? newHistoryId = copyChannel.Data.HistoryId;
                 if (newHistoryId is null) return;
 
                 string text = $"{WARN_SIGN_DISCORD} **history_id** for this channel was changed from `{cc.Data.HistoryId}` to `{newHistoryId}`";
+                await Context.Message.ReplyAsync(text).ConfigureAwait(false);
 
                 cc.Data.HistoryId = newHistoryId;
                 SaveData(channels: _handler.Channels);
-
-                await Context.Message.ReplyAsync(text).ConfigureAwait(false);
             }
         }
 
@@ -158,7 +158,7 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
         [Summary("Make character ignore next few messages")]
         public async Task StopTalk(int amount = 1)
         {
-            if (!ValidateUserAccess(Context))
+            if (Context.Guild is not null && !ValidateUserAccess(Context))
                 await NoPermissionAlert(Context).ConfigureAwait(false);
             else
             {
@@ -213,6 +213,24 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
                 CurrentChannel.Data.HuntedUsers[user.Id] = chance;
 
                 await Context.Message.ReplyAsync(text).ConfigureAwait(false);
+            }
+        }
+
+        [Command("target language")]
+        [Alias("lang")]
+        public async Task ChangeTragetLanguage(string lang)
+        {
+            if (!ValidateUserAccess(Context))
+                await NoPermissionAlert(Context).ConfigureAwait(false);
+            else
+            {
+                if (CurrentChannel is not DiscordChannel cc) return;
+
+                string text = $"{WARN_SIGN_DISCORD} Target language for current channel was changed from `{CurrentChannel.Data.TranslateLanguage}` to `{lang}`";
+                await Context.Message.ReplyAsync(text).ConfigureAwait(false);
+
+                cc.Data.TranslateLanguage = lang;
+                SaveData(channels: _handler.Channels);
             }
         }
     }

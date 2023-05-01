@@ -13,15 +13,15 @@ namespace CharacterAI_Discord_Bot.Service
     /// </summary>
     public partial class CommandsService : CommonService
     {
-        internal static void DeactivateOldUserChannel(CommandsHandler handler, ulong userId)
+        internal static void DeactivateOldUserChannel(CommandsHandler handler, ulong userId, ulong guildId)
         {
-            var userChannels = handler.Channels.Where(c => c.AuthorId == userId);
+            var userChannels = handler.Channels.Where(c => c.ChannelAuthorId == userId && c.GuildId == guildId);
             var newChannelsList = new List<DiscordChannel>();
             newChannelsList.AddRange(handler.Channels); // add all channels
 
             foreach (var userChannel in userChannels)
             {
-                var channelToRemove = handler.Channels.Find(c => c.Id == userChannel.Id);
+                var channelToRemove = handler.Channels.Find(c => c.ChannelId == userChannel.ChannelId);
                 if (channelToRemove is null) continue;
 
                 newChannelsList.Remove(channelToRemove); // delete old channel
@@ -39,13 +39,8 @@ namespace CharacterAI_Discord_Bot.Service
 
             // Create category if it does not exist.
             var newCategory = await context.Guild.CreateCategoryChannelAsync(categoryName, c =>
-            {   // Hide it for everyone except bot
-                c.PermissionOverwrites = new List<Overwrite>()
-                {
-                    ViewChannelPermOverwrite(context.Client.CurrentUser, PermValue.Allow),
-                    ViewChannelPermOverwrite(context.Guild.EveryoneRole, PermValue.Deny)
-                };
-            });
+                c.PermissionOverwrites = new List<Overwrite>() { ViewChannelPermOverwrite(context.Guild.EveryoneRole, PermValue.Allow) }
+            );
 
             return newCategory.Id;
         }

@@ -13,51 +13,59 @@ namespace CharacterAI_Discord_Bot.Handlers
         private readonly DiscordSocketClient _client;
         private readonly IServiceProvider _services;
         private readonly CommandService _commands;
-        
+
         public CommandsHandler(IServiceProvider services)
         {
-            CreateIntegration(BotConfig.UserToken);
+            CreateIntegration(BotConfig.caiUserToken);
 
             _services = services;
             _commands = services.GetRequiredService<CommandService>();
             _client = services.GetRequiredService<DiscordSocketClient>();
 
-            _client.MessageReceived += HandleMessage;
-            _client.ReactionAdded += HandleReaction;
-            _client.ReactionRemoved += HandleReaction;
-            _client.ButtonExecuted += HandleButton;
+            _client.MessageReceived += (message)
+                => _ = HandleMessageAsync(message);
+            _client.ButtonExecuted += (component)
+                => _ = HandleButtonAsync(component);
+            _client.ReactionAdded += (messache, channel, reaction)
+                => _ = HandleReactionAsync(messache, channel, reaction);
+            _client.ReactionRemoved += (messache, channel, reaction)
+                => _ = HandleReactionAsync(messache, channel, reaction);
+
             _client.JoinedGuild += (s) => Task.Run(() =>
             {
                 if (CurrentIntegration.CurrentCharacter.Name is string name)
                     _ = SetBotNicknameAndRole(name, _client);
             });
+
+            if (BotConfig.TranslateBtnEnabled && !string.IsNullOrWhiteSpace(BotConfig.DeeplApiToken))
+                DeeplClient = new(BotConfig.DeeplApiToken);
         }
 
         private void CreateIntegration(string token)
             => CurrentIntegration = new(token);
 
-        private async Task HandleMessage(SocketMessage rawMsg)
+        private async Task HandleMessageAsync(SocketMessage rawMsg)
         {
             var authorId = rawMsg.Author.Id;
             if (rawMsg is not SocketUserMessage message || authorId == _client.CurrentUser.Id)
                 return;
 
             int argPos = 0;
-            var random = new Random();
             string[] prefixes = BotConfig.BotPrefixes;
-            var context = new SocketCommandContext(_client, message);
 
             var cI = CurrentIntegration;
-            var currentChannel = Channels.Find(c => c.Id == context.Channel.Id);
-            bool cnn = currentChannel is not null;
+            var context = new SocketCommandContext(_client, message);
+            var currentChannel = Channels.Find(c => c.ChannelId == context.Channel.Id);
 
             bool isPrivate = context.Channel.Name.StartsWith("private");
             bool isDM = context.Guild is null;
             bool hasMention = message.HasMentionPrefix(_client.CurrentUser, ref argPos);
             bool hasPrefix = hasMention || prefixes.Any(p => message.HasStringPrefix(p, ref argPos));
             bool hasReply = hasPrefix || message.ReferencedMessage is IUserMessage refm && refm.Author.Id == _client.CurrentUser.Id;
-            bool randomReply = cnn && currentChannel!.Data.ReplyChance > (random.Next(99) + 0.001 + random.NextDouble()); // min: 0 + 0.001 + 0 = 0.001; max: 98 + 0.001 + 1 = 99.001
-            bool userIsHunted = cnn && currentChannel!.Data.HuntedUsers.ContainsKey(authorId) && currentChannel.Data.HuntedUsers[authorId] >= random.Next(100) + 1;
+
+            bool cnn = currentChannel is not null;
+            bool randomReply = cnn && currentChannel!.Data.ReplyChance > (@Random.Next(99) + 0.001 + @Random.NextDouble()); // min: 0 + 0.001 + 0 = 0.001; max: 98 + 0.001 + 1 = 99.001
+            bool userIsHunted = cnn && currentChannel!.Data.HuntedUsers.ContainsKey(authorId) && currentChannel.Data.HuntedUsers[authorId] >= @Random.Next(100) + 1;
 
             bool gottaExecute = hasMention || hasPrefix;
             bool gottaReply = isDM || hasReply || randomReply || userIsHunted;
@@ -106,13 +114,15 @@ namespace CharacterAI_Discord_Bot.Handlers
             else
             {
                 var typing = context.Channel.EnterTypingState();
-                _ = TryToCallCharacterAsync(context, currentChannel, isDM || isPrivate);
+                try { _ = TryToCallCharacterAsync(context, currentChannel, isDM || isPrivate); }
+                catch (Exception e) { Failure(e.ToString()); }
+
                 await Task.Delay(2500);
                 typing.Dispose();
             }       
         }
 
-        private async Task HandleReaction(Cacheable<IUserMessage, ulong> rawMessage, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
+        private async Task HandleReactionAsync(Cacheable<IUserMessage, ulong> rawMessage, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
         {
             var user = reaction?.User.Value;
             if (user is null) return;
@@ -121,12 +131,19 @@ namespace CharacterAI_Discord_Bot.Handlers
             if (socketUser.IsBot) return;
 
             var message = await rawMessage.DownloadAsync();
-            var currentChannel = Channels.Find(c => c.Id == message.Channel.Id);
+            var currentChannel = Channels.Find(c => c.ChannelId == message.Channel.Id);
             if (currentChannel is null) return;
+            if (reaction is null) return;
 
-            if (reaction!.Emote.Name == STOP_BTN.Name)
+            if (reaction.Emote.Name == STOP_BTN.Name)
             {
                 currentChannel.Data.SkipNextBotMessage = true;
+                return;
+            }
+
+            if (reaction.Emote.Name == TRANSLATE_BTN.Name)
+            {
+                _ = TranslateMessageAsync(message, currentChannel.Data.TranslateLanguage);
                 return;
             }
 
@@ -151,7 +168,7 @@ namespace CharacterAI_Discord_Bot.Handlers
         }
 
         // Navigate in search modal
-        private async Task HandleButton(SocketMessageComponent component)
+        private async Task HandleButtonAsync(SocketMessageComponent component)
         {
             if (LastSearch is null) return;
 
@@ -195,36 +212,9 @@ namespace CharacterAI_Discord_Bot.Handlers
                         LastSearch.CurrentPage++;
                     break;
                 case "select":
-                    int index = (LastSearch.CurrentPage - 1) * 10 + LastSearch.CurrentRow - 1;
-                    var characterId = LastSearch.Response!.Characters![index].Id;
-                    var character = await CurrentIntegration.GetInfoAsync(characterId);
-                    if (character.IsEmpty) return;
-
-                    var refContext = new SocketCommandContext(_client, (SocketUserMessage)refMessage);
-
-                    using (context.Channel.EnterTypingState())
-                        _ = SetCharacterAsync(characterId!, this, refContext);
-
-                    var imageUrl = TryGetImageAsync(character.AvatarUrlFull!, @HttpClient).Result ?
-                        character.AvatarUrlFull : TryGetImageAsync(character.AvatarUrlMini!, @HttpClient).Result ?
-                        character.AvatarUrlMini : null;
-
-                    var embed = new EmbedBuilder()
-                    {
-                        ImageUrl = imageUrl,
-                        Title = $"✅ Selected - {character.Name}",
-                        Footer = new EmbedFooterBuilder().WithText($"Created by {character.Author}"),
-                        Description = $"{character.Description}\n\n" +
-                                        $"*Original link: [Chat with {character.Name}](https://beta.character.ai/chat?char={character.Id})*\n" +
-                                        $"*Can generate images: {(character.ImageGenEnabled is true ? "Yes" : "No")}*\n" +
-                                        $"*Interactions: {character.Interactions}*"
-                    };
-
-                    await component.UpdateAsync(c =>
-                    {
-                        c.Embed = embed.Build();
-                        c.Components = null;
-                    }).ConfigureAwait(false);
+                    await component.DeferAsync();
+                    var refContext = new SocketCommandContext(context.Client, (SocketUserMessage)refMessage);
+                    _ = SelectCharacterAsync(this, component, refContext);
 
                     return;
                 default:
@@ -242,18 +232,17 @@ namespace CharacterAI_Discord_Bot.Handlers
 
             // Drop delay
             if (RemoveEmojiRequestQueue.ContainsKey(message.Id))
-                RemoveEmojiRequestQueue[message.Id] = BotConfig.RemoveDelay;
+                RemoveEmojiRequestQueue[message.Id] = BotConfig.BtnsRemoveDelay;
 
             // Check if fetching a new message, or just swiping among already available ones
             if (lastCall.RepliesList.Count < lastCall.CurrentReplyIndex + 1)
             {
-                _ = message.ModifyAsync(msg => { msg.Content = $"( 🕓 Wait... )"; msg.AllowedMentions = AllowedMentions.None; }).ConfigureAwait(false);
+                _ = message.ModifyAsync(msg => { msg.Content = WAIT_MESSAGE; msg.AllowedMentions = AllowedMentions.None; }).ConfigureAwait(false);
 
                 // Get new character response
                 var historyId = currentChannel.Data.HistoryId;
                 var parentMsgId = lastCall.OriginalResponse.LastUserMsgId;
                 var response = await CurrentIntegration.CallCharacterAsync(parentMsgId: parentMsgId, historyId: historyId);
-
                 if (!response.IsSuccessful)
                 {
                     await message.ModifyAsync(msg => { msg.Content = response.ErrorReason!.Replace(WARN_SIGN_UNICODE, WARN_SIGN_DISCORD); }).ConfigureAwait(false); ;
@@ -276,6 +265,8 @@ namespace CharacterAI_Discord_Bot.Handlers
 
             // Send (update) message
             await message.ModifyAsync(msg => { msg.Content = $"{replyText}"; msg.Embed = embed; }).ConfigureAwait(false);
+            var tm = TranslatedMessages.Find(tm => tm.MessageId == message.Id);
+            if (tm is not null) tm.IsTranslated = false;
         }
 
         private async Task TryToCallCharacterAsync(SocketCommandContext context, Models.DiscordChannel currentChannel, bool inDMorPrivate)
@@ -323,7 +314,7 @@ namespace CharacterAI_Discord_Bot.Handlers
 
             if (response.IsSuccessful)
             {
-                // Take first character answer by default and reply with it
+                // Take first character answer by default and respond with it
                 var reply = currentChannel.Data.LastCall!.RepliesList.First();
                 _ = Task.Run(async () =>
                 {

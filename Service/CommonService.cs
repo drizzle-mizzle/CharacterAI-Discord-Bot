@@ -16,8 +16,9 @@ namespace CharacterAI_Discord_Bot.Service
 
         private static readonly string _imgPath = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "img" + Path.DirectorySeparatorChar;
         private static readonly string _storagePath = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "storage" + Path.DirectorySeparatorChar;
+        private static readonly string YAML_SEPARATOR = "-------------------";
 
-        internal static readonly string nopowerPath = _imgPath + _config.Nopower;
+        internal static readonly string nopowerPath = _imgPath + _config.NopowerFileName;
         internal static readonly string defaultAvatarPath = _imgPath + "defaultAvatar.png";
         internal static readonly string WARN_SIGN_UNICODE = "⚠";
         internal static readonly string WARN_SIGN_DISCORD = ":warning:";
@@ -26,21 +27,12 @@ namespace CharacterAI_Discord_Bot.Service
         {
             var cI = handler.CurrentIntegration;
 
-            SetupResult result;
-            while (true)
-            {
-                try
-                {
-                    result = await cI.SetupAsync(_config.AutoCharId);
-                    break;
-                }
-                catch (Exception e)
-                {
-                    Failure($"Setup Failed. Trying again...\nDetails:\n{e}");
-                }
-            }
+            SetupResult setupResult;
+            // It will try to setup again after 5s, if something will go wrong.
+            while (true) try { setupResult = await cI.SetupAsync(_config.AutoCharId); break; }
+                         catch (Exception e) { Failure($"Setup Failed. Trying again...\nDetails:\n{e}"); await Task.Delay(5000); }
 
-            if (!result.IsSuccessful) return;
+            if (!setupResult.IsSuccessful) return;
 
             var savedData = GetStoredData(_config.AutoCharId);
 
@@ -88,16 +80,20 @@ namespace CharacterAI_Discord_Bot.Service
             {
                 var line = serializer.Serialize(new
                 {
-                    c.Id,
-                    c.AuthorId,
+                    c.ChannelId,
+                    c.ChannelName,
+                    c.ChannelAuthorId,
+                    c.GuildId,
+                    c.GuildName,
                     c.Data.HistoryId,
                     c.Data.CharacterId,
                     c.Data.AudienceMode,
                     c.Data.ReplyChance,
                     c.Data.ReplyDelay,
-                    c.GuestsList
+                    c.Data.GuestsList,
+                    c.Data.TranslateLanguage
                 });
-                channelsYAML += line += "-------------------\n";
+                channelsYAML += line += YAML_SEPARATOR + "\n";
             }
             File.WriteAllText(_storagePath + "channels.yaml", channelsYAML);
         }
@@ -111,7 +107,7 @@ namespace CharacterAI_Discord_Bot.Service
 
             var deserializer = new DeserializerBuilder()
                 .WithNamingConvention(PascalCaseNamingConvention.Instance)
-                .Build();   
+                .Build();
 
             var blackListYAML = File.ReadAllText(_storagePath + "blacklist.yaml");
             var channelsYAML = File.ReadAllText(_storagePath + "channels.yaml");
@@ -123,7 +119,7 @@ namespace CharacterAI_Discord_Bot.Service
 
             var channels = new List<DiscordChannel>();
             
-            foreach (string line in channelsYAML.Split("-------------------"))
+            foreach (string line in channelsYAML.Split(YAML_SEPARATOR))
             {
                 if (line.Length < 5) continue;
 
@@ -133,17 +129,25 @@ namespace CharacterAI_Discord_Bot.Service
                 if (characterId != currectCharId)
                     return new { BlackList = blackList, Channels = channels };
 
-                ulong channelId = channelTemp.Id;
-                ulong authorId = channelTemp.AuthorId;
+                ulong channelId = channelTemp.ChannelId;
+                ulong authorId = channelTemp.ChannelAuthorId;
                 string? historyId = channelTemp.HistoryId;
 
-                var data = new CharacterDialogData(characterId, historyId)
+                var data = new ChannelData(characterId, historyId)
                 {
                     AudienceMode = channelTemp.AudienceMode,
                     ReplyChance = channelTemp.ReplyChance,
-                    ReplyDelay = channelTemp.ReplyDelay
+                    ReplyDelay = channelTemp.ReplyDelay,
+                    GuestsList = channelTemp.GuestsList,
+                    TranslateLanguage = channelTemp.TranslateLanguage
                 };
-                var channel = new DiscordChannel(channelId, authorId, data) { GuestsList = channelTemp.GuestsList ?? new() };
+                var channel = new DiscordChannel(channelId, authorId, data)
+                {
+                    ChannelName = channelTemp.ChannelName,
+                    GuildId = channelTemp.GuildId,
+                    GuildName = channelTemp.GuildName
+                };
+
                 channels.Add(channel);
             }
 
@@ -285,14 +289,18 @@ namespace CharacterAI_Discord_Bot.Service
 
     internal class ChannelTemp
     {
-        public ulong Id { get; set; }
-        public ulong AuthorId { get; set; }
+        public ulong ChannelId { get; set; }
+        public string ChannelName { get; set; } = "";
+        public ulong ChannelAuthorId { get; set; }
+        public ulong GuildId { get; set; } = 0;
+        public string GuildName { get; set; } = "";
         public string? HistoryId { get; set; }
         public string? CharacterId { get; set; }
         public int AudienceMode { get; set; }
         public float ReplyChance { get; set; }
         public int ReplyDelay { get; set; }
-        public List<ulong>? GuestsList { get; set; }
+        public List<ulong> GuestsList { get; set; } = new();
+        public string TranslateLanguage { get; set; } = "";
     };
 
 }

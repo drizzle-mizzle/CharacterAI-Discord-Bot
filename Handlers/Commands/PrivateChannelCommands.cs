@@ -10,7 +10,7 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
     {
         private readonly CommandsHandler _handler;
         private Models.DiscordChannel? GetCurrentChannel(ulong channelId)
-            => _handler.Channels.Find(c => c.Id == channelId && c.AuthorId == Context.User.Id);
+            => _handler.Channels.Find(c => c.ChannelId == channelId && c.ChannelAuthorId == Context.User.Id);
 
         public PrivateChannelCommands(CommandsHandler handler)
             => _handler = handler;
@@ -43,7 +43,7 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
             var discordChannel = Context.Guild.GetChannel(channelId);
             await discordChannel.AddPermissionOverwriteAsync(user, showChannel);
 
-            currentChannel.GuestsList.Add(user.Id);
+            currentChannel.Data.GuestsList.Add(user.Id);
 
             SaveData(channels: _handler.Channels);
         }
@@ -62,7 +62,7 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
             var discordChannel = Context.Guild.GetChannel(Context.Channel.Id);
             await discordChannel.AddPermissionOverwriteAsync(user, hideChannel);
 
-            currentChannel.GuestsList.Remove(user.Id);
+            currentChannel.Data.GuestsList.Remove(user.Id);
 
             SaveData(channels: _handler.Channels);
         }
@@ -76,13 +76,13 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
                 return;
             }
 
-            var category = Context.Guild.CategoryChannels.FirstOrDefault(c => c.Name == BotConfig.Category);
+            var category = Context.Guild.CategoryChannels.First(c => c.Name == BotConfig.PrivateCategoryName);
             if (category is null) return;
 
             foreach (var channel in category.Channels.Cast<SocketTextChannel>())
             {
                 if (!channel.Name.Contains("private-chat-with")) continue;
-                if (_handler.Channels.Find(c => c.Id == channel.Id) is null)
+                if (_handler.Channels.Find(c => c.ChannelId == channel.Id) is null)
                     _ = channel.DeleteAsync();
             }
         }

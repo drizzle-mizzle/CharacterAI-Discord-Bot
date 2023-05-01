@@ -10,20 +10,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="DeepL.net" Version="1.7.1" />
     <PackageReference Include="Discord.Net" Version="3.10.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="PuppeteerExtraSharp" Version="2.0.0" />
+    <PackageReference Include="PuppeteerSharp" Version="9.1.0" />
     <PackageReference Include="YamlDotNet" Version="13.1.0" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Reference Include="CharacterAI">
       <HintPath>CharacterAI.dll</HintPath>
     </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
     <None Update="Config.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

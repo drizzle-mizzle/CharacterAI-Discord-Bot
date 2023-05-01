@@ -18,7 +18,7 @@
     "allow_dm": true,
 
     "rate_limit": 10,
-    "replies_delay": 1,
+    "default_replies_delay": 1,
     "enable_swipe_buttons": true,
     "enable_stop_button": true,
     "buttons_remove_delay": 120,
@@ -29,5 +29,9 @@
     "custom_chrome_directory": null,
     "custom_chrome_executable_full_path": null,
     "public_mode": false,
-    "hoster_discord_id": null
+    "hoster_discord_id": null,
+
+    "enable_translate_button": false,
+    "deepl_api_token": "",
+    "default_translate_language": "ru"
 }

@@ -54,9 +54,9 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
                 "`continue history <#channel>` - Copy history id from another channel\n    Aliases: `continue`, `ch`",
                 "`find character <query>` – Find and set character by it's name\n    Alias: `find`",
                 "`set character <id>` – Set character by id\n    Aliases: `set`, `sc`",
-                "`reset character` – Start new chat with a character *(for current text channel only, other channels won't be affected)*\n    Alias: `reset`",
+                "`reset character` – Start new chat with a character *(for a current channel only, other channels won't be affected)*\n    Alias: `reset`",
                 "`clear` – Delete all inactive private channels",
-                "`audience mode <mode?>` – Enable/disable audience mode *(What is the audience mode - read below)*\n    Alias: `amode`\n    Mode: `0` – disabled, `1` – username only, `2` – quote only, `3` – quote and username",
+                "`audience mode <mode?>` – Enable/disable audience mode *(what is the audience mode - read below)*\n    Alias: `amode`\n    Mode: `0` – disabled, `1` – username only, `2` – quote only, `3` – quote and username",
                 "`call user <@user> <any text>` – Make character call other user *(you can use it to make two bots talk to each other)*\n    Aliases: `call`, `cu`\n    Example: `@some_character call @another_character Do you love donuts?`\n    *(if no text argument provided, default `\"Hey!\"` will be used)*",
                 "`skip <amount>` – Make character ignore next few messages *(use it to stop bots' conversation)*\n    *(if no amount argument provided, default `1` will be used)*\n    *(commands will not be ignored, amount can be reduced with another call)*",
                 "`delay <time in seconds>` - Add delay to character responeses *(may be useful if you don't want two bots to reply to each other too fast)*",
@@ -68,7 +68,8 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
                 "`allow <@user>` – Allow user to call the bot\n    Alias: `unban`",
                 "`activity <text> <type>` – Change bot activity status\n    Type: `0` – Playing, `1` – Streaming, `2` – Listening, `3` – Watching, `4` – Custom (not working), `5` – Competing\n    *(default `type` value = 0)*\n    *(provide `0` for `text` to clear activity)*",
                 "`status <type>` – Change bot presence status\n    Type: `0` – Offline, `1` – Online, `2` – Idle, `3` – AFK, `4` – DND, `5` – Invisible",
-                "`reboot` - Relaunch browser. Use it if character begings to respond way too slow"
+                "`target language <language code>` - Change the target language for translate button\n    Alias: `lang`",
+                "`reboot` - Relaunch browser. Use it if character begings to respond way too slow or won't respond at all."
             };
             var publicCommands = new string[]
             {
@@ -134,6 +135,21 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
             }
             servers = $"Servers: {count}\n\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\n" + servers + "\n```";
             await Context.Channel.SendMessageAsync(servers);
+        }
+
+        [Command("all-alert")]
+        public async Task AllAlert([Remainder] string text)
+        {
+            if (Context.Message.Author.Id != BotConfig.HosterDiscordId) return;
+
+            foreach (var channel in _handler.Channels)
+            {
+                try
+                {
+                    var textChannel = (await Context.Client.GetChannelAsync(channel.ChannelId)) as SocketTextChannel;
+                    await textChannel!.SendMessageAsync(text);
+                } catch { }
+            }
         }
 
         [Command("ping")]

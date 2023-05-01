@@ -48,21 +48,22 @@ namespace CharacterAI_Discord_Bot.Service
             var newHistoryId = await cI.CreateNewChatAsync();
             if (newHistoryId is null) return;
 
-            var currentChannel = handler.Channels.Find(c => c.Id == context.Channel.Id);
-
-            var data = new CharacterDialogData(cI.CurrentCharacter.Id!, newHistoryId);
-            var newChannel = new DiscordChannel(context.Channel.Id, context.User.Id, data);
+            var currentChannel = handler.Channels.Find(c => c.ChannelId == context.Channel.Id);
+            var data = new ChannelData(cI.CurrentCharacter.Id!, newHistoryId);
 
             if (currentChannel is not null)
             {
-                newChannel.Data.AudienceMode = currentChannel.Data.AudienceMode;
-                newChannel.Data.ReplyChance = currentChannel.Data.ReplyChance;
-                newChannel.Data.ReplyDelay = currentChannel.Data.ReplyDelay;
-                newChannel.Data.SkipMessages = currentChannel.Data.SkipMessages;
-                newChannel.GuestsList = currentChannel.GuestsList;
+                data.AudienceMode = currentChannel.Data.AudienceMode;
+                data.ReplyChance = currentChannel.Data.ReplyChance;
+                data.ReplyDelay = currentChannel.Data.ReplyDelay;
+                data.SkipMessages = currentChannel.Data.SkipMessages;
+                data.GuestsList = currentChannel.Data.GuestsList;
+                data.TranslateLanguage = currentChannel.Data.TranslateLanguage;
 
                 handler.Channels.Remove(currentChannel);
             }
+
+            var newChannel = new DiscordChannel(context.Channel.Id, context.User.Id, data);
 
             handler.Channels.Add(newChannel);
             SaveData(handler.Channels);
@@ -81,11 +82,11 @@ namespace CharacterAI_Discord_Bot.Service
                 return;
             }
 
-            ulong categoryId = await FindOrCreateCategoryAsync(context, BotConfig.Category);
+            ulong categoryId = await FindOrCreateCategoryAsync(context, BotConfig.PrivateCategoryName);
             var newChannel = await CreateChannelAsync(context, categoryId, cI);
             var infoMsg = await newChannel.SendMessageAsync($"History Id: **`{newChatHistoryId}`**\n" +
                                                             $"Created by: {context.User.Mention}\n" +
-                                                            $"Use **`add {newChannel.Id} @user`** to add other users to this channel.\n" +
+                                                            $"Use **`add {newChannel.Id} @user`** to add other users to this channel (in public channels where you can mention them).\n" +
                                                             $"Use **`kick @user`** to kick user from this channel.");
             await infoMsg.PinAsync();
             await newChannel.SendMessageAsync(cI.CurrentCharacter.Greeting);
@@ -93,10 +94,10 @@ namespace CharacterAI_Discord_Bot.Service
             bool isOwner = context.User.Id == context.Guild.OwnerId;
             bool isManager = isOwner || ((SocketGuildUser)context.User).Roles.Any(r => r.Name == BotConfig.BotRole);
             if (!isManager) // owner's and managers' channels will not be deactivated
-                DeactivateOldUserChannel(handler, context.User.Id);
+                DeactivateOldUserChannel(handler, context.User.Id, context.Guild.Id);
 
             // Update channels list
-            var data = new CharacterDialogData(cI.CurrentCharacter.Id!, newChatHistoryId) { AudienceMode = 0 };
+            var data = new ChannelData(cI.CurrentCharacter.Id!, newChatHistoryId) { AudienceMode = 0 };
             var newChannelItem = new DiscordChannel(newChannel.Id, context.User.Id, data);
             handler.Channels.Add(newChannelItem);
 

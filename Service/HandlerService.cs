@@ -294,7 +294,9 @@ namespace CharacterAI_Discord_Bot.Service
             bool hasRefMessage = refMsg is not null && !string.IsNullOrEmpty(refMsg.Content);
             if (hasRefMessage)
             {
-                string quote = BotConfig.AudienceModeQuoteFormat.Replace("{quote}", refMsg!.Content);
+                string refContent = refMsg!.Content;
+                if (refContent.Length > 200) refContent = refContent[0..197] + "...";
+                string quote = BotConfig.AudienceModeQuoteFormat.Replace("{quote}", refContent);
                 text = quote + RemoveMention(text);
             }
 

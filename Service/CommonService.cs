@@ -22,6 +22,7 @@ namespace CharacterAI_Discord_Bot.Service
         internal static readonly string defaultAvatarPath = _imgPath + "defaultAvatar.png";
         internal static readonly string WARN_SIGN_UNICODE = "⚠";
         internal static readonly string WARN_SIGN_DISCORD = ":warning:";
+        internal static readonly string OK_SIGN_DISCORD = ":white_check_mark: ";
 
         public async Task AutoSetup(CommandsHandler handler, DiscordSocketClient client)
         {

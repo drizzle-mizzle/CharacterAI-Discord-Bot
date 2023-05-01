@@ -62,12 +62,12 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
             {
                 _handler.BlackList.Remove(user.Id);
                 SaveData(blackList: _handler.BlackList);
-                await Context.Message.ReplyAsync($"{WARN_SIGN_DISCORD} {user.Mention} was removed from the blacklist!");
+                await Context.Message.ReplyAsync($"{OK_SIGN_DISCORD} {user.Mention} was removed from the blacklist!");
             }
         }
 
         [Command("activity")]
-        public async Task UpdateStatus(string status, int type = 0)
+        public async Task UpdateStatus(int type = 0, [Remainder] string status = "")
         {
             if (!ValidatePublic(Context) || !ValidateUserAccess(Context))
                 await NoPermissionAlert(Context).ConfigureAwait(false);
@@ -90,7 +90,10 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
             if (!ValidatePublic(Context) || !ValidateUserAccess(Context))
                 await NoPermissionAlert(Context).ConfigureAwait(false);
             else
+            {
                 _ = _handler.CurrentIntegration.LaunchChromeAsync(BotConfig.CustomChromePath, BotConfig.CustomChromeExecPath);
+                await Context.Message.ReplyAsync($"{OK_SIGN_DISCORD} OK.");
+            }
         }
     }
 }

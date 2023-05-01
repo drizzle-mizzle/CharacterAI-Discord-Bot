@@ -220,7 +220,7 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
         [Alias("lang")]
         public async Task ChangeTragetLanguage(string lang)
         {
-            if (!ValidateUserAccess(Context))
+            if (Context.Guild is not null && !ValidateUserAccess(Context))
                 await NoPermissionAlert(Context).ConfigureAwait(false);
             else
             {

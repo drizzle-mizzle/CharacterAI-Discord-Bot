@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using PuppeteerSharp;
 using static CharacterAI_Discord_Bot.Service.CommandsService;
 using static CharacterAI_Discord_Bot.Service.CommonService;
 
@@ -66,7 +67,7 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
                 "`hunt chance <@user> <chance>` – Change the probability of replies to a hunted user `in %`\n    Alias: `hc`\n    Example: `hc @user 50` => `Probability of replies for @user was changed from 100% to 50%`\n    *(default value = 100%)*",
                 "`ignore <@user>` – Prevent user from calling the bot\n    Alias: `ban`",
                 "`allow <@user>` – Allow user to call the bot\n    Alias: `unban`",
-                "`activity <text> <type>` – Change bot activity status\n    Type: `0` – Playing, `1` – Streaming, `2` – Listening, `3` – Watching, `4` – Custom (not working), `5` – Competing\n    *(default `type` value = 0)*\n    *(provide `0` for `text` to clear activity)*",
+                "`activity <type> <text>` – Change bot activity status\n    Types: `0` – Playing, `1` – Streaming, `2` – Listening, `3` – Watching, `4` – Custom (not working), `5` – Competing\n    *(provide `0` for `text` to clear activity)*",
                 "`status <type>` – Change bot presence status\n    Type: `0` – Offline, `1` – Online, `2` – Idle, `3` – AFK, `4` – DND, `5` – Invisible",
                 "`target language <language code>` - Change the target language for translate button\n    Alias: `lang`",
                 "`reboot` - Relaunch browser. Use it if character begings to respond way too slow or won't respond at all."
@@ -117,24 +118,30 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
         }
 
         [Command("servers-list")]
-        public async Task Servers()
+        public async Task Servers(int page = 1)
         {
             if (Context.Message.Author.Id != BotConfig.HosterDiscordId) return;
 
             var guilds = Context.Client.Guilds;
-            string servers = "```\n";
-            int count = 0;
-
+            List<string> servers = new();
+            
             foreach (var guild in guilds)
             {
-                servers += $"[{guild.Name}]\n" +
-                           $"{(guild.Description is string desc ? $"Description: \"{desc}\"\n" : "")}" +
-                           $"Owner: {guild.Owner.DisplayName}{(guild.Owner.Nickname is string nick ? $" / {nick}" : "")}\n" +
-                           $"Members: {guild.MemberCount}\n\n";
-                count++;
+                servers.Add($"[{guild.Name}]\n" +
+                            $"{(guild.Description is string desc ? $"Description: \"{desc}\"\n" : "")}" +
+                            $"Owner: {guild.Owner.DisplayName}{(guild.Owner.Nickname is string nick ? $" / {nick}" : "")}\n" +
+                            $"Members: {guild.MemberCount}\n\n");
             }
-            servers = $"Servers: {count}\n\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\\~\n" + servers + "\n```";
-            await Context.Channel.SendMessageAsync(servers);
+            
+            var pages = Math.Ceiling((double)(servers.Count / 10.0));
+            
+            int posA = page * 10 - 10;
+            int overflow = servers.Count - posA;
+            int amount = overflow > 10 ? 10 : overflow;
+
+            var text = $"**Page {page}/{pages}**\nServers: {servers.Count}\n```\n{string.Join("", servers.GetRange(posA, amount))}\n```";
+            
+            await Context.Channel.SendMessageAsync(text);
         }
 
         [Command("all-alert")]

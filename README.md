@@ -25,4 +25,8 @@ An unofficial Discord integration with a [CharacterAI](https://beta.character.ai
 - [Commands](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/wiki/Commands)
 - [Additional configuration](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/wiki/Additional-configuration)
 
-<!-- ## 🔧Known issues -->
+## 🔧Known issues
+- `private` command is broken again now, sorry
+
+    ![image](https://user-images.githubusercontent.com/55811932/236642586-d4d06f16-2016-4ec6-9481-995f9f251d61.png)
+

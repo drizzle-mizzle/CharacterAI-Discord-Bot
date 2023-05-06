@@ -76,7 +76,7 @@ namespace CharacterAI_Discord_Bot
             }
             catch (Exception e)
             {
-                Failure(e.ToString());
+                Failure(e.ToString(), client: _client);
             }
         }
 

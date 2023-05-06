@@ -26,7 +26,7 @@ namespace CharacterAI_Discord_Bot.Service
                 }
                 catch (Exception e)
                 {
-                    Failure($"Setup Failed. Trying again...\nDetails:\n{e}");
+                    Failure($"Setup Failed. Trying again...\nDetails:\n{e}", client: context.Client);
                 }
             }
 

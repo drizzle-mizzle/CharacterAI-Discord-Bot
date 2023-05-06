@@ -117,7 +117,7 @@ namespace CharacterAI_Discord_Bot.Handlers
             {
                 var typing = context.Channel.EnterTypingState();
                 try { _ = TryToCallCharacterAsync(context, currentChannel, isDM || isPrivate); }
-                catch (Exception e) { Failure(e.ToString()); }
+                catch (Exception e) { Failure(e.ToString(), client: _client); }
 
                 await Task.Delay(2500);
                 typing.Dispose();
@@ -250,7 +250,7 @@ namespace CharacterAI_Discord_Bot.Handlers
                     await message.ModifyAsync(msg => { msg.Content = response.ErrorReason!.Replace(WARN_SIGN_UNICODE, WARN_SIGN_DISCORD); }).ConfigureAwait(false); ;
                     return;
                 }
-                lastCall.RepliesList.AddRange(response.Replies);
+                lastCall.RepliesList.Add(response.Response!);
             }
             var newReply = lastCall.RepliesList[lastCall.CurrentReplyIndex];
             lastCall.CurrentPrimaryMsgId = newReply.Id;
@@ -312,10 +312,10 @@ namespace CharacterAI_Discord_Bot.Handlers
             // Send message to a character
             await Task.Delay(currentChannel.Data.ReplyDelay * 1000); // wait
             var response = await CurrentIntegration.CallCharacterAsync(text, imgPath, historyId, primaryMsgId);
-            currentChannel.Data.LastCall = new(response);
 
             if (response.IsSuccessful)
             {
+                currentChannel.Data.LastCall = new(response);
                 // Take first character answer by default and respond with it
                 var reply = currentChannel.Data.LastCall!.RepliesList.First();
                 _ = Task.Run(async () =>

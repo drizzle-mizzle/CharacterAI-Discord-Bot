@@ -31,8 +31,9 @@ namespace CharacterAI_Discord_Bot.Models
         public bool PublicMode { get; }
         public ulong? HosterDiscordId { get; set; }
         public bool TranslateBtnEnabled { get; }
-        public string DeeplApiToken { get; }
-        public string DefaultTranslateLanguage { get; }
+        public string? DeeplApiToken { get; }
+        public string? DefaultTranslateLanguage { get; }
+        public string? DiscordErrorLogChannelID { get; } 
 
 
         private readonly JObject _configParsed;
@@ -69,6 +70,7 @@ namespace CharacterAI_Discord_Bot.Models
             TranslateBtnEnabled = bool.Parse(GetValue("enable_translate_button"));
             DeeplApiToken = GetValue("deepl_api_token");
             DefaultTranslateLanguage = GetValue("default_translate_language");
+            DiscordErrorLogChannelID = GetValue("discord_error_log_channel_id");
         }
 
         private string GetValue(string key)

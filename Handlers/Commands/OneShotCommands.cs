@@ -56,6 +56,7 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
                 "`find character <query>` – Find and set character by it's name\n    Alias: `find`",
                 "`set character <id>` – Set character by id\n    Aliases: `set`, `sc`",
                 "`reset character` – Start new chat with a character *(for a current channel only, other channels won't be affected)*\n    Alias: `reset`",
+                "`reset character -all` – Drop chat history for all channels on the server.\n    Alias: `reset -all`",
                 "`clear` – Delete all inactive private channels",
                 "`audience mode <mode?>` – Enable/disable audience mode *(what is the audience mode - read below)*\n    Alias: `amode`\n    Mode: `0` – disabled, `1` – username only, `2` – quote only, `3` – quote and username",
                 "`call user <@user> <any text>` – Make character call other user *(you can use it to make two bots talk to each other)*\n    Aliases: `call`, `cu`\n    Example: `@some_character call @another_character Do you love donuts?`\n    *(if no text argument provided, default `\"Hey!\"` will be used)*",

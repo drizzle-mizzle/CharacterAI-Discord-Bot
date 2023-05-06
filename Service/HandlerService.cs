@@ -70,23 +70,17 @@ namespace CharacterAI_Discord_Bot.Service
         internal async Task<DiscordChannel> StartTrackingChannelAsync(SocketCommandContext context)
         {
             var cI = CurrentIntegration;
-            var data = new ChannelData(null, null);
+            var charId = cI.CurrentCharacter.IsEmpty ? null : cI.CurrentCharacter.Id;
+            var historyId = cI.CurrentCharacter.IsEmpty ? null : await cI.CreateNewChatAsync() ?? cI.Chats[0];
+
+            var data = new ChannelData(charId, historyId);
             var currentChannel = new DiscordChannel(context.Channel.Id, context.User.Id, data)
             {
                 ChannelName = context.Channel.Name,
-                GuildId = context.Guild.Id,
-                GuildName = context.Guild.Name
+                GuildId = context.Guild?.Id ?? 0,
+                GuildName = context.Guild?.Name ?? "DM"
             };
             Channels.Add(currentChannel);
-
-            if (!cI.CurrentCharacter.IsEmpty)
-            {
-                var historyId = await cI.CreateNewChatAsync() ?? cI.Chats[0];
-
-                currentChannel.Data.CharacterId = cI.CurrentCharacter.Id;
-                currentChannel.Data.HistoryId = historyId;
-            }
-
             SaveData(channels: Channels);
 
             return currentChannel;
@@ -118,10 +112,9 @@ namespace CharacterAI_Discord_Bot.Service
                                 $"*Can generate images: {(character.ImageGenEnabled is true ? "Yes" : "No")}*\n" +
                                 $"*Interactions: {character.Interactions}*"
             }.Build();
-            try
-            {
-                await component.FollowupAsync(embed: embed, components: null);
-            }catch (Exception e) { Failure(e.ToString()); }
+
+            try { await component.FollowupAsync(embed: embed, components: null); }
+            catch (Exception e) { Failure(e.ToString(), client: refContext.Client); }
         }
 
         internal async Task TranslateMessageAsync(IUserMessage message, string translateTo)

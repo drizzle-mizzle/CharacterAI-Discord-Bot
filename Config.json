@@ -33,5 +33,7 @@
 
     "enable_translate_button": false,
     "deepl_api_token": "",
-    "default_translate_language": "ru"
+    "default_translate_language": "ru",
+
+    "discord_error_log_channel_id": null
 }

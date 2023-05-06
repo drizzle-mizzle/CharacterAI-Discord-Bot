@@ -30,10 +30,21 @@ namespace CharacterAI_Discord_Bot.Service
 
             SetupResult setupResult;
             // It will try to setup again after 5s, if something will go wrong.
-            while (true) try { setupResult = await cI.SetupAsync(_config.AutoCharId); break; }
-                         catch (Exception e) { Failure($"Setup Failed. Trying again...\nDetails:\n{e}"); await Task.Delay(5000); }
+            while (true)
+            {
+                try {
+                    setupResult = await cI.SetupAsync(_config.AutoCharId, true);
+                    if (setupResult.IsSuccessful) break;
 
-            if (!setupResult.IsSuccessful) return;
+                    Failure($"Setup Failed. Trying again...", client: client);
+                    await Task.Delay(5000);
+                }
+                catch (Exception e)
+                {
+                    Failure($"Setup Failed. Trying again...\nDetails:\n{e}", client: client);
+                    await Task.Delay(5000);
+                }
+            }
 
             var savedData = GetStoredData(_config.AutoCharId);
 
@@ -218,10 +229,9 @@ namespace CharacterAI_Discord_Bot.Service
         }
 
         // Log and return false
-        public static bool Failure(string logText = "", HttpResponseMessage? response = null)
+        public static bool Failure(string logText = "", HttpResponseMessage? response = null, DiscordSocketClient? client = null)
         {
-            if (logText != "")
-                Log(logText + "\n", ConsoleColor.Red);
+            var text = logText;
 
             if (response is not null)
             {
@@ -230,12 +240,19 @@ namespace CharacterAI_Discord_Bot.Service
                 var responseContent = response.Content?.ReadAsStringAsync().Result;
                 var requestContent = request.Content?.ReadAsStringAsync().Result;
 
-                Log($"Error!\n Request failed! ({url})\n", ConsoleColor.Red);
-                Log(color: ConsoleColor.Red,
-                    text: $" Response: {response.ReasonPhrase}\n" +
-                          (requestContent is null ? "" : $" Request Content: {requestContent}\n") +
-                          (requestContent is null ? "" : $" Response Content: {responseContent}\n")
-                    );
+                text += $"Error!\n Request failed! ({url})\n";
+
+                text += $" Response: {response.ReasonPhrase}\n" +
+                    (requestContent is null ? "" : $" Request Content: {requestContent}\n") +
+                    (requestContent is null ? "" : $" Response Content: {responseContent}\n");
+            }
+
+            Log(text, ConsoleColor.Red);
+
+            if (!string.IsNullOrWhiteSpace(BotConfig.DiscordErrorLogChannelID) && client is not null)
+            {
+                var channel = client.GetChannel(ulong.Parse(BotConfig.DiscordErrorLogChannelID)) as SocketTextChannel;
+                channel?.SendMessageAsync(text);
             }
 
             return false;

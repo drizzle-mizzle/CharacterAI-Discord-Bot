@@ -71,7 +71,7 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
         [Command("reset character")]
         [Summary("Drop chat history in current channel")]
         [Alias("reset")]
-        public async Task ResetCharacter()
+        public async Task ResetCharacter(string? arg = null)
         {
             if (Context.Guild is not null && !ValidateUserAccess(Context))
                 await NoPermissionAlert(Context).ConfigureAwait(false);
@@ -79,7 +79,12 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
                 await Context.Message.ReplyAsync($"{WARN_SIGN_DISCORD} Set a character first").ConfigureAwait(false);
             else
                 using (Context.Channel.EnterTypingState())
-                    _ = ResetCharacterAsync(_handler, Context);
+                {
+                    if (arg == "-all" && Context.Guild is not null)
+                        _ = FullResetAsync(_handler, Context);
+                    else
+                        _ = ResetCharacterAsync(_handler, Context);
+                }
         }
 
         [Command("reply chance")]

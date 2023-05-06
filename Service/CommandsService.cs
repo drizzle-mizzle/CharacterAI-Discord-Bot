@@ -41,12 +41,36 @@ namespace CharacterAI_Discord_Bot.Service
             await context.Message.ReplyAsync(embed: list, components: buttons.Build()).ConfigureAwait(false);
         }
 
+        // [Command("reset character -all")]
+        public static async Task FullResetAsync(CommandsHandler handler, SocketCommandContext context)
+        {
+            var channelsToRemove = new List<DiscordChannel>();
+
+            foreach(var channel in handler.Channels)
+            {
+                if (channel.GuildId != context.Guild.Id) continue;
+                if (context.Guild.GetChannel(channel.ChannelId) is not SocketTextChannel guildChannel) continue;
+                await guildChannel.SendMessageAsync($"{WARN_SIGN_DISCORD} Chat history for this channel was dropped by {context.User.Mention}");
+
+                channelsToRemove.Add(channel);
+            }
+
+            foreach(var channel in channelsToRemove)
+                handler.Channels.Remove(channel);
+
+            SaveData(channels: handler.Channels);
+        }
+
         // [Command("reset character")]
         public static async Task ResetCharacterAsync(CommandsHandler handler, SocketCommandContext context)
         {
             var cI = handler.CurrentIntegration;
             var newHistoryId = await cI.CreateNewChatAsync();
-            if (newHistoryId is null) return;
+            if (newHistoryId is null)
+            {
+                await context.Message.ReplyAsync($"{WARN_SIGN_DISCORD} Failed to create new chat history. Try again.");
+                return;
+            }
 
             var currentChannel = handler.Channels.Find(c => c.ChannelId == context.Channel.Id);
             var data = new ChannelData(cI.CurrentCharacter.Id!, newHistoryId);
@@ -66,8 +90,8 @@ namespace CharacterAI_Discord_Bot.Service
             var newChannel = new DiscordChannel(context.Channel.Id, context.User.Id, data)
             {
                 ChannelName = context.Channel.Name,
-                GuildId = context.Guild.Id,
-                GuildName = context.Guild.Name
+                GuildId = context.Guild?.Id ?? 0,
+                GuildName = context.Guild?.Name ?? "DM"
             };
 
             handler.Channels.Add(newChannel);

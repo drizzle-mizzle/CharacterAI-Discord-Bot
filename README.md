@@ -25,6 +25,4 @@ An unofficial Discord integration with a [CharacterAI](https://beta.character.ai
 - [Commands](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/wiki/Commands)
 - [Additional configuration](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/wiki/Additional-configuration)
 
-## 🩼Known issues
-`System.IO.IOException: The process cannot access the file because it is being used by another process.`
-Solution: Simply relaunch the application.
+<!-- ## 🔧Known issues -->

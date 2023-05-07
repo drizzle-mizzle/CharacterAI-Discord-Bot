@@ -2,12 +2,12 @@
 name: Bug report
 about: Something is broken
 title: "[BUG]"
-labels: bug
+labels: bug, help wanted, question
 assignees: ''
 
 ---
 
-- [ ] I am using the [latest version](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/releases/latest) of the program.
+- [x] I am using the [latest version](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/releases/latest) of the program.
 - [ ] I have read the [Known-issues](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot#known-issues) section and [Issues](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/issues) page, and made sure that this problem was not already described elsewhere.
 
 ### Describe the bug:

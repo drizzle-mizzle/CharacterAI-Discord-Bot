@@ -11,12 +11,13 @@ My [Discord Server](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/di
 </div>
 
 ## 🪄Features
-- Talk with any character on your own server and change them on the fly.
-- Embedded character search.
-- Automatically sets the name and profile picture of a character.
-- Supports answers swiping <s>and image sending</s>broken.
-- Supports multiple parallel chats with the same character.
-- Random replies, audience mode and some other stuff.
+- Talk with any character on your own server and change them on the fly
+- Embedded character search
+- Embedded DeepL translator
+- Automatically sets the name and profile picture of a character
+- Supports answers swiping <s>and image sending</s>broken, works only in one direction now (can receive images, but not send)
+- Supports multiple parallel chats with the same character
+- Random replies, audience mode and some other stuff
 
     ![chrome_cshYMsGIaB](https://user-images.githubusercontent.com/55811932/211129383-c7cd4ca2-ceb4-42c5-8449-bc6ce9b2d538.gif)
     

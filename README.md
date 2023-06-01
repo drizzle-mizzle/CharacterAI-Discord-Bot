@@ -33,3 +33,5 @@ My [Discord Server](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/di
 
     ![image](https://user-images.githubusercontent.com/55811932/236642586-d4d06f16-2016-4ec6-9481-995f9f251d61.png)
 
+## 🧱Build yourself
+- [.NET publishing guide](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/wiki/Build-youself)

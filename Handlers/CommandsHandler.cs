@@ -53,7 +53,7 @@ namespace CharacterAI_Discord_Bot.Handlers
                 return;
 
             int argPos = 0;
-            string[] prefixes = BotConfig.BotPrefixes;
+            string[] prefixes = BotConfig.BotCallPrefixes;
 
             var cI = CurrentIntegration;
             var context = new SocketCommandContext(_client, message);
@@ -68,7 +68,6 @@ namespace CharacterAI_Discord_Bot.Handlers
             bool cnn = currentChannel is not null;
             bool randomReply = cnn && currentChannel!.Data.ReplyChance > (@Random.Next(99) + 0.001 + @Random.NextDouble()); // min: 0 + 0.001 + 0 = 0.001; max: 98 + 0.001 + 1 = 99.001
             bool userIsHunted = cnn && currentChannel!.Data.HuntedUsers.ContainsKey(authorId) && currentChannel.Data.HuntedUsers[authorId] >= @Random.Next(100) + 1;
-
             bool gottaExecute = hasMention || hasPrefix;
             bool gottaReply = isDM || hasReply || randomReply || userIsHunted;
             if (!(gottaExecute || gottaReply)) return;
@@ -84,8 +83,10 @@ namespace CharacterAI_Discord_Bot.Handlers
             if ((isDM && !BotConfig.DMenabled) || UserIsBanned(context)) return;
 
             if (gottaExecute)
-            {   // Try to execute command
-                var cmdResponse = await _commands.ExecuteAsync(context, argPos, _services);
+            {
+                var cmdArgPos = message.Content.IndexOf(BotConfig.BotCommandSubPrefix) + 1; 
+                // Try to execute command
+                var cmdResponse = await _commands.ExecuteAsync(context, cmdArgPos, _services);
                 // If command was found and executed, return
                 if (cmdResponse.IsSuccess) return;
                 // If command was found but failed to execute, return
@@ -281,7 +282,7 @@ namespace CharacterAI_Discord_Bot.Handlers
             }
 
             // Prepare text data
-            string text = RemoveMention(context.Message.Content);
+            string text = RemoveMentionAndPrefix(context.Message.Content);
 
             int amode = currentChannel.Data.AudienceMode;
             if (amode == 1 || amode == 3 || inDMorPrivate)

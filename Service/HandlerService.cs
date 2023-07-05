@@ -253,14 +253,14 @@ namespace CharacterAI_Discord_Bot.Service
         /// <summary>
         /// Remove prefix and/or @mention_prefix
         /// </summary>
-        internal static string RemoveMention(string text)
+        internal static string RemoveMentionAndPrefix(string text)
         {
             text = text.Trim();
             // Remove first @mention
             if (text.StartsWith("<"))
                 text = new Regex("\\<(.*?)\\>").Replace(text, "", 1);
             // Remove prefix
-            var prefixes = BotConfig.BotPrefixes.OrderBy(p => p.Length).Reverse().ToArray(); // ex: "~ai" first, only then "~"
+            var prefixes = BotConfig.BotCallPrefixes.OrderBy(p => p.Length).Reverse().ToArray(); // ex: "~ai" first, only then "~"
             foreach (string prefix in prefixes)
                 if (text.StartsWith(prefix))
                     text = text.Replace(prefix, "");
@@ -295,7 +295,7 @@ namespace CharacterAI_Discord_Bot.Service
                 string refContent = refMsg!.Content;
                 if (refContent.Length > 200) refContent = refContent[0..197] + "...";
                 string quote = BotConfig.AudienceModeQuoteFormat.Replace("{quote}", refContent);
-                text = quote + RemoveMention(text);
+                text = quote + RemoveMentionAndPrefix(text);
             }
 
             return text;

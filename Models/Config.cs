@@ -8,7 +8,8 @@ namespace CharacterAI_Discord_Bot.Models
         public string caiUserToken { get; }
         public string BotToken { get; }
         public string BotRole { get; }
-        public string[] BotPrefixes { get; }
+        public string[] BotCallPrefixes { get; }
+        public string BotCommandSubPrefix { get; }
         public string PrivateCategoryName { get; }
         public int DefaultAudienceMode { get; }
         public string AudienceModeQuoteFormat { get; }
@@ -45,7 +46,8 @@ namespace CharacterAI_Discord_Bot.Models
 
             AutoSetupEnabled = bool.Parse(GetValue("auto_setup"))!;
             AutoCharId = GetValue("auto_char_id");
-            BotPrefixes = JsonConvert.DeserializeObject<string[]>(_configParsed["discord_bot_prefixes"]!.ToString())!;
+            BotCallPrefixes = JsonConvert.DeserializeObject<string[]>(_configParsed["discord_bot_call_prefixes"]!.ToString())!;
+            BotCommandSubPrefix = GetValue("discord_bot_command_subprefix");
             BotRole = GetValue("discord_bot_role");
             BotToken = GetValue("discord_bot_token");
             PrivateCategoryName = GetValue("discord_private_category_name");

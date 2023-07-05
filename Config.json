@@ -3,7 +3,8 @@
     "char_ai_user_token": "_YOUR_USER_TOKEN_",
 
     "discord_bot_role": "Manage Character",
-    "discord_bot_prefixes": [ ".ai ", "!!" ],
+    "discord_bot_call_prefixes": [ ".ai ", "!!" ],
+    "discord_bot_command_subprefix": "#",
     "discord_private_category_name": "CAI PRIVATE CHANNELS",
 
     "default_audience_mode": 0,

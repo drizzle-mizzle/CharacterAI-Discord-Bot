@@ -119,6 +119,7 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
         }
 
         [Command("servers-list")]
+        [Alias("sl")]
         public async Task Servers(int page = 1)
         {
             if (Context.Message.Author.Id != BotConfig.HosterDiscordId) return;
@@ -160,7 +161,7 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
             }
         }
 
-        [Command("##exit")]
+        [Command("exit")]
         public async Task ExitApp()
         {
             if (!ValidatePublic(Context) || !ValidateUserAccess(Context))

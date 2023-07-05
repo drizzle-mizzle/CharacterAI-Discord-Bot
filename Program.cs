@@ -22,9 +22,6 @@ namespace CharacterAI_Discord_Bot
 
             if (BotConfig is null) return;
 
-            // So it would simply not show that annoying error in console.
-            // Presence Intent itself is actually needed for commands that take user as an argument.
-            _client.PresenceUpdated += (a, b, c) => Task.CompletedTask;
             _client.Log += Log;
             _client.Ready += OnClientReady;
             _client.JoinedGuild += OnGuildJoin;

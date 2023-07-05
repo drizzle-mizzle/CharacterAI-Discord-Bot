@@ -160,6 +160,24 @@ namespace CharacterAI_Discord_Bot.Handlers.Commands
             }
         }
 
+        [Command("##exit")]
+        public async Task ExitApp()
+        {
+            if (!ValidatePublic(Context) || !ValidateUserAccess(Context))
+                await NoPermissionAlert(Context).ConfigureAwait(false);
+            else
+            {
+                await Context.Message.ReplyAsync($"{WARN_SIGN_DISCORD} Shutting down...");
+
+                try { CharacterAI.Integration.KillChromes(_handler.CurrentIntegration.EXEC_PATH); }
+                catch (Exception e)
+                {
+                    throw new("Failed to kill Chrome processes.\n" + e.ToString());
+                }
+                Environment.Exit(0);
+            }
+        }
+
         [Command("ping")]
         public async Task Ping()
             => await Context.Message.ReplyAsync($"Pong! - {Context.Client.Latency} ms").ConfigureAwait(false);

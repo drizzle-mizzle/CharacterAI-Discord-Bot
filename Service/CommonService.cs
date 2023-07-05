@@ -279,29 +279,6 @@ namespace CharacterAI_Discord_Bot.Service
                 return null;
             }
         }
-
-        public static void CommandsLog()
-            => Log("\nEnter \"kill\" to close all Puppeteer Chrome proccesses (if you use same 'custom_chrome_directory' for several bots at once, it will close chrome for them too).\n" +
-                     "Enter \"launch\" to launch Puppeteer Chrome process again.\n" +
-                     "Enter \"exit\" or \"stop\" to close the application (chrome processes will not be terminated).");
-
-        // probably not useless
-        //public static async Task CreateRole(DiscordSocketClient client)
-        //{
-        //    var guild = client.Guilds.FirstOrDefault();
-        //    var role = client.GetGuild(guild.Id).Roles.FirstOrDefault(role => role.Name == CommonService.GetConfig().botRole);
-        //    if (!string.IsNullOrEmpty(role.ToString)) return;
-
-        //    try
-        //    {
-        //        Log("Creating role... ");
-        //        var newRole = await guild.CreateRoleAsync(GetConfig().botRole).Result;
-        //        await guild.Owner.AddRoleAsync(newRole);
-        //    }
-        //    catch { Failure("Failed to create default bot role. Probably, missing permissions?"); }
-
-        //    Success("OK\n");
-        //}
     }
 
 

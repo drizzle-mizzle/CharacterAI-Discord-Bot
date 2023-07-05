@@ -45,7 +45,7 @@ namespace CharacterAI_Discord_Bot
         public Task OnClientReady()
         {
             _ = Task.Run(async () => await LaunchChromeAndSetup(setup: BotConfig.AutoSetupEnabled));
-            
+
             return Task.CompletedTask;
         }
 
@@ -56,23 +56,6 @@ namespace CharacterAI_Discord_Bot
                 var handler = _services.GetRequiredService<CommandsHandler>();
                 await handler.CurrentIntegration.LaunchChromeAsync(BotConfig.CustomChromePath, BotConfig.CustomChromeExecPath);
                 if (setup) await AutoSetup(handler, _client);
-
-                CommandsLog();
-                while (true)
-                {
-                    Log("\n# ", ConsoleColor.Green);
-                    string? input = Console.ReadLine();
-                    input = input?.Trim().Trim('\"');
-
-                    if (input is null) continue;
-
-                    switch (input)
-                    {
-                        case "exit" or "stop": Environment.Exit(0); break;
-                        case "kill": KillChromes(); break;
-                        case "launch": await LaunchChromeAndSetup(false); break;
-                    };
-                }
             }
             catch (Exception e)
             {
@@ -86,7 +69,9 @@ namespace CharacterAI_Discord_Bot
             {
                 GatewayIntents = GatewayIntents.All
                 ^ GatewayIntents.GuildScheduledEvents
-                ^ GatewayIntents.GuildInvites,
+                ^ GatewayIntents.GuildInvites
+                ^ GatewayIntents.GuildPresences,
+
                 MessageCacheSize = 5
             };
 
@@ -105,20 +90,6 @@ namespace CharacterAI_Discord_Bot
             Console.WriteLine(log.ToString());
 
             return Task.CompletedTask;
-        }
-
-        private void KillChromes()
-        {
-            try
-            {
-                var path = _services.GetRequiredService<CommandsHandler>().CurrentIntegration.EXEC_PATH;
-                CharacterAI.Integration.KillChromes(path);
-                Success("OK");
-            }
-            catch (Exception e)
-            {
-                Failure("Failed to kill Chrome processes.\n" + e.ToString());
-            }
         }
     }
 }

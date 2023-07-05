@@ -34,6 +34,7 @@ namespace CharacterAI_Discord_Bot.Models
         public string? DeeplApiToken { get; }
         public string? DefaultTranslateLanguage { get; }
         public string? DiscordErrorLogChannelID { get; } 
+        public bool CAIplusEnabled { get; }
 
 
         private readonly JObject _configParsed;
@@ -71,6 +72,7 @@ namespace CharacterAI_Discord_Bot.Models
             DeeplApiToken = GetValue("deepl_api_token");
             DefaultTranslateLanguage = GetValue("default_translate_language");
             DiscordErrorLogChannelID = GetValue("discord_error_log_channel_id");
+            CAIplusEnabled = bool.Parse(GetValue("enable_cai_plus_mode"));
         }
 
         private string GetValue(string key)

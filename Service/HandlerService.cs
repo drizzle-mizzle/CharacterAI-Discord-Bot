@@ -33,7 +33,7 @@ namespace CharacterAI_Discord_Bot.Service
             string replyText = reply.Text!;
 
             // (3 or more) "\n\n\n..." -> (exactly 1) "\n"
-            replyText = LBRegex().Replace(replyText, "\n");
+            replyText = LBRegex().Replace(replyText, "\n").Replace("\r", "");
 
             // Discord won't accept message that is longer than 2000 symbols
             if (replyText.Length > 2000)
@@ -61,7 +61,7 @@ namespace CharacterAI_Discord_Bot.Service
             if (isReplyToBot && BotConfig.StopBtnEnabled)
                 await AddStopButtonAsync(botReply);
 
-            if (BotConfig.TranslateBtnEnabled)
+            if (BotConfig.TranslateBtnEnabled && (Channels.Find(c => c.ChannelId == message.Channel.Id)?.Data.TranslateLanguage != "0" ))
                 await AddTranslateButtonAsync(botReply);
 
             return botReply!.Id;
@@ -113,7 +113,7 @@ namespace CharacterAI_Discord_Bot.Service
                                 $"*Interactions: {character.Interactions}*"
             }.Build();
 
-            try { await component.FollowupAsync(embed: embed, components: null); }
+            try { await component.ModifyOriginalResponseAsync(r => { r.Embed = embed; r.Components = null; }); }
             catch (Exception e) { Failure(e.ToString(), client: refContext.Client); }
         }
 

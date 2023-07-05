@@ -33,7 +33,7 @@ namespace CharacterAI_Discord_Bot.Service
             while (true)
             {
                 try {
-                    setupResult = await cI.SetupAsync(_config.AutoCharId, true);
+                    setupResult = await cI.SetupAsync(_config.AutoCharId, false);
                     if (setupResult.IsSuccessful) break;
 
                     Failure($"Setup Failed. Trying again...", client: client);

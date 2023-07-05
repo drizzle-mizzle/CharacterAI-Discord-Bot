@@ -1,5 +1,4 @@
 ﻿using Discord;
-using Discord.Webhook;
 using Discord.Commands;
 using Discord.WebSocket;
 using static CharacterAI_Discord_Bot.Service.CommandsService;

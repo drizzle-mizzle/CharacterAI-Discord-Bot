@@ -38,7 +38,7 @@ namespace CharacterAI_Discord_Bot.Handlers
         }
 
         private void CreateIntegration(string token)
-            => CurrentIntegration = new(token);
+            => CurrentIntegration = new(token, BotConfig.CAIplusEnabled);
 
         private Task HandleMessage(SocketMessage rawMsg)
         {

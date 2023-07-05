@@ -35,5 +35,6 @@
     "deepl_api_token": "",
     "default_translate_language": "ru",
 
-    "discord_error_log_channel_id": null
+    "discord_error_log_channel_id": null,
+    "enable_cai_plus_mode": false
 }

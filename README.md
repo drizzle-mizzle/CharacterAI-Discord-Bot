@@ -1,7 +1,12 @@
 # CharacterAI Discord Bot
 
-### **⚡⚡⚡ This project is being absorbed by a new one ([Character Engine](https://github.com/drizzle-mizzle/Character-Engine-Discord)) and is no longer *actively* supported.**
-
+⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡
+### This project is being absorbed by a new one:
+### [Character Engine Discord](https://github.com/drizzle-mizzle/Character-Engine-Discord)
+### And will be no longer actively supported.
+### Consider switching to it.
+⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡
+<br><br><br><br>
 An unofficial Discord integration with a [CharacterAI](https://beta.character.ai/) service which you can use to add any character on your own Discord server.
 
 <div align="center">

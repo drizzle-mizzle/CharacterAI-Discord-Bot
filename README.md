@@ -1,21 +1,15 @@
 # CharacterAI Discord Bot
 
-⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡
-### This project is being absorbed by a new one:
-### [Character Engine Discord](https://github.com/drizzle-mizzle/Character-Engine-Discord)
-### And will be no longer actively supported.
-### Consider switching to it.
-⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡
-<br><br><br><br>
+⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡<br>
+⚡This project is absorbed by the new **[Character Engine Discord](https://github.com/drizzle-mizzle/Character-Engine-Discord)** bot, consider switching to it. ⚡<br>
+⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡
+<br><br>
 An unofficial Discord integration with a [CharacterAI](https://beta.character.ai/) service which you can use to add any character on your own Discord server.
 
-<div align="center">
+<div align="center">    
     
 ![Logo](https://user-images.githubusercontent.com/55811932/224168501-48e81f64-9b2f-442c-a8fe-6ecab8d7aab2.png)<br>
-<!-- ![Logo](https://user-images.githubusercontent.com/55811932/226441262-8edbb834-33d5-4cd2-8fac-0bacfa6ff79b.png) -->
 
-<sup><b>If you found this project useful, the best way to thank me is to simply leave a star ⭐<br>
-My [Discord Server](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/discussions/22#discussioncomment-5502307) | Based on [CharacterAI.Net](https://github.com/drizzle-mizzle/CharacterAI.Net-API-Wrapper)</b></sup>
 </div>
 
 ## 🪄Features
@@ -34,12 +28,3 @@ My [Discord Server](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/di
 - [How to set up](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/wiki/How-to-set-up)
 - [Commands](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/wiki/Commands)
 - [Additional configuration](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/wiki/Additional-configuration)
-
-## 🔧Known issues
-- you can't send your pictures to a character, maybe will be fixed later (maybe not)
-- there might be some problems with `private` command
-
-    ![image](https://user-images.githubusercontent.com/55811932/236642586-d4d06f16-2016-4ec6-9481-995f9f251d61.png)
-
-## 🧱Build yourself
-- [.NET publishing guide](https://github.com/drizzle-mizzle/CharacterAI-Discord-Bot/wiki/Build-youself)

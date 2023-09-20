@@ -1,92 +1,38 @@
-﻿using Discord;
-using Discord.WebSocket;
-using Discord.Commands;
-using Microsoft.Extensions.DependencyInjection;
-using CharacterAI_Discord_Bot.Service;
-using CharacterAI_Discord_Bot.Handlers;
+﻿using CharacterAiDiscordBot.Services;
+using static CharacterAiDiscordBot.Services.CommonService;
 
-namespace CharacterAI_Discord_Bot
+namespace CharacterAiDiscordBot
 {
-    public class Program : CommandsService
+    internal class Program : DiscordService
     {
-        private ServiceProvider _services = null!;
-        private DiscordSocketClient _client = null!;
-
         static void Main()
             => new Program().MainAsync().GetAwaiter().GetResult();
 
         private async Task MainAsync()
         {
-            _services = CreateServices();
-            _client = _services.GetRequiredService<DiscordSocketClient>();
+            AppDomain.CurrentDomain.UnhandledException += (s, args) =>
+            {
+                var sw = File.AppendText($"{EXE_DIR}{SC}logs.txt");
+                string text = $"{new string('~', Console.WindowWidth)}\n" +
+                              $"Sender: {s?.GetType()}\n" +
+                              $"Error:\n{args?.ExceptionObject}";
+                sw.WriteLine(text);
+                sw.Close();
+            };
 
-            if (BotConfig is null) return;
+            Log("Working directory: ");
+            LogYellow(EXE_DIR + '\n');
+            CreateLogsFile();
 
-            _client.Log += Log;
-            _client.Ready += OnClientReady;
-            _client.JoinedGuild += OnGuildJoin;
-
-            await _client.LoginAsync(TokenType.Bot, BotConfig.BotToken);
-            await _client.StartAsync();
-            await _services.GetRequiredService<CommandsHandler>().InitializeAsync();
-
+            await SetupDiscordClient();
             await Task.Delay(-1);
         }
 
-        private async Task OnGuildJoin(SocketGuild guild)
+        private static void CreateLogsFile()
         {
-            await CreateBotRoleAsync(guild);
-            Success($"Joined guild: {guild.Name} | Owner: {guild.Owner.Username} | Members: {guild.MemberCount}");
-        }
-
-        public Task OnClientReady()
-        {
-            _ = Task.Run(async () => await LaunchChromeAndSetup(setup: BotConfig.AutoSetupEnabled));
-
-            return Task.CompletedTask;
-        }
-
-        private async Task LaunchChromeAndSetup(bool setup)
-        {
-            try
-            {
-                var handler = _services.GetRequiredService<CommandsHandler>();
-                await handler.CurrentIntegration.LaunchChromeAsync(BotConfig.CustomChromePath, BotConfig.CustomChromeExecPath);
-                if (setup) await AutoSetup(handler, _client);
-            }
-            catch (Exception e)
-            {
-                Failure(e.ToString(), client: _client);
-            }
-        }
-
-        private static ServiceProvider CreateServices()
-        {
-            var clientConfig = new DiscordSocketConfig
-            {
-                GatewayIntents = GatewayIntents.All
-                ^ GatewayIntents.GuildScheduledEvents
-                ^ GatewayIntents.GuildInvites
-                ^ GatewayIntents.GuildPresences,
-
-                MessageCacheSize = 5
-            };
-
-            var services = new ServiceCollection()
-                .AddSingleton(new DiscordSocketClient(clientConfig))
-                .AddSingleton(new CommandService())
-                .AddSingleton<CommandsHandler>();
-
-            return services.BuildServiceProvider();
-        }
-
-        private Task Log(LogMessage log)
-        {
-            if (log.Exception is NullReferenceException) return Task.CompletedTask;
-
-            Console.WriteLine(log.ToString());
-
-            return Task.CompletedTask;
+            string logstxt = $"{EXE_DIR}{SC}logs.txt";
+            if (File.Exists(logstxt)) return;
+            else File.Create(logstxt).Close();
         }
     }
 }

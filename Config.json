@@ -1,41 +1,15 @@
-{
-    "discord_bot_token": "_YOUR_DISCORD_TOKEN_",
-    "char_ai_user_token": "_YOUR_USER_TOKEN_",
+﻿{
+    "discord_bot_token": "YOUR_BOT_TOKEN",
+    "discord_bot_manager_role": "Manage Character",
 
-    "discord_bot_role": "Manage Character",
-    "discord_bot_call_prefixes": [ ".ai ", "!!" ],
-    "discord_bot_command_subprefix": "#",
-    "discord_private_category_name": "CAI PRIVATE CHANNELS",
-
-    "default_audience_mode": 0,
-    "audience_mode_quote_format": "((In response to: [{quote}]))\n",
-    "audience_mode_username_format": "User [{username}] says: ",
-    "default_no_permission_file": "nopower.gif",
-
-    "private_chat_role_required": false,
-    "use_character_avatar": true,
-    "use_character_name": true,
-    "description_in_playing_status": true,
-    "allow_dm": true,
-
-    "rate_limit": 10,
-    "default_replies_delay": 1,
-    "enable_swipe_buttons": true,
-    "enable_stop_button": true,
-    "buttons_remove_delay": 120,
-
-    "auto_setup": false,
-    "auto_char_id": "_CHARACTER_ID_",
-
-    "custom_chrome_directory": null,
-    "custom_chrome_executable_full_path": null,
-    "public_mode": false,
     "hoster_discord_id": null,
+    "discord_logs_channel_id": null,
+    "discord_error_logs_channel_id": null,
 
-    "enable_translate_button": false,
-    "deepl_api_token": "",
-    "default_translate_language": "ru",
+    "default_messages_format": "{{ref_msg_begin}}((In response to '{{ref_msg_text}}' from '{{ref_msg_user}}')){{ref_msg_end}}\n{{user}} says:\n{{msg}}",
+    "no_permission_file": "nopower.gif",
+    "rate_limit": 15,
 
-    "discord_error_log_channel_id": null,
-    "enable_cai_plus_mode": false
+    "puppeteer_browser_directory": null,
+    "puppeteer_browser_executable_path": null
 }

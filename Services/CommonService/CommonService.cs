@@ -81,7 +81,7 @@ namespace CharacterAiDiscordBot.Services
                 }
                 else
                 {
-                    string refName = refMsg.Author is SocketGuildUser refGuildUser ? (refGuildUser.GetBestName()) : refMsg.Author.Username;
+                    string refName = refMsg.Author is SocketUser user ? user.GetBestName() : refMsg.Author.Username;
                     string refContent = refMsg.Content.Replace("\n", " ");
                     if (refContent.StartsWith("<"))
                         refContent = MentionRegex().Replace(refContent, "", 1);

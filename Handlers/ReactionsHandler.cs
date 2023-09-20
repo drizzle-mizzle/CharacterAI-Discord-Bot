@@ -49,7 +49,7 @@ namespace CharacterAiDiscordBot.Handlers
         private async Task HandleReactionAsync(Cacheable<IUserMessage, ulong> rawMessage, Cacheable<IMessageChannel, ulong> discordChannel, SocketReaction reaction)
         {
             var user = reaction.User.GetValueOrDefault();
-            if (user is null || user is not SocketGuildUser userReacted || userReacted.IsBot) return;
+            if (user is null || user is not SocketUser userReacted || userReacted.IsBot) return;
 
             IUserMessage originalMessage;
             try { originalMessage = await rawMessage.DownloadAsync(); }

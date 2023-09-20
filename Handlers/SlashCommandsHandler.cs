@@ -66,10 +66,10 @@ namespace CharacterAiDiscordBot.Handlers
             if (ignore) return;
 
             var originalResponse = await context.Interaction.GetOriginalResponseAsync();
-            var owner = (await guild.GetOwnerAsync()) as SocketGuildUser;
+            var owner = guild is null ? null : (await guild.GetOwnerAsync()) as SocketGuildUser;
 
             TryToReportInLogsChannel(_client, title: "Slash Command Exception",
-                                              desc: $"Guild: `{guild.Name} ({guild.Id})`\n" +
+                                              desc: $"Guild: `{guild?.Name} ({guild?.Id})`\n" +
                                                     $"Owner: `{owner?.GetBestName()} ({owner?.Username})`\n" +
                                                     $"Channel: `{channel.Name} ({channel.Id})`\n" +
                                                     $"User: `{context.User.Username}`\n" +

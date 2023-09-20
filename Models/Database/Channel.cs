@@ -35,7 +35,7 @@
         public required ulong MessagesSent { get; set; }
         public required DateTime LastCallTime { get; set; }
 
-        public required ulong GuildId { get; set; }
+        public required ulong? GuildId { get; set; }
         public virtual Guild Guild { get; set; } = null!;
     }
 }

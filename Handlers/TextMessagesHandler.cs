@@ -52,7 +52,7 @@ namespace CharacterAiDiscordBot.Handlers
             var db = new StorageContext();
 
             var context = new SocketCommandContext(_client, msg);
-            var channel = await FindOrStartTrackingChannelAsync(context.Channel.Id, context.Guild.Id, db);
+            var channel = await FindOrStartTrackingChannelAsync(context.Channel.Id, context.Guild?.Id, db);
 
             bool gottaReply;
             gottaReply = context.Guild is null || (msg.ReferencedMessage is IUserMessage refm && refm.Author.Id == _client.CurrentUser.Id) ||
@@ -92,7 +92,7 @@ namespace CharacterAiDiscordBot.Handlers
 
             // Reformat message
             var formatTemplate = channel.ChannelMessagesFormat ?? channel.Guild.GuildMessagesFormat ?? ConfigFile.DefaultMessagesFormat.Value!;
-            string username = context.User is SocketGuildUser gu ? gu.GetBestName() : context.User.GlobalName ?? context.User.Username;
+            string username = context.User is SocketUser user ? user.GetBestName() : context.User.Username;
             
             string text = context.Message.Content ?? "";
             text = TryToRemoveTextPrefix(text);

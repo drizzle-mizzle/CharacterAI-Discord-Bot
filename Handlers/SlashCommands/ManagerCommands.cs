@@ -33,7 +33,7 @@ namespace CharacterAiDiscordBot.Handlers.SlashCommands
         {
             await DeferAsync();
 
-            var channel = await FindOrStartTrackingChannelAsync(Context.Channel.Id, Context.Guild.Id, _db);
+            var channel = await FindOrStartTrackingChannelAsync(Context.Channel.Id, Context.Guild?.Id, _db);
 
             string message = $"{OK_SIGN_DISCORD} **History ID** for this channel was changed from `{channel.HistoryId}` to `{historyId}`";
             if (historyId.Length != 43)
@@ -50,9 +50,14 @@ namespace CharacterAiDiscordBot.Handlers.SlashCommands
         {
             await DeferAsync();
 
+            if (Context.Guild is null)
+            {
+                await FollowupAsync("This command can't be used in DM");
+                return;
+            }
+
             var fromChannel = await FindOrStartTrackingChannelAsync(Context.Channel.Id, Context.Guild.Id, _db);
             var toChannel = await FindOrStartTrackingChannelAsync(channel.Id, Context.Guild.Id, _db);
-
 
             string? newHistoryId = fromChannel.HistoryId;
             if (newHistoryId is null)
@@ -85,7 +90,7 @@ namespace CharacterAiDiscordBot.Handlers.SlashCommands
         {
             await DeferAsync();
 
-            var channel = await FindOrStartTrackingChannelAsync(Context.Channel.Id, Context.Guild.Id, _db);
+            var channel = await FindOrStartTrackingChannelAsync(Context.Channel.Id, Context.Guild?.Id, _db);
             string before = channel.RandomReplyChance.ToString();
             channel.RandomReplyChance = chance;
             await _db.SaveChangesAsync();
@@ -98,7 +103,7 @@ namespace CharacterAiDiscordBot.Handlers.SlashCommands
         {
             await DeferAsync();
 
-            var channel = await FindOrStartTrackingChannelAsync(Context.Channel.Id, Context.Guild.Id, _db);
+            var channel = await FindOrStartTrackingChannelAsync(Context.Channel.Id, Context.Guild?.Id, _db);
             string before = channel.ResponseDelay.ToString();
             channel.ResponseDelay = seconds;
             await _db.SaveChangesAsync();
@@ -113,7 +118,7 @@ namespace CharacterAiDiscordBot.Handlers.SlashCommands
 
             if (!await ValidateMessageFormatAsync(newFormat)) return;
 
-            var channel = await FindOrStartTrackingChannelAsync(Context.Channel.Id, Context.Guild.Id, _db);
+            var channel = await FindOrStartTrackingChannelAsync(Context.Channel.Id, Context.Guild?.Id, _db);
             channel.ChannelMessagesFormat = newFormat;
             await _db.SaveChangesAsync();
 
@@ -135,6 +140,12 @@ namespace CharacterAiDiscordBot.Handlers.SlashCommands
         public async Task SetServerMessagesFormat(string newFormat)
         {
             await DeferAsync();
+
+            if (Context.Guild is null)
+            {
+                await FollowupAsync("This command can't be used in DM");
+                return;
+            }
 
             if (!await ValidateMessageFormatAsync(newFormat)) return;
 
@@ -161,7 +172,7 @@ namespace CharacterAiDiscordBot.Handlers.SlashCommands
         {
             await DeferAsync();
 
-            var channel = await FindOrStartTrackingChannelAsync(Context.Channel.Id, Context.Guild.Id, _db);
+            var channel = await FindOrStartTrackingChannelAsync(Context.Channel.Id, Context.Guild?.Id, _db);
 
             channel.ChannelMessagesFormat = null;
             await _db.SaveChangesAsync();
@@ -173,6 +184,12 @@ namespace CharacterAiDiscordBot.Handlers.SlashCommands
         public async Task DropGuildMessagesFormat()
         {
             await DeferAsync();
+
+            if (Context.Guild is null)
+            {
+                await FollowupAsync("This command can't be used in DM");
+                return;
+            }
 
             var guild = await FindOrStartTrackingGuildAsync(Context.Guild.Id, _db);
 
@@ -192,6 +209,12 @@ namespace CharacterAiDiscordBot.Handlers.SlashCommands
         public async Task ServerBlockUser(IUser? user = null, string? userId = null, [Summary(description: "Don't specify hours to block forever")]int hours = 0)
         {
             await DeferAsync();
+
+            if (Context.Guild is null)
+            {
+                await FollowupAsync("This command can't be used in DM");
+                return;
+            }
 
             if (user is null && userId is null)
             {
@@ -233,6 +256,12 @@ namespace CharacterAiDiscordBot.Handlers.SlashCommands
         public async Task ServerUnblockUser(IUser? user = null, string? userId = null)
         {
             await DeferAsync();
+
+            if (Context.Guild is null)
+            {
+                await FollowupAsync("This command can't be used in DM");
+                return;
+            }
 
             if (user is null && userId is null)
             {
@@ -310,7 +339,7 @@ namespace CharacterAiDiscordBot.Handlers.SlashCommands
             }
 
             var newHistoryIdTask = _integration.CaiClient.CreateNewChatAsync(character.Id, _integration.CaiAuthToken, _integration.CaiPlusMode);
-            var channel = await FindOrStartTrackingChannelAsync(Context.Channel.Id, Context.Guild.Id, _db);
+            var channel = await FindOrStartTrackingChannelAsync(Context.Channel.Id, Context.Guild?.Id, _db);
 
             string? newHistoryId = await newHistoryIdTask;
             if (newHistoryId is null)
@@ -328,6 +357,12 @@ namespace CharacterAiDiscordBot.Handlers.SlashCommands
         private async Task HuntUserAsync(IUser? user, string? userId, float chanceOfResponse)
         {
             await DeferAsync();
+
+            if (Context.Guild is null)
+            {
+                await FollowupAsync("This command can't be used in DM");
+                return;
+            }
 
             if (user is null && userId is null)
             {
@@ -367,6 +402,12 @@ namespace CharacterAiDiscordBot.Handlers.SlashCommands
         private async Task UnhuntUserAsync(IUser? user, string? userId)
         {
             await DeferAsync();
+
+            if (Context.Guild is null)
+            {
+                await FollowupAsync("This command can't be used in DM");
+                return;
+            }
 
             if (user is null && userId is null)
             {

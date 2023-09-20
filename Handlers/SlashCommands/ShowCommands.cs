@@ -48,7 +48,7 @@ namespace CharacterAiDiscordBot.Handlers.SlashCommands
         {
             await DeferAsync();
 
-            var channel = await FindOrStartTrackingChannelAsync(Context.Channel.Id, Context.Guild.Id);
+            var channel = await FindOrStartTrackingChannelAsync(Context.Channel.Id, Context.Guild?.Id);
 
             await FollowupAsync(embed: $"{OK_SIGN_DISCORD} Current history ID: `{channel.HistoryId ?? "not set"}`".ToInlineEmbed(Color.Green));
         }
@@ -57,7 +57,7 @@ namespace CharacterAiDiscordBot.Handlers.SlashCommands
         {
             await DeferAsync();
 
-            var channel = await FindOrStartTrackingChannelAsync(Context.Channel.Id, Context.Guild.Id);
+            var channel = await FindOrStartTrackingChannelAsync(Context.Channel.Id, Context.Guild?.Id);
 
             string format = channel.ChannelMessagesFormat ?? channel.Guild.GuildMessagesFormat ?? ConfigFile.DefaultMessagesFormat.Value!;
             string text = format.Replace("{{msg}}", "Hello!").Replace("{{user}}", "Average AI Enjoyer");

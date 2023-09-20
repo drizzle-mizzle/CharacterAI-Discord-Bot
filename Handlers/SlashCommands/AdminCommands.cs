@@ -108,6 +108,12 @@ namespace CharacterAiDiscordBot.Handlers.SlashCommands
         {
             await DeferAsync();
 
+            if (Context.Guild is null)
+            {
+                await FollowupAsync("This command can't be used in DM");
+                return;
+            }
+
             var guilds = _client.Guilds.Where(g => g.Id != Context.Guild.Id);
             await Parallel.ForEachAsync(guilds, async (guild, ct) => await guild.LeaveAsync());
 
@@ -233,6 +239,12 @@ namespace CharacterAiDiscordBot.Handlers.SlashCommands
             ulong uGuildId;
             if (guildId is null)
             {
+                if (Context.Guild is null)
+                {
+                    await FollowupAsync("This command can't be used in DM");
+                    return;
+                }
+
                 uGuildId = Context.Guild.Id;
             }
             else

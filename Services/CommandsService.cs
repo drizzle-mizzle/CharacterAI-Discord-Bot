@@ -1,8 +1,6 @@
 ﻿using Discord;
 using Discord.Interactions;
-using CharacterAiDiscordBot.Models.Database;
 using static CharacterAiDiscordBot.Services.CommonService;
-using static CharacterAiDiscordBot.Services.IntegrationService;
 using static CharacterAiDiscordBot.Services.StorageContext;
 using CharacterAiDiscordBot.Models.Common;
 using Discord.WebSocket;
@@ -11,10 +9,14 @@ namespace CharacterAiDiscordBot.Services
 {
     public static partial class CommandsService
     {
-        internal static string GetBestName(this SocketGuildUser user)
-            => user.Nickname ?? user.DisplayName ?? user.Username;
-
-        internal static bool IsHoster(this SocketGuildUser? user)
+        internal static string GetBestName(this SocketUser user)
+        {
+            if (user is SocketGuildUser gu)
+                return gu.Nickname ?? gu.DisplayName ?? gu.Username;
+            else
+                return user.GlobalName ?? user.Username;
+        }
+        internal static bool IsHoster(this SocketUser? user)
         {
             string? hosterId = ConfigFile.HosterDiscordID.Value;
 
@@ -94,7 +96,7 @@ namespace CharacterAiDiscordBot.Services
                 return null;
             }
 
-            await FindOrStartTrackingChannelAsync(context.Channel.Id, context.Guild.Id);
+            await FindOrStartTrackingChannelAsync(context.Channel.Id, context.Guild?.Id);
 
             int pages = (int)Math.Ceiling(searchQueryData.Characters.Count / 10.0f);
             var query = new SearchQuery(context.Interaction.Id, context.User.Id, searchQueryData, pages);

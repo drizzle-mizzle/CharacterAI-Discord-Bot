@@ -43,7 +43,7 @@ namespace CharacterAiDiscordBot.Services
             return guild;
         }
 
-        protected internal static async Task<Channel> FindOrStartTrackingChannelAsync(ulong channelId, ulong guildId, StorageContext? db = null)
+        protected internal static async Task<Channel> FindOrStartTrackingChannelAsync(ulong channelId, ulong? guildId, StorageContext? db = null)
         {
             db ??= new StorageContext();
             var channel = await db.Channels.FindAsync(channelId);
@@ -62,7 +62,7 @@ namespace CharacterAiDiscordBot.Services
                     SkipNextBotMessage = false,
                     StopBtnEnabled = true,
                     SwipesEnabled = true,
-                    GuildId = (await FindOrStartTrackingGuildAsync(guildId, db)).Id
+                    GuildId = guildId is null ? null : (await FindOrStartTrackingGuildAsync((ulong)guildId, db)).Id
                 };
                 await db.Channels.AddAsync(channel);
                 await db.SaveChangesAsync();

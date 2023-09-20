@@ -1,8 +1,9 @@
 # CharacterAI Discord Bot
 
-⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡<br>
-⚡This project is absorbed by the new **[Character Engine Discord](https://github.com/drizzle-mizzle/Character-Engine-Discord)** bot, consider switching to it. ⚡<br>
-⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡
+⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡<br>
+This project was absorbed by the new **[Character Engine Discord](https://github.com/drizzle-mizzle/Character-Engine-Discord)** bot and is not longer actively supported.<br>
+Please, consider switching to it *(it can do basically all the same things, but more and better)*.<br>
+⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡⚡
 <br><br>
 An unofficial Discord integration with a [CharacterAI](https://beta.character.ai/) service which you can use to add any character on your own Discord server.
 
@@ -14,11 +15,8 @@ An unofficial Discord integration with a [CharacterAI](https://beta.character.ai
 
 ## 🪄Features
 - Talk with any character on your own server and change them on the fly
-- Embedded character search
-- Embedded DeepL translator
-- Filter "tails" - view the content of messages that were filtered and deleted (only the part that was written **before** the message was deleted, **it doesn't actually bypass the filter**)
+- Embedded character finder
 - Automatically sets the name and profile picture of selected character
-- Supports answers swiping <s>and image sending</s>broken, works only in one direction now (can receive images, but not send)
 - Supports multiple parallel chats with the same character
 - Random replies, audience mode and some other stuff, [read here](#documentation)
 

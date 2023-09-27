@@ -48,10 +48,12 @@ namespace CharacterAiDiscordBot.Handlers
             bool ignore = msg.Content.StartsWith("~ignore");
             if (ignore) return;
 
+            var context = new SocketCommandContext(_client, msg);
+            if (await _integration.CheckIfUserIsBannedAsync(context)) return;
+
             int argPos = 0;
             var db = new StorageContext();
 
-            var context = new SocketCommandContext(_client, msg);
             var channel = await FindOrStartTrackingChannelAsync(context.Channel.Id, context.Guild?.Id, db);
 
             bool gottaReply;
@@ -242,11 +244,13 @@ namespace CharacterAiDiscordBot.Handlers
 
         private void TryToRemoveButtons(ulong oldMessageId, ISocketMessageChannel channel)
         {
-            _ = Task.Run(async () =>
+            Task.Run(async () =>
             {
+                if (oldMessageId == 0) return;
+                
                 var oldMessage = await channel.GetMessageAsync(oldMessageId);
                 if (oldMessage is null) return;
-
+                
                 var btns = new Emoji[] { ARROW_LEFT, ARROW_RIGHT };
                 await Parallel.ForEachAsync(btns, async (btn, ct)
                     => await oldMessage.RemoveReactionAsync(btn, _client.CurrentUser));

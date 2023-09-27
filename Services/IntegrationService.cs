@@ -152,24 +152,24 @@ namespace CharacterAiDiscordBot.Services
         internal static async Task<bool> UserIsBannedCheckOnly(ulong userId)
             => (await new StorageContext().BlockedUsers.FindAsync(userId)) is not null;
 
-        internal async Task<bool> UserIsBanned(SocketCommandContext context)
+        internal async Task<bool> CheckIfUserIsBannedAsync(SocketCommandContext context)
         {
             var user = context.Message.Author;
             var channel = context.Channel;
 
-            return await CheckIfUserIsBannedAsync(user, channel, context.Client);
+            return await VerdictAsync(user, channel, context.Client);
         }
 
-        internal async Task<bool> UserIsBanned(SocketReaction reaction, DiscordSocketClient client)
+        internal async Task<bool> CheckIfUserIsBannedAsync(SocketReaction reaction, DiscordSocketClient client)
         {
             var user = reaction.User.GetValueOrDefault();
             var channel = reaction.Channel;
             if (user is null) return true;
 
-            return await CheckIfUserIsBannedAsync(user, channel, client);
+            return await VerdictAsync(user, channel, client);
         }
 
-        internal async Task<bool> CheckIfUserIsBannedAsync(IUser user, ISocketMessageChannel channel, DiscordSocketClient client)
+        internal async Task<bool> VerdictAsync(IUser user, ISocketMessageChannel channel, DiscordSocketClient client)
         {
             var db = new StorageContext();
             

@@ -50,10 +50,8 @@ namespace CharacterAiDiscordBot.Handlers
 
         private async Task HandleInteractionExceptionAsync(IInteractionContext context, IResult result)
         {
-            string[] allowedKeywords = new string[] { "correct format", "bot owner", "manager" };
             LogRed(result.ErrorReason + "\n");
-
-            string message = allowedKeywords.Any(result.ErrorReason.Contains) ? result.ErrorReason : "Something went wrong!";
+            string message = result.ErrorReason;
 
             try { await context.Interaction.RespondAsync(embed: $"{WARN_SIGN_DISCORD} Failed to execute command: `{message}`".ToInlineEmbed(Color.Red)); }
             catch { await context.Interaction.FollowupAsync(embed: $"{WARN_SIGN_DISCORD} Failed to execute command: `{message}`".ToInlineEmbed(Color.Red)); }
@@ -74,7 +72,7 @@ namespace CharacterAiDiscordBot.Handlers
                                                     $"Channel: `{channel.Name} ({channel.Id})`\n" +
                                                     $"User: `{context.User.Username}`\n" +
                                                     $"Slash command: `{originalResponse.Interaction.Name}`",
-                                              content: $"{result.ErrorReason}\n\n{result.Error.GetValueOrDefault()}",
+                                              content: $"{message}\n\n{result.Error.GetValueOrDefault()}",
                                               color: Color.Red,
                                               error: true);
         }

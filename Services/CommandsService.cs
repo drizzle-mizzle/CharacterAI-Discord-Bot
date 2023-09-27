@@ -158,7 +158,7 @@ namespace CharacterAiDiscordBot.Services
 
         public static void TryToReportInLogsChannel(IDiscordClient client, string title, string desc, string? content, Color color, bool error)
         {
-            _ = Task.Run(async () =>
+            Task.Run(async () =>
             {
                 string? channelId = null;
 

@@ -7,14 +7,13 @@ using CharacterAiDiscordBot.Models.Common;
 using static CharacterAiDiscordBot.Services.CommonService;
 using static CharacterAiDiscordBot.Services.CommandsService;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 
 namespace CharacterAiDiscordBot.Services
 {
     internal class DiscordService
     {
-        public List<string> Prefixes { get; set; } = new();
+        public List<string> Prefixes { get; set; } = null!;
 
         private ServiceProvider _services = null!;
         private DiscordSocketClient _client = null!;
@@ -32,18 +31,47 @@ namespace CharacterAiDiscordBot.Services
             await _interactions.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
 
             // Initialize handlers
-            _services.GetRequiredService<ReactionsHandler>();
             _services.GetRequiredService<ButtonsHandler>();
+            _services.GetRequiredService<ReactionsHandler>();
             _services.GetRequiredService<SlashCommandsHandler>();
             _services.GetRequiredService<TextMessagesHandler>();
-            
-            await new StorageContext().Database.MigrateAsync();
 
-            _client.Log += (msg) => Task.Run(() => Log($"{msg}\n"));
-            _client.LeftGuild += (guild) => Task.Run(() => LogRed($"Left guild: {guild.Name} | Members: {guild?.MemberCount}\n"));
-            _client.JoinedGuild += (guild) =>
+            BindEvents();
+            await SetupIntegrationAsync();
+
+            Prefixes = GetPrefixes();
+
+            await _client.LoginAsync(TokenType.Bot, ConfigFile.DiscordBotToken.Value);
+            await _client.StartAsync();
+            
+            await RunJobsAsync();
+        }
+
+        private static string GetLastGameStatus()
+        {
+            string gamePath = $"{EXE_DIR}{SC}storage{SC}settings{SC}game.txt";
+            return File.Exists(gamePath) ? File.ReadAllText(gamePath) : string.Empty;
+        }
+
+        private static List<string> GetPrefixes()
+        {
+            string prefixesPath = $"{EXE_DIR}{SC}storage{SC}settings{SC}prefixes.txt";
+
+            if (File.Exists(prefixesPath))
             {
-                Task.Run(async () => await OnGuildJoinAsync(guild));
+                string content = File.ReadAllText(prefixesPath);
+                if (!string.IsNullOrWhiteSpace(content))
+                    return content.Split("\n").OrderBy(p => p.Length).Reverse().ToList(); // ex: "~ai" first, only then "~"
+            }
+
+            return new();
+        }
+
+        private void BindEvents()
+        {
+            _client.Log += (msg) =>
+            {
+                Log($"{msg}\n");
                 return Task.CompletedTask;
             };
 
@@ -53,30 +81,15 @@ namespace CharacterAiDiscordBot.Services
                 return Task.CompletedTask;
             };
 
-            await SetupIntegrationAsync();
-
-            string prefixesPath = $"{EXE_DIR}{SC}storage{SC}settings{SC}prefixes.txt";
-            if (File.Exists(prefixesPath))
+            _client.JoinedGuild += (guild) =>
             {
-                string content = File.ReadAllText(prefixesPath);
-                if (!string.IsNullOrWhiteSpace(content))
-                    Prefixes = content.Split("\n").OrderBy(p => p.Length).Reverse().ToList(); // ex: "~ai" first, only then "~"
-            }
+                Task.Run(async () => await OnGuildJoinAsync(guild));
+                return Task.CompletedTask;
+            };
 
-            string gamePath = $"{EXE_DIR}{SC}storage{SC}settings{SC}game.txt";
-            if (File.Exists(gamePath))
-            {
-                string content = File.ReadAllText(gamePath);
-                if (!string.IsNullOrWhiteSpace(content))
-                    await _client.SetGameAsync(content);
-            }
-
-            await _client.LoginAsync(TokenType.Bot, ConfigFile.DiscordBotToken.Value);
-            await _client.StartAsync();
             
-            await RunJobsAsync();
+            _client.LeftGuild += OnGuildLeft;
         }
-
 
         private async Task RunJobsAsync()
         {
@@ -88,7 +101,7 @@ namespace CharacterAiDiscordBot.Services
 
                     var time = DateTime.UtcNow - Process.GetCurrentProcess().StartTime.ToUniversalTime();
                     int blockedUsersCount = db.BlockedUsers.Where(bu => bu.GuildId == null).Count();
-                    string text = $"Running: `{time.Days}d/{time.Hours}h`\n" +
+                    string text = $"Running: `{time.Days}:{time.Hours}:{time.Minutes}`\n" +
                                   $"Blocked: `{blockedUsersCount} user(s)` | `{db.BlockedGuilds.Count()} guild(s)`";
 
                     var blockedUsersToUnblock = db.BlockedUsers.Where(bu => bu.Hours != 0 && (bu.From.AddHours(bu.Hours) <= DateTime.UtcNow));
@@ -105,9 +118,10 @@ namespace CharacterAiDiscordBot.Services
                             _integration.CaiClient.LaunchBrowser(killDuplicates: true);
                         }
                     }
+                    _firstLaunch = false;
 
                     TryToReportInLogsChannel(_client, "Status", desc: text, content: null, color: Color.DarkGreen, error: false);
-                    await Task.Delay(3_600_000); // 1 hour
+                    await Task.Delay(1_800_000); // 30 min
                 }
             }
             catch (Exception e)
@@ -132,7 +146,7 @@ namespace CharacterAiDiscordBot.Services
             LogGreen("\nCommands registered successfully\n");
             TryToReportInLogsChannel(_client, "Notification", "Commands registered successfully\n", null, Color.Green, error: false);
 
-            _firstLaunch = false;
+            await _client.SetGameAsync(GetLastGameStatus());
         }
 
         private async Task OnGuildJoinAsync(SocketGuild guild)
@@ -159,6 +173,15 @@ namespace CharacterAiDiscordBot.Services
             catch { return; }
         }
 
+        private Task OnGuildLeft(SocketGuild guild)
+        {
+            string log = $"Left guild: {guild.Name} | Members: {guild.MemberCount}";
+            LogRed(log);
+            TryToReportInLogsChannel(_client, "Left server", log, null, Color.Orange, false);
+
+            return Task.CompletedTask;
+        }
+
         internal ServiceProvider CreateServices()
         {
             var discordClient = CreateDiscordClient();
@@ -180,11 +203,6 @@ namespace CharacterAiDiscordBot.Services
             try {
                 await _integration.InitializeAsync();
                 if (_integration.SelfCharacter is null) return;
-
-                //string? status = new StorageContext().Settings.Single().LastPlayingStatus;
-                //if (status is null) return;
-
-                //await _client.SetGameAsync(status);
             }
             catch (Exception e) { LogException(new[] { e }); }
         }

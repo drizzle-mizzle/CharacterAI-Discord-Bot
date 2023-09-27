@@ -33,9 +33,9 @@ namespace CharacterAiDiscordBot.Services
         {
             if (text is null) return;
 
-            LogRed(new string('~', Console.WindowWidth));
+            LogRed(new string('~', Console.WindowWidth - 1) + "\n");
             LogRed($"{string.Join('\n', text)}\n");
-            LogRed(new string('~', Console.WindowWidth));
+            LogRed(new string('~', Console.WindowWidth - 1) + "\n");
         }
     }
 }

@@ -80,7 +80,7 @@ namespace CharacterAiDiscordBot.Handlers
 
             if ((reaction.Emote?.Name == ARROW_LEFT.Name) && channel.CurrentSwipeIndex > 0)
             {   // left arrow
-                if (await _integration.UserIsBanned(reaction, _client)) return;
+                if (await _integration.CheckIfUserIsBannedAsync(reaction, _client)) return;
 
                 channel.CurrentSwipeIndex--;
                 await db.SaveChangesAsync();
@@ -88,7 +88,7 @@ namespace CharacterAiDiscordBot.Handlers
             }
             else if (reaction.Emote?.Name == ARROW_RIGHT.Name)
             {   // right arrow
-                if (await _integration.UserIsBanned(reaction, _client)) return;
+                if (await _integration.CheckIfUserIsBannedAsync(reaction, _client)) return;
 
                 channel.CurrentSwipeIndex++;
                 await db.SaveChangesAsync();
